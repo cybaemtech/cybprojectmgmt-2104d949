@@ -52,7 +52,7 @@ const workItemFormSchema = z.object({
   tags: z.string().optional(),
   type: z.string(),
   status: z.string(),
-  priority: z.string().min(1, 'Priority is required'),
+  priority: z.string().optional(),
   projectId: z.number(),
   parentId: z.number().optional().nullable(),
   assigneeId: z.number().optional().nullable(),
