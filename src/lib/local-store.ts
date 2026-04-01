@@ -65,6 +65,22 @@ export const teamStore = {
   get: (id: number): Team | undefined => teamStore.all().find(t => t.id === id),
 };
 
+// ---- Users ----
+export const userStore = {
+  all: (): User[] => getOrInit(USERS_KEY, DEMO_USERS),
+  get: (id: number): User | undefined => userStore.all().find(u => u.id === id),
+};
+
+// ---- Team Members ----
+export const teamMemberStore = {
+  all: (): TeamMember[] => getOrInit(TEAM_MEMBERS_KEY, DEMO_TEAM_MEMBERS),
+  byTeam: (teamId: number): TeamMember[] => teamMemberStore.all().filter(m => m.teamId === teamId),
+  usersForTeam: (teamId: number): User[] => {
+    const memberIds = teamMemberStore.byTeam(teamId).map(m => m.userId);
+    return userStore.all().filter(u => memberIds.includes(u.id));
+  },
+};
+
 // ---- Work Items ----
 export const workItemStore = {
   all: (): WorkItem[] => getOrInit(WORK_ITEMS_KEY, DEMO_WORK_ITEMS),
