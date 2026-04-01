@@ -116,6 +116,33 @@ export const teamMemberStore = {
     const memberIds = teamMemberStore.byTeam(teamId).map(m => m.userId);
     return userStore.all().filter(u => memberIds.includes(u.id));
   },
+  add: (teamId: number, userId: number, role: string = 'MEMBER'): TeamMember => {
+    const members = teamMemberStore.all();
+    const maxId = members.reduce((m, tm) => Math.max(m, tm.id), 0);
+    const now = new Date().toISOString();
+    const newMember: TeamMember = {
+      id: maxId + 1,
+      teamId,
+      userId,
+      role: role as any,
+      joinedAt: now,
+      updatedAt: now,
+    };
+    members.push(newMember);
+    save(TEAM_MEMBERS_KEY, members);
+    return newMember;
+  },
+  remove: (teamId: number, userId: number) => {
+    save(TEAM_MEMBERS_KEY, teamMemberStore.all().filter(m => !(m.teamId === teamId && m.userId === userId)));
+  },
+  updateRole: (teamId: number, userId: number, role: string) => {
+    const members = teamMemberStore.all();
+    const idx = members.findIndex(m => m.teamId === teamId && m.userId === userId);
+    if (idx >= 0) {
+      members[idx] = { ...members[idx], role: role as any, updatedAt: new Date().toISOString() };
+      save(TEAM_MEMBERS_KEY, members);
+    }
+  },
 };
 
 // ---- Work Items ----
