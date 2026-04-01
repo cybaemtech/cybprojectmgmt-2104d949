@@ -331,6 +331,7 @@ export function CreateProject({
                           <Input {...field} placeholder="e.g., Healthcare, Finance, E-commerce" value={field.value || ""} />
                         </FormControl>
                         <FormMessage />
+                      </FormItem>
                     )}
                   />
                   <FormField
