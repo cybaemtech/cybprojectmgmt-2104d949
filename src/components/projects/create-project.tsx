@@ -244,16 +244,50 @@ export function CreateProject({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Project Category</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value} onValueChange={(val) => {
+                      if (val === "__add_new__") {
+                        setIsAddingCategory(true);
+                        return;
+                      }
+                      field.onChange(val);
+                    }}>
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="CLIENT">Client Project</SelectItem>
-                        <SelectItem value="IN_HOUSE">In-House Project</SelectItem>
+                        {categories.map(cat => (
+                          <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                        ))}
+                        <SelectItem value="__add_new__" className="text-primary font-medium">
+                          <span className="flex items-center gap-1"><Plus className="h-3 w-3" /> Add New Category</span>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormDescription>Select whether this is a client project or an internal project.</FormDescription>
+                    {isAddingCategory && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Input
+                          placeholder="New category name"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          className="flex-1"
+                          autoFocus
+                        />
+                        <Button type="button" size="sm" onClick={() => {
+                          if (newCategoryName.trim()) {
+                            const newCat = categoryStore.add(newCategoryName.trim());
+                            setCategories(categoryStore.all());
+                            field.onChange(newCat.value);
+                            setNewCategoryName("");
+                            setIsAddingCategory(false);
+                          }
+                        }}>Add</Button>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => {
+                          setIsAddingCategory(false);
+                          setNewCategoryName("");
+                        }}>Cancel</Button>
+                      </div>
+                    )}
+                    <FormDescription>Select a category or create a new one.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
