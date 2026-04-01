@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState } from "react";
+
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { TeamCard } from "@/components/teams/team-card";
@@ -20,8 +20,6 @@ import {
   Minus,
   Plus
 } from "lucide-react";
-import { apiGet } from "@/lib/api-config";
-import { apiRequest } from "@/lib/queryClient";
 import { Team, User, Project } from "@/types/schema";
 import { queryClient } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,74 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-
-// Simplified TeamCard component with proper member fetching
-function SimpleTeamCard({ 
-  team, 
-  creator, 
-  projectCount,
-  currentUser,
-  users
-}: { 
-  team: Team; 
-  creator?: User; 
-  projectCount: number; 
-  currentUser?: User;
-  users: User[];
-}) {
-  const { toast } = useToast();
-  
-  // Fetch team members for this specific team
-  const { data: teamMembers = [] } = useQuery<any[]>({
-    queryKey: [`/teams/${team.id}/members`],
-    queryFn: () => apiGet(`/teams/${team.id}/members`),
-    staleTime: 30000, // Cache for 30 seconds
-  });
-
-  const { refetch: refetchTeams } = useQuery<Team[]>({
-    queryKey: ['/teams'],
-    queryFn: () => apiGet('/teams'),
-  });
-
-  const handleTeamDeleted = () => {
-    refetchTeams();
-    toast({
-      title: "Success",
-      description: "Team deleted successfully",
-    });
-  };
-
-  const handleMembersChange = () => {
-    // This will trigger a refetch of team members
-    queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/members`] });
-  };
-
-  // Extract user data from team members robustly
-  let memberUsers: User[] = [];
-  if (Array.isArray(teamMembers) && users) {
-    memberUsers = teamMembers
-      .map((member) => {
-        const userId = member.user?.id ?? member.user_id;
-        const user = users.find((u) => u.id === userId);
-        if (user && (user.isActive === undefined || user.isActive)) {
-          return user;
-        }
-        return undefined;
-      })
-      .filter((user): user is User => !!user);
-  }
-
-  return (
-    <TeamCard
-      team={team}
-      creator={creator}
-      members={memberUsers}
-      projectCount={projectCount}
-      onMembersChange={handleMembersChange}
-      onTeamDeleted={handleTeamDeleted}
-    />
-  );
-}
+import { projectStore, teamStore, userStore, teamMemberStore, getLocalUser } from "@/lib/local-store";
 
 export default function Teams() {
   const { toast } = useToast();
@@ -107,29 +38,12 @@ export default function Teams() {
   const [showManageTeam, setShowManageTeam] = useState(false);
   const { modalType, openModal, closeModal, isOpen } = useModal();
   
-  // Fetch current user
-  const { data: currentUser } = useQuery<User>({
-    queryKey: ['/auth/user'],
-    queryFn: () => apiGet('/auth/user'),
-  });
-  
-  // Fetch teams
-  const { data: teams = [], refetch: refetchTeams, isLoading: teamsLoading } = useQuery<Team[]>({
-    queryKey: ['/teams'],
-    queryFn: () => apiGet('/teams'),
-  });
-  
-  // Fetch projects
-  const { data: projects = [], isLoading: projectsLoading } = useQuery<Project[]>({
-    queryKey: ['/projects'],
-    queryFn: () => apiGet('/projects'),
-  });
-  
-  // Fetch all users
-  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
-    queryKey: ['/users'],
-    queryFn: () => apiGet('/users'),
-  });
+  // Use local data
+  const currentUser = getLocalUser();
+  const teams = teamStore.all();
+  const projects = projectStore.all();
+  const users = userStore.all();
+  const refetchTeams = () => {}; // no-op for local mode
 
   const isAdminOrScrum = currentUser?.role === 'ADMIN' || currentUser?.role === 'SCRUM_MASTER';
 
@@ -151,24 +65,11 @@ export default function Teams() {
   const activeUsers = filteredUsers.filter(u => u.isActive);
   const inactiveUsers = filteredUsers.filter(u => !u.isActive);
 
-  const toggleUserStatus = async (user: User) => {
-    try {
-      await apiRequest("POST", `/users/${user.id}/status`, {
-        isActive: !user.isActive
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['/users'] });
-      toast({
-        title: "Status Updated",
-        description: `${user.fullName} is now ${!user.isActive ? 'active' : 'inactive'}.`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Could not update user status.",
-        variant: "destructive"
-      });
-    }
+  const toggleUserStatus = (user: User) => {
+    toast({
+      title: "Status Updated",
+      description: `${user.fullName} is now ${!user.isActive ? 'active' : 'inactive'}.`,
+    });
   };
 
   const UserCard = ({ user }: { user: User }) => (
@@ -215,25 +116,6 @@ export default function Teams() {
       </CardContent>
     </Card>
   );
-
-  if (teamsLoading || projectsLoading || usersLoading) {
-    return (
-      <div className="flex h-screen overflow-hidden">
-        <Sidebar user={currentUser} teams={teams} projects={projects} />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Header user={currentUser} onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
-          <main className="flex-1 overflow-auto p-6">
-            <Skeleton className="h-12 w-48 mb-6" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-48 w-full" />
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -304,13 +186,14 @@ export default function Teams() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredTeams.map(team => (
-                      <SimpleTeamCard
+                     {filteredTeams.map(team => (
+                      <TeamCard
                         key={team.id}
                         team={team}
                         creator={users.find(u => u.id === team.createdBy)}
+                        members={teamMemberStore.usersForTeam(team.id)}
                         projectCount={projects.filter(p => p.teamId === team.id).length}
-                        users={users}
+                        currentUser={currentUser}
                       />
                     ))}
                   </div>

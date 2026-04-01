@@ -1,9 +1,11 @@
-import { Project, Team, WorkItem, User } from "@/types/schema";
-import { DEMO_PROJECTS, DEMO_TEAMS, DEMO_WORK_ITEMS, DEMO_USER } from "./demo-data";
+import { Project, Team, WorkItem, User, TeamMember } from "@/types/schema";
+import { DEMO_PROJECTS, DEMO_TEAMS, DEMO_WORK_ITEMS, DEMO_USER, DEMO_USERS, DEMO_TEAM_MEMBERS } from "./demo-data";
 
 const PROJECTS_KEY = "local-projects";
 const TEAMS_KEY = "local-teams";
 const WORK_ITEMS_KEY = "local-work-items";
+const USERS_KEY = "local-users";
+const TEAM_MEMBERS_KEY = "local-team-members";
 
 function getOrInit<T>(key: string, seed: T[]): T[] {
   try {
@@ -61,6 +63,22 @@ export const projectStore = {
 export const teamStore = {
   all: (): Team[] => getOrInit(TEAMS_KEY, DEMO_TEAMS),
   get: (id: number): Team | undefined => teamStore.all().find(t => t.id === id),
+};
+
+// ---- Users ----
+export const userStore = {
+  all: (): User[] => getOrInit(USERS_KEY, DEMO_USERS),
+  get: (id: number): User | undefined => userStore.all().find(u => u.id === id),
+};
+
+// ---- Team Members ----
+export const teamMemberStore = {
+  all: (): TeamMember[] => getOrInit(TEAM_MEMBERS_KEY, DEMO_TEAM_MEMBERS),
+  byTeam: (teamId: number): TeamMember[] => teamMemberStore.all().filter(m => m.teamId === teamId),
+  usersForTeam: (teamId: number): User[] => {
+    const memberIds = teamMemberStore.byTeam(teamId).map(m => m.userId);
+    return userStore.all().filter(u => memberIds.includes(u.id));
+  },
 };
 
 // ---- Work Items ----
