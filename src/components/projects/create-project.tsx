@@ -75,6 +75,9 @@ export function CreateProject({
 }: CreateProjectProps) {
   const { toast } = useToast();
   const [clientDetailsOpen, setClientDetailsOpen] = useState(true);
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [categories, setCategories] = useState(categoryStore.all());
   
   const isAdmin = currentUser?.role === 'ADMIN';
   const allUsers = userStore.all();
