@@ -68,6 +68,8 @@ export default function Teams() {
   const inactiveUsers = filteredUsers.filter(u => !u.isActive);
 
   const toggleUserStatus = (user: User) => {
+    userStore.update(user.id, { isActive: !user.isActive });
+    setRefreshKey(k => k + 1);
     toast({
       title: "Status Updated",
       description: `${user.fullName} is now ${!user.isActive ? 'active' : 'inactive'}.`,
@@ -76,15 +78,20 @@ export default function Teams() {
 
   const UserCard = ({ user }: { user: User }) => (
     <Card 
-      className="mb-3 hover:bg-accent/50 transition-colors cursor-pointer border shadow-sm bg-background"
-      onClick={() => isAdminOrScrum && toggleUserStatus(user)}
+      className={cn(
+        "mb-3 transition-colors cursor-pointer border shadow-sm",
+        user.isActive ? "bg-background hover:bg-accent/50" : "bg-muted/30 hover:bg-muted/50 opacity-75"
+      )}
     >
       <CardContent className="p-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="relative">
-            <Avatar className="h-12 w-12 border">
+            <Avatar className={cn("h-12 w-12 border", !user.isActive && "grayscale")}>
               <AvatarImage src={user.avatarUrl || undefined} />
-              <AvatarFallback className="bg-primary/5 text-primary font-bold">
+              <AvatarFallback className={cn(
+                "font-bold",
+                user.isActive ? "bg-primary/5 text-primary" : "bg-muted text-muted-foreground"
+              )}>
                 {user.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -94,7 +101,10 @@ export default function Teams() {
             )} />
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-lg leading-tight text-foreground">{user.fullName}</span>
+            <span className={cn(
+              "font-bold text-lg leading-tight",
+              user.isActive ? "text-foreground" : "text-muted-foreground"
+            )}>{user.fullName}</span>
             <span className="text-sm text-muted-foreground">{user.email}</span>
           </div>
         </div>
@@ -110,8 +120,10 @@ export default function Teams() {
                 "h-8 w-8 p-0 rounded-full",
                 user.isActive ? "text-red-500 hover:text-red-600 hover:bg-red-50" : "text-green-500 hover:text-green-600 hover:bg-green-50"
               )}
+              onClick={(e) => { e.stopPropagation(); toggleUserStatus(user); }}
+              title={user.isActive ? "Deactivate user" : "Activate user"}
             >
-              {user.isActive ? <UserRound className="h-4 w-4" /> : <UserRound className="h-4 w-4" />}
+              <UserRound className="h-4 w-4" />
             </Button>
           )}
         </div>

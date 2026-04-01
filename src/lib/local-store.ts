@@ -106,6 +106,14 @@ export const teamStore = {
 export const userStore = {
   all: (): User[] => getOrInit(USERS_KEY, DEMO_USERS),
   get: (id: number): User | undefined => userStore.all().find(u => u.id === id),
+  update: (id: number, updates: Partial<User>) => {
+    const users = userStore.all();
+    const idx = users.findIndex(u => u.id === id);
+    if (idx >= 0) {
+      users[idx] = { ...users[idx], ...updates, updatedAt: new Date().toISOString() };
+      save(USERS_KEY, users);
+    }
+  },
 };
 
 // ---- Team Members ----
