@@ -255,7 +255,7 @@ export default function Teams() {
       <CreateTeam
         isOpen={isOpen && modalType === "createTeam"}
         onClose={closeModal}
-        onSuccess={(team) => { refetchTeams(); return team; }}
+        onSuccess={() => { refresh(); }}
         userId={currentUser?.id || 1}
       />
       
