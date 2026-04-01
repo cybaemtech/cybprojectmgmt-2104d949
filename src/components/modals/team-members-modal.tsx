@@ -28,6 +28,8 @@ export function TeamMembersModal({ isOpen, onClose, team, onMembersChange, onTea
   const [selectedRole, setSelectedRole] = useState<string>("MEMBER");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newTeamName, setNewTeamName] = useState(team.name);
   const userInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentUser = getLocalUser();
