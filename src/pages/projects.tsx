@@ -698,8 +698,8 @@ export default function Projects() {
                             <td className="px-6 py-4">
                               <Link to={`/projects/${project.id}`}>
                                 <div className="cursor-pointer hover:text-blue-600 transition-colors">
-                                  <p className="font-semibold text-gray-900">{project.key}</p>
-                                  <p className="text-sm text-gray-600 hover:text-blue-700">{project.name}</p>
+                                  <p className="font-bold text-gray-900">{project.name}</p>
+                                  <p className="text-sm text-gray-600">{project.key}</p>
                                 </div>
                               </Link>
                             </td>
