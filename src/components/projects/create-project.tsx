@@ -357,10 +357,11 @@ export function CreateProject({
                     name="clientContactName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Primary Contact Name</FormLabel>
+                        <FormLabel>Primary Contact Name <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                           <Input {...field} placeholder="Name of the main point of contact" value={field.value || ""} />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
