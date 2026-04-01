@@ -23,7 +23,7 @@ export function DeleteItemModal({
   console.log("DeleteItemModal - isOpen:", isOpen);
   console.log("DeleteItemModal - workItem:", workItem);
   
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!workItem) {
       toast({
         title: "Error",
@@ -34,7 +34,7 @@ export function DeleteItemModal({
     }
     
     try {
-      await apiRequest("DELETE", `/work-items/${workItem.id}`, null);
+      workItemStore.delete(workItem.id);
       
       toast({
         title: "Item deleted",
