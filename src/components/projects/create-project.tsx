@@ -200,24 +200,6 @@ export function CreateProject({
               )}
             />
             
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      {...field} 
-                      placeholder="Enter project description"
-                      value={field.value || ""}
-                      rows={3}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             {/* Project Dates */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
