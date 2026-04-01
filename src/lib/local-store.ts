@@ -75,6 +75,31 @@ export const projectStore = {
 export const teamStore = {
   all: (): Team[] => getOrInit(TEAMS_KEY, DEMO_TEAMS),
   get: (id: number): Team | undefined => teamStore.all().find(t => t.id === id),
+  save: (team: Partial<Team> & { name: string }): Team => {
+    const teams = teamStore.all();
+    const maxId = teams.reduce((m, t) => Math.max(m, t.id), 0);
+    const authUser = JSON.parse(localStorage.getItem("auth-user") || "null") || DEMO_USER;
+    const now = new Date().toISOString();
+    const newTeam: Team = {
+      id: team.id ?? maxId + 1,
+      name: team.name,
+      description: team.description || null,
+      createdBy: team.createdBy ?? authUser.id,
+      isActive: team.isActive ?? true,
+      createdAt: team.createdAt || now,
+      updatedAt: now,
+    };
+    const idx = teams.findIndex(t => t.id === newTeam.id);
+    if (idx >= 0) teams.splice(idx, 1, newTeam);
+    else teams.unshift(newTeam);
+    save(TEAMS_KEY, teams);
+    return newTeam;
+  },
+  delete: (id: number) => {
+    save(TEAMS_KEY, teamStore.all().filter(t => t.id !== id));
+    // Also remove team members
+    save(TEAM_MEMBERS_KEY, teamMemberStore.all().filter(m => m.teamId !== id));
+  },
 };
 
 // ---- Users ----
