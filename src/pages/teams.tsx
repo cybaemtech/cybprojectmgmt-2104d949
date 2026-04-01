@@ -117,25 +117,6 @@ export default function Teams() {
     </Card>
   );
 
-  if (teamsLoading || projectsLoading || usersLoading) {
-    return (
-      <div className="flex h-screen overflow-hidden">
-        <Sidebar user={currentUser} teams={teams} projects={projects} />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Header user={currentUser} onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
-          <main className="flex-1 overflow-auto p-6">
-            <Skeleton className="h-12 w-48 mb-6" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-48 w-full" />
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar 
