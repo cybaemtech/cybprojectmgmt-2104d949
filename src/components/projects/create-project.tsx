@@ -384,10 +384,11 @@ export function CreateProject({
                       name="clientContactPhone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contact Phone Number</FormLabel>
+                          <FormLabel>Contact Phone Number <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
                             <Input {...field} type="tel" placeholder="+1 (555) 000-0000" value={field.value || ""} />
                           </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
