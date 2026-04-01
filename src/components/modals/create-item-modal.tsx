@@ -207,6 +207,32 @@ export function CreateItemModal({
   const watchedType = form.watch("type");
   const watchedBugType = form.watch("bugType");
   const watchedStatus = form.watch("status");
+  const watchedStartDate = form.watch("startDate");
+  const watchedEndDate = form.watch("endDate");
+
+  // Calculate working days (Mon-Fri) between two dates
+  const calculateWorkingHours = useCallback((start: string | null | undefined, end: string | null | undefined): string => {
+    if (!start || !end) return "";
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || endDate < startDate) return "";
+    let workingDays = 0;
+    const current = new Date(startDate);
+    while (current <= endDate) {
+      const day = current.getDay();
+      if (day !== 0 && day !== 6) workingDays++;
+      current.setDate(current.getDate() + 1);
+    }
+    return (workingDays * 9).toString();
+  }, []);
+
+  // Auto-calculate estimated hours for FEATURE when dates change
+  useEffect(() => {
+    if (watchedType === 'FEATURE' && watchedStartDate && watchedEndDate) {
+      const hours = calculateWorkingHours(watchedStartDate, watchedEndDate);
+      if (hours) form.setValue("estimate", hours);
+    }
+  }, [watchedStartDate, watchedEndDate, watchedType, calculateWorkingHours, form]);
 
   useEffect(() => {
     if (isOpen) {
