@@ -594,7 +594,7 @@ export function CreateItemModal({
                     name="prototypeLink"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-semibold text-orange-900">Prototype Link (Optional)</FormLabel>
+                        <FormLabel className="font-semibold text-orange-900">GitHub / Prototype Link (Optional)</FormLabel>
                         <FormControl><Input {...field} placeholder="https://..." value={field.value || ""} className="bg-background" /></FormControl>
                       </FormItem>
                     )}
