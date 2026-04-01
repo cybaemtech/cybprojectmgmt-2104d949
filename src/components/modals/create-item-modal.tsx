@@ -350,23 +350,155 @@ export function CreateItemModal({
                 )}
               />
 
-              {/* Title */}
+              {/* Title / Client Company Name */}
               <FormField
                 control={form.control}
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Title <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>{watchedType === 'EPIC' ? 'Client / Company Name' : 'Title'} <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Enter work item title" maxLength={200} className="py-2" />
+                      <Input {...field} placeholder={watchedType === 'EPIC' ? "Enter client or company name" : "Enter work item title"} maxLength={200} className="py-2" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* Description - shown for non-TASK, non-BUG, non-FEATURE (handled separately) */}
-              {!['TASK', 'BUG', 'FEATURE'].includes(watchedType) && (
+              {/* EPIC / Client Details specific block */}
+              {watchedType === 'EPIC' && (
+                <div className="space-y-6">
+                  {/* Core Client Information */}
+                  <div className="space-y-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                    <h3 className="font-semibold text-sm text-primary">Core Client Information</h3>
+                    <FormField
+                      control={form.control}
+                      name="tags"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Industry / Sector</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="e.g., Healthcare, Finance, E-commerce" value={field.value || ""} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="githubUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company Website</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="url" placeholder="https://www.example.com" value={field.value || ""} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Contact Information */}
+                  <div className="space-y-4 p-4 bg-accent/30 rounded-lg border border-accent">
+                    <h3 className="font-semibold text-sm text-accent-foreground">Contact Information</h3>
+                    <FormField
+                      control={form.control}
+                      name="currentBehavior"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Primary Contact Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Name of the main point of contact" value={field.value || ""} />
+                          </FormControl>
+                          <p className="text-xs text-muted-foreground">The main person you speak to at the company</p>
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="expectedBehavior"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact Email</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="email" placeholder="client@example.com" value={field.value || ""} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="referenceUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact Phone Number</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="tel" placeholder="+1 (555) 000-0000" value={field.value || ""} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Relationship Management */}
+                  <div className="space-y-4 p-4 bg-secondary/30 rounded-lg border border-secondary">
+                    <h3 className="font-semibold text-sm text-secondary-foreground">Relationship Management</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="assigneeId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Account Manager</FormLabel>
+                            <FormControl>
+                              <Combobox
+                                options={[{ value: "unassigned", label: "Unassigned" }, ...projectTeamMembers.map(u => ({ value: u.id.toString(), label: u.fullName || u.username }))]}
+                                value={field.value?.toString() || "unassigned"}
+                                onValueChange={v => field.onChange(v === "unassigned" ? null : parseInt(v))}
+                              />
+                            </FormControl>
+                            <p className="text-xs text-muted-foreground">Internal team member responsible for this client</p>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="status"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Client Status <span className="text-destructive">*</span></FormLabel>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                              <SelectContent>
+                                <SelectItem value="TODO">Lead</SelectItem>
+                                <SelectItem value="IN_PROGRESS">Onboarding</SelectItem>
+                                <SelectItem value="ON_HOLD">Active</SelectItem>
+                                <SelectItem value="DONE">Inactive / Churned</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Client Description / Notes</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} placeholder="Background information, special requirements, relationship history..." value={field.value || ""} rows={4} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Description - shown for non-TASK, non-BUG, non-FEATURE, non-EPIC */}
+              {!['TASK', 'BUG', 'FEATURE', 'EPIC'].includes(watchedType) && (
                 <FormField
                   control={form.control}
                   name="description"
@@ -374,7 +506,7 @@ export function CreateItemModal({
                     <FormItem>
                       <FormLabel>
                         {watchedType === 'STORY' ? 'Requirement Point' : 'Description'}
-                        {watchedType === 'STORY' && <span className="text-red-500"> *</span>}
+                        {watchedType === 'STORY' && <span className="text-destructive"> *</span>}
                       </FormLabel>
                       <FormControl>
                         <Textarea
@@ -398,18 +530,18 @@ export function CreateItemModal({
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Client Requirement Description <span className="text-red-500">*</span></FormLabel>
+                        <FormLabel>Client Requirement Description <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
-                          <Textarea {...field} placeholder="Enter requirement details" value={field.value || ""} rows={2} className="bg-white" />
+                          <Textarea {...field} placeholder="Enter requirement details" value={field.value || ""} rows={2} className="bg-background" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <div className="space-y-2">
-                    <FormLabel className="font-semibold text-orange-900">Requirement Document (PDF) <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel className="font-semibold text-orange-900">Requirement Document (PDF) <span className="text-destructive">*</span></FormLabel>
                     <div
-                      className="border-2 border-dashed border-orange-200 rounded-lg p-4 text-center hover:border-orange-400 cursor-pointer bg-white transition-colors"
+                      className="border-2 border-dashed border-orange-200 rounded-lg p-4 text-center hover:border-orange-400 cursor-pointer bg-background transition-colors"
                       onClick={() => document.getElementById('pdf-upload')?.click()}
                     >
                       <input id="pdf-upload" type="file" accept="application/pdf" className="hidden" onChange={e => {
@@ -422,7 +554,7 @@ export function CreateItemModal({
                           <span className="text-sm">{selectedAttachmentFile.name}</span>
                         </div>
                       ) : (
-                        <p className="text-sm text-neutral-500">Click to upload mandatory requirement PDF</p>
+                        <p className="text-sm text-muted-foreground">Click to upload mandatory requirement PDF</p>
                       )}
                     </div>
                     <FormMessage>{form.formState.errors.attachmentFile?.message}</FormMessage>
@@ -433,7 +565,7 @@ export function CreateItemModal({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="font-semibold text-orange-900">Prototype Link (Optional)</FormLabel>
-                        <FormControl><Input {...field} placeholder="https://..." value={field.value || ""} className="bg-white" /></FormControl>
+                        <FormControl><Input {...field} placeholder="https://..." value={field.value || ""} className="bg-background" /></FormControl>
                       </FormItem>
                     )}
                   />
@@ -442,7 +574,7 @@ export function CreateItemModal({
                     control={form.control}
                     name="autoCreateTemplateTasks"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-white shadow-sm">
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-background shadow-sm">
                         <FormControl>
                           <Checkbox
                             checked={field.value}
@@ -453,7 +585,7 @@ export function CreateItemModal({
                           <FormLabel className="font-semibold text-orange-900 cursor-pointer">
                             Auto-create Template Tasks
                           </FormLabel>
-                          <p className="text-xs text-neutral-500">
+                          <p className="text-xs text-muted-foreground">
                             Create "Initial Requirement Gathering" tasks automatically for this requirement.
                           </p>
                         </div>
