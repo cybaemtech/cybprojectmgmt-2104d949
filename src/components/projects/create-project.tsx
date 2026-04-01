@@ -424,7 +424,7 @@ export function CreateProject({
                       name="clientStatus"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Client Status</FormLabel>
+                          <FormLabel>Client Status <span className="text-destructive">*</span></FormLabel>
                           <Select value={field.value || ""} onValueChange={field.onChange}>
                             <FormControl>
                               <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
