@@ -4,6 +4,8 @@ import { DEMO_PROJECTS, DEMO_TEAMS, DEMO_WORK_ITEMS, DEMO_USER, DEMO_USERS, DEMO
 const PROJECTS_KEY = "local-projects";
 const TEAMS_KEY = "local-teams";
 const WORK_ITEMS_KEY = "local-work-items";
+const USERS_KEY = "local-users";
+const TEAM_MEMBERS_KEY = "local-team-members";
 
 function getOrInit<T>(key: string, seed: T[]): T[] {
   try {
