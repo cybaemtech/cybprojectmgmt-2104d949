@@ -76,12 +76,7 @@ export const DEMO_TEAMS: Team[] = [
   { id: 3, name: "QA Team", description: "Quality assurance and testing", isActive: true, createdBy: 1, createdAt: "2024-03-01", updatedAt: new Date().toISOString() },
 ];
 
-export const DEMO_PROJECTS: Project[] = [
-  { id: 1, name: "Agile Platform v2", key: "APV2", description: "Next-gen project management platform", category: "IN_HOUSE", status: "ACTIVE", teamId: 1, startDate: "2024-06-01", targetDate: "2025-06-01", githubUrl: null, createdBy: 1, createdByName: "Demo User", createdByEmail: "demo@cybaemtech.com", createdAt: "2024-06-01", updatedAt: new Date().toISOString() },
-  { id: 2, name: "Mobile App", key: "MOBI", description: "Cross-platform mobile companion app", category: "IN_HOUSE", status: "ACTIVE", teamId: 2, startDate: "2024-09-01", targetDate: "2025-03-01", githubUrl: null, createdBy: 1, createdByName: "Demo User", createdByEmail: "demo@cybaemtech.com", createdAt: "2024-09-01", updatedAt: new Date().toISOString() },
-  { id: 3, name: "API Gateway", key: "APIG", description: "Centralized API gateway service", category: "IN_HOUSE", status: "ACTIVE", teamId: 2, startDate: "2025-01-01", targetDate: "2025-09-01", githubUrl: null, createdBy: 1, createdByName: "Demo User", createdByEmail: "demo@cybaemtech.com", createdAt: "2025-01-01", updatedAt: new Date().toISOString() },
-  { id: 4, name: "Design System", key: "DSYS", description: "Shared component library", category: "IN_HOUSE", status: "COMPLETED", teamId: 1, startDate: "2024-03-01", targetDate: "2024-12-01", githubUrl: null, createdBy: 1, createdByName: "Demo User", createdByEmail: "demo@cybaemtech.com", createdAt: "2024-03-01", updatedAt: new Date().toISOString() },
-];
+export const DEMO_PROJECTS: Project[] = [];
 
 const now = new Date();
 const daysAgo = (n: number) => new Date(now.getTime() - n * 86400000).toISOString();
