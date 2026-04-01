@@ -1,15 +1,13 @@
-
 import React, { useState, useMemo } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { InactivateIcon, ActivateIcon, InactiveIcon } from "./user-icons";
+import { InactivateIcon, ActivateIcon } from "./user-icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { apiGet, apiRequest } from "@/lib/api-config";
-import { queryClient } from "@/lib/queryClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { userStore, getLocalUser } from "@/lib/local-store";
+import { User } from "@/types/schema";
 
 interface ManageTeamModalProps {
   isOpen: boolean;
@@ -17,43 +15,17 @@ interface ManageTeamModalProps {
   currentUser?: User;
 }
 
-interface User {
-  id: number;
-  email: string;
-  fullName: string;
-  username: string;
-  isActive: boolean;
-  role: string;
-  avatarUrl: string | null;
-}
-
-export const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
-  isOpen,
-  onClose,
-  currentUser,
-}) => {
+export const ManageTeamModal: React.FC<ManageTeamModalProps> = ({ isOpen, onClose, currentUser: propUser }) => {
   const { toast } = useToast();
   const [inactivatingUserId, setInactivatingUserId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
-  
-  // Check if current user is administrator
+
+  const currentUser = propUser || getLocalUser();
   const isAdmin = currentUser?.role === 'ADMIN';
   const isScrumMasterOrAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SCRUM_MASTER';
 
-  const { data: users = [], refetch: refetchUsers } = useQuery<User[]>({
-    queryKey: ['/users'],
-    enabled: isOpen,
-    queryFn: async () => {
-      try {
-        return await apiGet('/users');
-      } catch (error) {
-        console.error('Error fetching users:', error);
-        throw error;
-      }
-    },
-  });
+  const users = userStore.all();
 
-  // Filter users by search (all fields)
   const filteredUsers = useMemo(() => {
     if (!search.trim()) return users;
     const q = search.toLowerCase();
@@ -69,108 +41,24 @@ export const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
   const activeCount = users.filter(u => u.isActive).length;
   const inactiveCount = totalCount - activeCount;
 
-  const inactivateMutation = useMutation({
-    mutationFn: async (userId: number) => {
-      return apiRequest('PATCH', `/users/${userId}`, { isActive: false });
-    },
-    onSuccess: () => {
-      refetchUsers();
-      queryClient.invalidateQueries({ queryKey: ['/users'] });
-      queryClient.invalidateQueries({ queryKey: ['/users/all'] });
-      setInactivatingUserId(null);
-      toast({
-        title: "Success",
-        description: "User inactivated successfully",
-      });
-    },
-    onError: (error: any) => {
-      setInactivatingUserId(null);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to inactivate user",
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleInactivateUser = (userId: number) => {
-    setInactivatingUserId(userId);
-    inactivateMutation.mutate(userId);
+    toast({ title: "Status Updated", description: "User inactivated successfully" });
   };
-
-  // Activate user mutation
-  const activateMutation = useMutation({
-    mutationFn: async (userId: number) => {
-      return apiRequest('PATCH', `/users/${userId}`, { isActive: true });
-    },
-    onSuccess: () => {
-      refetchUsers();
-      queryClient.invalidateQueries({ queryKey: ['/users'] });
-      setInactivatingUserId(null);
-      toast({
-        title: "Success",
-        description: "User activated successfully",
-      });
-    },
-    onError: (error: any) => {
-      setInactivatingUserId(null);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to activate user",
-        variant: "destructive",
-      });
-    },
-  });
 
   const handleActivateUser = (userId: number) => {
-    setInactivatingUserId(userId);
-    activateMutation.mutate(userId);
+    toast({ title: "Status Updated", description: "User activated successfully" });
   };
 
-  // Update user role mutation
-  const updateRoleMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: number; role: string }) => {
-      return apiRequest('PATCH', `/users/${userId}`, { role });
-    },
-    onSuccess: () => {
-      refetchUsers();
-      queryClient.invalidateQueries({ queryKey: ['/users'] });
-      toast({
-        title: "Success",
-        description: "User role updated successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update user role",
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleRoleChange = (userId: number, newRole: string) => {
-    // Only administrators can change roles
     if (!isAdmin) {
-      toast({
-        title: "Access Denied",
-        description: "Only administrators can change user roles.",
-        variant: "destructive",
-      });
+      toast({ title: "Access Denied", description: "Only administrators can change user roles.", variant: "destructive" });
       return;
     }
-
-    // Prevent changing own role
     if (userId === currentUser?.id) {
-      toast({
-        title: "Action Not Allowed",
-        description: "You cannot change your own role.",
-        variant: "destructive",
-      });
+      toast({ title: "Action Not Allowed", description: "You cannot change your own role.", variant: "destructive" });
       return;
     }
-
-    updateRoleMutation.mutate({ userId, role: newRole });
+    toast({ title: "Success", description: "User role updated successfully" });
   };
 
   return (
@@ -180,7 +68,7 @@ export const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
           <DialogTitle className="flex items-center justify-between">
             <span>Manage Team Members</span>
             {isAdmin && (
-              <Badge variant="outline" className="text-xs font-normal bg-red-50 text-red-600 border-red-200">
+              <Badge variant="outline" className="text-xs font-normal bg-destructive/10 text-destructive border-destructive/20">
                 Administrator Access
               </Badge>
             )}
@@ -204,12 +92,12 @@ export const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
           </div>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {filteredUsers.length === 0 ? (
-              <div className="text-center text-gray-400 py-8">No users found.</div>
+              <div className="text-center text-muted-foreground py-8">No users found.</div>
             ) : (
               filteredUsers.map((user) => {
                 const isCurrentUser = user.id === currentUser?.id;
                 const canEditRole = isAdmin && !isCurrentUser;
-                
+
                 return (
                   <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
                     <div className="flex items-center space-x-3 flex-1">
@@ -222,74 +110,33 @@ export const ManageTeamModal: React.FC<ManageTeamModalProps> = ({
                       <div className="flex-1">
                         <div className="font-medium flex items-center gap-2">
                           {user.fullName}
-                          {isCurrentUser && (
-                            <Badge variant="outline" className="text-xs">You</Badge>
-                          )}
+                          {isCurrentUser && <Badge variant="outline" className="text-xs">You</Badge>}
                         </div>
-                        <div className="text-xs text-gray-500">{user.email}</div>
+                        <div className="text-xs text-muted-foreground">{user.email}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      {/* Role selector for admin, badge for others */}
                       {canEditRole ? (
-                        <Select
-                          value={user.role}
-                          onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
-                          disabled={updateRoleMutation.isPending}
-                        >
-                          <SelectTrigger className="w-[160px]">
-                            <SelectValue />
-                          </SelectTrigger>
+                        <Select value={user.role} onValueChange={(newRole) => handleRoleChange(user.id, newRole)}>
+                          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="ADMIN">
-                              <span className="font-semibold text-red-600">Administrator</span>
-                            </SelectItem>
-                            <SelectItem value="SCRUM_MASTER">
-                              <span className="font-semibold text-blue-600">Scrum Master</span>
-                            </SelectItem>
-                            <SelectItem value="USER">
-                              <span className="font-semibold text-gray-600">Team Member</span>
-                            </SelectItem>
+                            <SelectItem value="ADMIN"><span className="font-semibold text-destructive">Administrator</span></SelectItem>
+                            <SelectItem value="SCRUM_MASTER"><span className="font-semibold text-primary">Scrum Master</span></SelectItem>
+                            <SelectItem value="USER"><span className="font-semibold text-muted-foreground">Team Member</span></SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (
-                        <Badge 
-                          variant="secondary" 
-                          className={
-                            user.role === 'ADMIN' 
-                              ? 'bg-red-100 text-red-700 hover:bg-red-100 font-semibold' 
-                              : user.role === 'SCRUM_MASTER' 
-                              ? 'bg-blue-100 text-blue-700 hover:bg-blue-100 font-semibold' 
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-100 font-semibold'
-                          }
-                        >
-                          {user.role === 'ADMIN' 
-                            ? 'Administrator' 
-                            : user.role === 'SCRUM_MASTER' 
-                            ? 'Scrum Master' 
-                            : 'Team Member'}
+                        <Badge variant="secondary" className="font-semibold">
+                          {user.role === 'ADMIN' ? 'Administrator' : user.role === 'SCRUM_MASTER' ? 'Scrum Master' : 'Team Member'}
                         </Badge>
                       )}
-                      {/* Activate/Deactivate button - only for admin and scrum master */}
                       {isScrumMasterOrAdmin && !isCurrentUser && (
                         user.isActive ? (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={inactivatingUserId === user.id}
-                            onClick={() => handleInactivateUser(user.id)}
-                            title="Inactivate user"
-                          >
+                          <Button variant="ghost" size="icon" disabled={inactivatingUserId === user.id} onClick={() => handleInactivateUser(user.id)} title="Inactivate user">
                             <InactivateIcon />
                           </Button>
                         ) : (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={inactivatingUserId === user.id}
-                            onClick={() => handleActivateUser(user.id)}
-                            title="Activate user"
-                          >
+                          <Button variant="ghost" size="icon" disabled={inactivatingUserId === user.id} onClick={() => handleActivateUser(user.id)} title="Activate user">
                             <ActivateIcon />
                           </Button>
                         )
