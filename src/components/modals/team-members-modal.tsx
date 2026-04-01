@@ -82,11 +82,53 @@ export function TeamMembersModal({ isOpen, onClose, team, onMembersChange, onTea
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[800px] max-h-[90vh] overflow-hidden">
         <DialogHeader className="pb-4">
-          <DialogTitle className="flex items-center">
-            <Users className="h-5 w-5 mr-2" />
-            Manage Team Members - {team.name}
+          <DialogTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            {isRenaming ? (
+              <div className="flex items-center gap-2 flex-1">
+                <Input
+                  value={newTeamName}
+                  onChange={e => setNewTeamName(e.target.value)}
+                  className="h-8 text-lg font-semibold"
+                  autoFocus
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      if (newTeamName.trim().length >= 3) {
+                        teamStore.save({ ...team, name: newTeamName.trim() });
+                        setIsRenaming(false);
+                        onMembersChange?.();
+                        toast({ title: "Team renamed", description: `Team renamed to "${newTeamName.trim()}"` });
+                      }
+                    } else if (e.key === 'Escape') {
+                      setNewTeamName(team.name);
+                      setIsRenaming(false);
+                    }
+                  }}
+                />
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                  if (newTeamName.trim().length >= 3) {
+                    teamStore.save({ ...team, name: newTeamName.trim() });
+                    setIsRenaming(false);
+                    onMembersChange?.();
+                    toast({ title: "Team renamed", description: `Team renamed to "${newTeamName.trim()}"` });
+                  }
+                }}><Check className="h-4 w-4" /></Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setNewTeamName(team.name); setIsRenaming(false); }}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <>
+                Manage Team - {team.name}
+                {isScrumMasterOrAdmin && (
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setIsRenaming(true)} title="Rename team">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </>
+            )}
           </DialogTitle>
-          {isScrumMasterOrAdmin && (
+          {isScrumMasterOrAdmin && !isRenaming && (
             <div className="flex justify-end pt-2">
               <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)}>
                 <Trash2 className="h-4 w-4 mr-1" /> Delete Team
