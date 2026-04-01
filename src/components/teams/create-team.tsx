@@ -14,9 +14,8 @@ import {
   FormMessage 
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { teamStore } from "@/lib/local-store";
 
-// Define the form schema
 const teamFormSchema = z.object({
   name: z.string().min(3, { message: "Team name must be at least 3 characters" }),
   description: z.string().optional(),
@@ -31,49 +30,28 @@ interface CreateTeamProps {
   userId: number;
 }
 
-export function CreateTeam({ 
-  isOpen, 
-  onClose, 
-  onSuccess,
-  userId 
-}: CreateTeamProps) {
+export function CreateTeam({ isOpen, onClose, onSuccess, userId }: CreateTeamProps) {
   const { toast } = useToast();
   
-  // Set up the form
   const form = useForm<TeamFormValues>({
     resolver: zodResolver(teamFormSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-    },
+    defaultValues: { name: "", description: "" },
   });
   
-  // Handle form submission
-  const onSubmit = async (data: TeamFormValues) => {
+  const onSubmit = (data: TeamFormValues) => {
     try {
-      const teamData = {
+      const newTeam = teamStore.save({
         name: data.name,
         description: data.description || "",
         createdBy: userId,
-      };
-      
-      const response = await apiRequest("POST", "/teams", teamData);
-      const newTeam = await response.json();
-      
-      toast({
-        title: "Team created",
-        description: "The team has been created successfully.",
       });
       
+      toast({ title: "Team created", description: "The team has been created successfully." });
+      form.reset();
       onSuccess(newTeam);
       onClose();
     } catch (error) {
-      console.error("Error creating team:", error);
-      toast({
-        title: "Error",
-        description: "Could not create the team. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Could not create the team.", variant: "destructive" });
     }
   };
 
@@ -83,46 +61,26 @@ export function CreateTeam({
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">Create New Team</DialogTitle>
         </DialogHeader>
-        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Team Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Enter team name" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      {...field} 
-                      placeholder="Enter team description"
-                      value={field.value || ""}
-                      rows={3}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
+            <FormField control={form.control} name="name" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Team Name</FormLabel>
+                <FormControl><Input {...field} placeholder="Enter team name" /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="description" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea {...field} placeholder="Enter team description" value={field.value || ""} rows={3} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
             <DialogFooter className="mt-6">
-              <Button variant="outline" type="button" onClick={onClose}>
-                Cancel
-              </Button>
+              <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
               <Button type="submit">Create Team</Button>
             </DialogFooter>
           </form>

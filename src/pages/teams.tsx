@@ -36,14 +36,16 @@ export default function Teams() {
   const [searchQuery, setSearchQuery] = useState("");
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [showManageTeam, setShowManageTeam] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { modalType, openModal, closeModal, isOpen } = useModal();
+  
+  const refresh = () => setRefreshKey(k => k + 1);
   
   // Use local data
   const currentUser = getLocalUser();
   const teams = teamStore.all();
   const projects = projectStore.all();
   const users = userStore.all();
-  const refetchTeams = () => {}; // no-op for local mode
 
   const isAdminOrScrum = currentUser?.role === 'ADMIN' || currentUser?.role === 'SCRUM_MASTER';
 
@@ -194,6 +196,8 @@ export default function Teams() {
                         members={teamMemberStore.usersForTeam(team.id)}
                         projectCount={projects.filter(p => p.teamId === team.id).length}
                         currentUser={currentUser}
+                        onMembersChange={refresh}
+                        onTeamDeleted={refresh}
                       />
                     ))}
                   </div>
@@ -253,7 +257,7 @@ export default function Teams() {
       <CreateTeam
         isOpen={isOpen && modalType === "createTeam"}
         onClose={closeModal}
-        onSuccess={(team) => { refetchTeams(); return team; }}
+        onSuccess={() => { refresh(); }}
         userId={currentUser?.id || 1}
       />
       
@@ -261,7 +265,7 @@ export default function Teams() {
         isOpen={isOpen && modalType === "inviteMembers"}
         onClose={closeModal}
         teams={teams}
-        onCreateTeam={async (name) => { refetchTeams(); return { name } as any; }}
+        onCreateTeam={async (name) => { refresh(); return { name } as any; }}
       />
 
       <ManageTeamModal
