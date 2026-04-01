@@ -74,7 +74,7 @@ export function CreateProject({
   currentUser
 }: CreateProjectProps) {
   const { toast } = useToast();
-  const [clientDetailsOpen, setClientDetailsOpen] = useState(false);
+  const [clientDetailsOpen, setClientDetailsOpen] = useState(true);
   
   const isAdmin = currentUser?.role === 'ADMIN';
   const allUsers = userStore.all();
