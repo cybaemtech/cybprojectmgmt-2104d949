@@ -263,7 +263,7 @@ export default function Teams() {
         isOpen={isOpen && modalType === "inviteMembers"}
         onClose={closeModal}
         teams={teams}
-        onCreateTeam={async (name) => { refetchTeams(); return { name } as any; }}
+        onCreateTeam={async (name) => { refresh(); return { name } as any; }}
       />
 
       <ManageTeamModal
