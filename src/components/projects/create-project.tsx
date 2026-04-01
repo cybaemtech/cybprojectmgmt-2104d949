@@ -371,7 +371,7 @@ export function CreateProject({
                       name="clientContactEmail"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contact Email</FormLabel>
+                          <FormLabel>Contact Email <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
                             <Input {...field} type="email" placeholder="client@example.com" value={field.value || ""} />
                           </FormControl>
