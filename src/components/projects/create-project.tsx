@@ -35,7 +35,7 @@ const projectFormSchema = z.object({
   description: z.string().optional(),
   teamId: z.string().optional(),
   status: z.enum(["PLANNING", "ACTIVE", "COMPLETED"]).default("ACTIVE"),
-  category: z.enum(["CLIENT", "IN_HOUSE"]).default("IN_HOUSE"),
+  category: z.string().min(1, { message: "Category is required" }),
   githubUrl: z.string().url({ message: "Please enter a valid GitHub URL" }).optional().or(z.literal("")),
   startDate: z.string().optional(),
   targetDate: z.string().optional().refine((date) => {
