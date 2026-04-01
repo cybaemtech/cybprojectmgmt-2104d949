@@ -350,6 +350,26 @@ export function CreateItemModal({
                 )}
               />
 
+              {/* Project field - always shown, topmost */}
+              <FormField
+                control={form.control}
+                name="projectId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project</FormLabel>
+                    <FormControl>
+                      <Combobox
+                        options={projects.map(p => ({ value: p.id.toString(), label: p.name }))}
+                        value={selectedProjectId.toString()}
+                        onValueChange={v => {
+                          const id = parseInt(v); setSelectedProjectId(id); field.onChange(id); form.setValue("parentId", null);
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
               {/* Title / Client Company Name */}
               <FormField
                 control={form.control}
