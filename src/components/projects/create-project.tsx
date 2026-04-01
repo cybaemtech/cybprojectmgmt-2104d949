@@ -270,32 +270,8 @@ export function CreateProject({
               />
             )}
 
-            {/* GitHub URL field - visible for CLIENT projects or to admins */}
-            {(form.watch("category") === "CLIENT" || isAdmin) && (
-              <FormField
-                control={form.control}
-                name="githubUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      GitHub Repository URL
-                      {form.watch("category") === "CLIENT" ? " (Required for Client Projects)" : " (Optional)"}
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        {...field} 
-                        placeholder="https://github.com/owner/repository" 
-                        value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Link to the GitHub repository for this project. This will be used for source code tracking and integration.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+
+
             
             <FormField
               control={form.control}
