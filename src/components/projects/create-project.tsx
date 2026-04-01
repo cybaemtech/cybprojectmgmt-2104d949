@@ -339,7 +339,7 @@ export function CreateProject({
                     name="clientWebsite"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Company Website</FormLabel>
+                        <FormLabel>Company Website <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                           <Input {...field} type="url" placeholder="https://www.example.com" value={field.value || ""} />
                         </FormControl>
