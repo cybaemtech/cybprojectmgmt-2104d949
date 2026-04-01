@@ -777,6 +777,7 @@ export function CreateItemModal({
               {/* Non-EPIC fields: Assignee, Parent, Status, Estimates, Dates */}
               {watchedType !== 'EPIC' && (
                 <>
+                  {watchedType !== 'FEATURE' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -814,6 +815,7 @@ export function CreateItemModal({
                       )}
                     />
                   </div>
+                  )}
 
 
                   {/* For FEATURE: Dates first, then Estimate (auto-calculated) */}
