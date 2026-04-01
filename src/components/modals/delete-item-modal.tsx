@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { WorkItem } from "@/types/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { workItemStore } from "@/lib/local-store";
 import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle } from "lucide-react";
 
@@ -23,7 +23,7 @@ export function DeleteItemModal({
   console.log("DeleteItemModal - isOpen:", isOpen);
   console.log("DeleteItemModal - workItem:", workItem);
   
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!workItem) {
       toast({
         title: "Error",
@@ -34,7 +34,7 @@ export function DeleteItemModal({
     }
     
     try {
-      await apiRequest("DELETE", `/work-items/${workItem.id}`, null);
+      workItemStore.delete(workItem.id);
       
       toast({
         title: "Item deleted",

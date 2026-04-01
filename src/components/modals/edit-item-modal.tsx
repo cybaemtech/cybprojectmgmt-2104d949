@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { workItemStore } from "@/lib/local-store";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -394,10 +395,10 @@ export function EditItemModal({
     }
   };
 
-  const handleDeleteWorkItem = async () => {
+  const handleDeleteWorkItem = () => {
     if (!workItem) return;
     try {
-      await apiRequest("DELETE", `/work-items/${workItem.id}`);
+      workItemStore.delete(workItem.id);
       toast({ title: "Item deleted", description: "The work item has been deleted successfully." });
       onSuccess();
       onClose();
