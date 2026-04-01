@@ -312,7 +312,7 @@ export function CreateProject({
                 >
                   <span className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-primary" />
-                    Client Details (Optional)
+                    Client Details
                   </span>
                   {clientDetailsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 </Button>
