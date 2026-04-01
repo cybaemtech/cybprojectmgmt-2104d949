@@ -1,5 +1,5 @@
-import { Project, Team, WorkItem, User } from "@/types/schema";
-import { DEMO_PROJECTS, DEMO_TEAMS, DEMO_WORK_ITEMS, DEMO_USER } from "./demo-data";
+import { Project, Team, WorkItem, User, TeamMember } from "@/types/schema";
+import { DEMO_PROJECTS, DEMO_TEAMS, DEMO_WORK_ITEMS, DEMO_USER, DEMO_USERS, DEMO_TEAM_MEMBERS } from "./demo-data";
 
 const PROJECTS_KEY = "local-projects";
 const TEAMS_KEY = "local-teams";
