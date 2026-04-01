@@ -743,143 +743,146 @@ export function CreateItemModal({
                 />
               )}
 
-              {/* Project + Assignee */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="projectId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Project</FormLabel>
-                      <FormControl>
-                        <Combobox
-                          options={projects.map(p => ({ value: p.id.toString(), label: p.name }))}
-                          value={selectedProjectId.toString()}
-                          onValueChange={v => {
-                            const id = parseInt(v); setSelectedProjectId(id); field.onChange(id); form.setValue("parentId", null);
-                          }}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="assigneeId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Assignee</FormLabel>
-                      <FormControl>
-                        <Combobox
-                          options={[{ value: "unassigned", label: "Unassigned" }, ...projectTeamMembers.map(u => ({ value: u.id.toString(), label: u.fullName || u.username }))]}
-                          value={field.value?.toString() || "unassigned"}
-                          onValueChange={v => field.onChange(v === "unassigned" ? null : parseInt(v))}
-                          disabled={!isAdminOrScrum}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
+              {/* Project field - always shown */}
+              <FormField
+                control={form.control}
+                name="projectId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project</FormLabel>
+                    <FormControl>
+                      <Combobox
+                        options={projects.map(p => ({ value: p.id.toString(), label: p.name }))}
+                        value={selectedProjectId.toString()}
+                        onValueChange={v => {
+                          const id = parseInt(v); setSelectedProjectId(id); field.onChange(id); form.setValue("parentId", null);
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-              {/* Parent + Status */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="parentId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{getParentLabel()}</FormLabel>
-                      <FormControl>
-                        <Combobox
-                          options={[{ value: "none", label: "None" }, ...getValidParents().map(item => ({ value: item.id.toString(), label: `${item.externalId}: ${item.title}` }))]}
-                          value={field.value?.toString() || "none"}
-                          onValueChange={v => field.onChange(v === "none" ? null : parseInt(v))}
-                          disabled={watchedType === 'EPIC'}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status <span className="text-red-500">*</span></FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          <SelectItem value="TODO">To Do</SelectItem>
-                          <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                          <SelectItem value="ON_HOLD">On Hold</SelectItem>
-                          <SelectItem value="DONE">Done</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* For FEATURE: Dates first, then Estimate (auto-calculated) */}
-              {watchedType === 'FEATURE' && (
+              {/* Non-EPIC fields: Assignee, Parent, Status, Estimates, Dates */}
+              {watchedType !== 'EPIC' && (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="startDate" render={({ field }) => (
-                      <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
-                    )} />
-                    <FormField control={form.control} name="endDate" render={({ field }) => (
-                      <FormItem><FormLabel>Scheduled End Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
-                    )} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="assigneeId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Assignee</FormLabel>
+                          <FormControl>
+                            <Combobox
+                              options={[{ value: "unassigned", label: "Unassigned" }, ...projectTeamMembers.map(u => ({ value: u.id.toString(), label: u.fullName || u.username }))]}
+                              value={field.value?.toString() || "unassigned"}
+                              onValueChange={v => field.onChange(v === "unassigned" ? null : parseInt(v))}
+                              disabled={!isAdminOrScrum}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Status <span className="text-destructive">*</span></FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              <SelectItem value="TODO">To Do</SelectItem>
+                              <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                              <SelectItem value="ON_HOLD">On Hold</SelectItem>
+                              <SelectItem value="DONE">Done</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="estimate" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Estimated Hours <span className="text-destructive">*</span></FormLabel>
-                        <FormControl><Input {...field} placeholder="Auto-calculated from dates" readOnly className="bg-muted" /></FormControl>
-                        <p className="text-xs text-muted-foreground">Auto-calculated: Working days (Mon–Fri) × 9 hrs</p>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="actualHours" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Actual Hours</FormLabel>
-                        <FormControl><Input {...field} placeholder="Hours" disabled={watchedStatus !== "DONE"} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  </div>
-                </>
-              )}
 
-              {/* For non-FEATURE: Original order (Estimate first, then Dates) */}
-              {watchedType !== 'FEATURE' && (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="estimate" render={({ field }) => (
+                  {/* Parent */}
+                  <FormField
+                    control={form.control}
+                    name="parentId"
+                    render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{watchedType === 'STORY' ? 'Story Points' : 'Estimated Hours'} <span className="text-destructive">*</span></FormLabel>
-                        <FormControl><Input {...field} placeholder="Value" /></FormControl>
+                        <FormLabel>{getParentLabel()}</FormLabel>
+                        <FormControl>
+                          <Combobox
+                            options={[{ value: "none", label: "None" }, ...getValidParents().map(item => ({ value: item.id.toString(), label: `${item.externalId}: ${item.title}` }))]}
+                            value={field.value?.toString() || "none"}
+                            onValueChange={v => field.onChange(v === "none" ? null : parseInt(v))}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
-                    )} />
-                    <FormField control={form.control} name="actualHours" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Actual Hours</FormLabel>
-                        <FormControl><Input {...field} placeholder="Hours" disabled={watchedStatus !== "DONE"} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="startDate" render={({ field }) => (
-                      <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
-                    )} />
-                    <FormField control={form.control} name="endDate" render={({ field }) => (
-                      <FormItem><FormLabel>Scheduled End Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
-                    )} />
-                  </div>
+                    )}
+                  />
+
+                  {/* For FEATURE: Dates first, then Estimate (auto-calculated) */}
+                  {watchedType === 'FEATURE' && (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="startDate" render={({ field }) => (
+                          <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                        )} />
+                        <FormField control={form.control} name="endDate" render={({ field }) => (
+                          <FormItem><FormLabel>Scheduled End Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                        )} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="estimate" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Estimated Hours <span className="text-destructive">*</span></FormLabel>
+                            <FormControl><Input {...field} placeholder="Auto-calculated from dates" readOnly className="bg-muted" /></FormControl>
+                            <p className="text-xs text-muted-foreground">Auto-calculated: Working days (Mon–Fri) × 9 hrs</p>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name="actualHours" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Actual Hours</FormLabel>
+                            <FormControl><Input {...field} placeholder="Hours" disabled={watchedStatus !== "DONE"} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
+                    </>
+                  )}
+
+                  {/* For non-FEATURE: Original order (Estimate first, then Dates) */}
+                  {watchedType !== 'FEATURE' && (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="estimate" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{watchedType === 'STORY' ? 'Story Points' : 'Estimated Hours'} <span className="text-destructive">*</span></FormLabel>
+                            <FormControl><Input {...field} placeholder="Value" /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name="actualHours" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Actual Hours</FormLabel>
+                            <FormControl><Input {...field} placeholder="Hours" disabled={watchedStatus !== "DONE"} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="startDate" render={({ field }) => (
+                          <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                        )} />
+                        <FormField control={form.control} name="endDate" render={({ field }) => (
+                          <FormItem><FormLabel>Scheduled End Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                        )} />
+                      </div>
+                    </>
+                  )}
                 </>
               )}
 
