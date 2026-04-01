@@ -44,13 +44,13 @@ const projectFormSchema = z.object({
     return !isNaN(parsedDate.getTime());
   }, { message: "Please enter a valid date" }),
   // Client Details fields
-  clientIndustry: z.string().optional(),
-  clientWebsite: z.string().optional(),
-  clientContactName: z.string().optional(),
-  clientContactEmail: z.string().email({ message: "Please enter a valid email" }).optional().or(z.literal("")),
-  clientContactPhone: z.string().optional(),
+  clientIndustry: z.string().min(1, { message: "Industry is required" }).trim(),
+  clientWebsite: z.string().min(1, { message: "Company website is required" }).trim(),
+  clientContactName: z.string().min(1, { message: "Contact name is required" }).trim(),
+  clientContactEmail: z.string().email({ message: "Please enter a valid email" }).min(1, { message: "Contact email is required" }),
+  clientContactPhone: z.string().min(1, { message: "Phone number is required" }).trim(),
   clientAccountManager: z.string().optional(),
-  clientStatus: z.enum(["LEAD", "ONBOARDING", "ACTIVE", "CHURNED"]).optional(),
+  clientStatus: z.enum(["LEAD", "ONBOARDING", "ACTIVE", "CHURNED"], { required_error: "Client status is required" }),
   clientNotes: z.string().optional(),
 });
 
