@@ -36,14 +36,16 @@ export default function Teams() {
   const [searchQuery, setSearchQuery] = useState("");
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [showManageTeam, setShowManageTeam] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { modalType, openModal, closeModal, isOpen } = useModal();
+  
+  const refresh = () => setRefreshKey(k => k + 1);
   
   // Use local data
   const currentUser = getLocalUser();
   const teams = teamStore.all();
   const projects = projectStore.all();
   const users = userStore.all();
-  const refetchTeams = () => {}; // no-op for local mode
 
   const isAdminOrScrum = currentUser?.role === 'ADMIN' || currentUser?.role === 'SCRUM_MASTER';
 
