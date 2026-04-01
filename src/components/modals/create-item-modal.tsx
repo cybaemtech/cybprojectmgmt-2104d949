@@ -689,33 +689,66 @@ export function CreateItemModal({
                 />
               </div>
 
-              {/* Estimate + Actual Hours */}
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="estimate" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{watchedType === 'STORY' ? 'Story Points' : 'Estimated Hours'} <span className="text-red-500">*</span></FormLabel>
-                    <FormControl><Input {...field} placeholder="Value" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="actualHours" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Actual Hours</FormLabel>
-                    <FormControl><Input {...field} placeholder="Hours" disabled={watchedStatus !== "DONE"} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
+              {/* For FEATURE: Dates first, then Estimate (auto-calculated) */}
+              {watchedType === 'FEATURE' && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="startDate" render={({ field }) => (
+                      <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                    )} />
+                    <FormField control={form.control} name="endDate" render={({ field }) => (
+                      <FormItem><FormLabel>Scheduled End Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                    )} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="estimate" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estimated Hours <span className="text-destructive">*</span></FormLabel>
+                        <FormControl><Input {...field} placeholder="Auto-calculated from dates" readOnly className="bg-muted" /></FormControl>
+                        <p className="text-xs text-muted-foreground">Auto-calculated: Working days (Mon–Fri) × 9 hrs</p>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="actualHours" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Actual Hours</FormLabel>
+                        <FormControl><Input {...field} placeholder="Hours" disabled={watchedStatus !== "DONE"} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                </>
+              )}
 
-              {/* Scheduled Dates */}
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="startDate" render={({ field }) => (
-                  <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
-                )} />
-                <FormField control={form.control} name="endDate" render={({ field }) => (
-                  <FormItem><FormLabel>Scheduled End Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
-                )} />
-              </div>
+              {/* For non-FEATURE: Original order (Estimate first, then Dates) */}
+              {watchedType !== 'FEATURE' && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="estimate" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{watchedType === 'STORY' ? 'Story Points' : 'Estimated Hours'} <span className="text-destructive">*</span></FormLabel>
+                        <FormControl><Input {...field} placeholder="Value" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="actualHours" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Actual Hours</FormLabel>
+                        <FormControl><Input {...field} placeholder="Hours" disabled={watchedStatus !== "DONE"} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="startDate" render={({ field }) => (
+                      <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                    )} />
+                    <FormField control={form.control} name="endDate" render={({ field }) => (
+                      <FormItem><FormLabel>Scheduled End Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                    )} />
+                  </div>
+                </>
+              )}
 
               {/* Footer */}
               <div className="flex justify-end gap-2 pt-4 border-t sticky bottom-0">
