@@ -24,19 +24,6 @@ const lastNames = ["Smith", "Johnson", "Lee", "Patel", "Garcia", "Chen", "Brown"
 
 export const DEMO_USERS: User[] = [
   DEMO_USER,
-  ...Array.from({ length: 30 }, (_, i) => ({
-    id: i + 100,
-    username: firstNames[i].toLowerCase() + "." + lastNames[i].toLowerCase(),
-    email: `${firstNames[i].toLowerCase()}.${lastNames[i].toLowerCase()}@cybaemtech.com`,
-    fullName: `${firstNames[i]} ${lastNames[i]}`,
-    password: "",
-    avatarUrl: null,
-    isActive: true,
-    role: (i % 10 === 0 ? "SCRUM_MASTER" : "USER") as User["role"],
-    lastLogin: new Date().toISOString(),
-    createdAt: "2024-01-15",
-    updatedAt: new Date().toISOString(),
-  })),
 ];
 
 // Team members: 10 users per team

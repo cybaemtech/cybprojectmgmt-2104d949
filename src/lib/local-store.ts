@@ -2,7 +2,7 @@ import { Project, Team, WorkItem, User, TeamMember } from "@/types/schema";
 import { DEMO_PROJECTS, DEMO_TEAMS, DEMO_WORK_ITEMS, DEMO_USER, DEMO_USERS, DEMO_TEAM_MEMBERS } from "./demo-data";
 
 const DATA_VERSION_KEY = "local-data-version";
-const CURRENT_VERSION = "2"; // Bump to force reset
+const CURRENT_VERSION = "3"; // Bump to force reset
 
 const PROJECTS_KEY = "local-projects";
 const TEAMS_KEY = "local-teams";
