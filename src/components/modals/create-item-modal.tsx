@@ -293,7 +293,8 @@ export function CreateItemModal({
         }
       }
 
-      await apiRequest("POST", "/work-items", submitData);
+      // Use local store for creating work items
+      workItemStore.save(submitData);
       toast({ title: "Item created", description: "Created successfully." });
       onSuccess();
       onClose();
