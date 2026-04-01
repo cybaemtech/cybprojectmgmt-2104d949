@@ -367,37 +367,66 @@ export function CreateProject({
                         <FormControl>
                           <Combobox
                             options={[
-                              { value: "Healthcare", label: "Healthcare" },
-                              { value: "Finance", label: "Finance" },
-                              { value: "Banking", label: "Banking" },
-                              { value: "Insurance", label: "Insurance" },
-                              { value: "E-commerce", label: "E-commerce" },
-                              { value: "Retail", label: "Retail" },
-                              { value: "Technology", label: "Technology" },
-                              { value: "Software", label: "Software" },
-                              { value: "Education", label: "Education" },
-                              { value: "Real Estate", label: "Real Estate" },
-                              { value: "Manufacturing", label: "Manufacturing" },
-                              { value: "Automotive", label: "Automotive" },
+                              // Technology & Communications
+                              { value: "Information Technology (IT) & Services", label: "Information Technology (IT) & Services" },
+                              { value: "Software (SaaS / PaaS)", label: "Software (SaaS / PaaS)" },
+                              { value: "Hardware & Electronics", label: "Hardware & Electronics" },
                               { value: "Telecommunications", label: "Telecommunications" },
-                              { value: "Media & Entertainment", label: "Media & Entertainment" },
-                              { value: "Travel & Hospitality", label: "Travel & Hospitality" },
+                              // Finance & Professional Services
+                              { value: "Financial Services (Banking, Wealth Management, Insurance)", label: "Financial Services (Banking, Wealth Management, Insurance)" },
+                              { value: "Accounting & Tax", label: "Accounting & Tax" },
+                              { value: "Legal Services", label: "Legal Services" },
+                              { value: "Consulting & Business Services", label: "Consulting & Business Services" },
+                              { value: "Human Resources & Staffing", label: "Human Resources & Staffing" },
+                              // Healthcare & Sciences
+                              { value: "Healthcare Providers (Hospitals, Clinics, Medical Practices)", label: "Healthcare Providers (Hospitals, Clinics, Medical Practices)" },
+                              { value: "Pharmaceuticals & Biotech", label: "Pharmaceuticals & Biotech" },
+                              { value: "Medical Devices", label: "Medical Devices" },
+                              // Consumer & Retail
+                              { value: "Retail & E-commerce", label: "Retail & E-commerce" },
+                              { value: "Consumer Goods (FMCG)", label: "Consumer Goods (FMCG)" },
                               { value: "Food & Beverage", label: "Food & Beverage" },
-                              { value: "Energy", label: "Energy" },
-                              { value: "Agriculture", label: "Agriculture" },
-                              { value: "Construction", label: "Construction" },
-                              { value: "Logistics & Supply Chain", label: "Logistics & Supply Chain" },
-                              { value: "Legal", label: "Legal" },
-                              { value: "Government", label: "Government" },
-                              { value: "Non-Profit", label: "Non-Profit" },
-                              { value: "Pharmaceuticals", label: "Pharmaceuticals" },
-                              { value: "Consulting", label: "Consulting" },
+                              // Industrial, Energy & Manufacturing
+                              { value: "Manufacturing", label: "Manufacturing" },
+                              { value: "Construction & Engineering", label: "Construction & Engineering" },
+                              { value: "Energy & Utilities (Oil, Gas, Renewables)", label: "Energy & Utilities (Oil, Gas, Renewables)" },
+                              { value: "Automotive & Aerospace", label: "Automotive & Aerospace" },
+                              { value: "Agriculture & Mining", label: "Agriculture & Mining" },
+                              // Media, Travel & Entertainment
+                              { value: "Media & Publishing", label: "Media & Publishing" },
+                              { value: "Entertainment & Gaming", label: "Entertainment & Gaming" },
+                              { value: "Travel, Tourism & Hospitality", label: "Travel, Tourism & Hospitality" },
+                              { value: "Marketing & Advertising", label: "Marketing & Advertising" },
+                              // Public Sector & Non-Profit
+                              { value: "Education (K-12, Higher Ed, EdTech)", label: "Education (K-12, Higher Ed, EdTech)" },
+                              { value: "Government & Public Administration", label: "Government & Public Administration" },
+                              { value: "Non-Profit & Philanthropy", label: "Non-Profit & Philanthropy" },
+                              // Real Estate & Logistics
+                              { value: "Real Estate (Commercial & Residential)", label: "Real Estate (Commercial & Residential)" },
+                              { value: "Transportation & Logistics", label: "Transportation & Logistics" },
+                              // Other
                               { value: "Other", label: "Other" },
                             ]}
                             value={field.value || ""}
                             onValueChange={field.onChange}
                           />
                         </FormControl>
+                        {field.value === "Other" && (
+                          <Input
+                            placeholder="Please specify your industry"
+                            className="mt-2"
+                            onChange={(e) => {
+                              if (e.target.value.trim()) {
+                                form.setValue("clientIndustry", `Other: ${e.target.value.trim()}`);
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (e.target.value.trim()) {
+                                form.setValue("clientIndustry", `Other: ${e.target.value.trim()}`);
+                              }
+                            }}
+                          />
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
