@@ -130,12 +130,12 @@ export function ProjectCard({
             )}
           </div>
         </div>
+        <CardTitle className="text-lg font-bold mt-2">{project.name}</CardTitle>
           {project.key && (
-            <div className="mb-1 text-xs text-neutral-500">
-              <span className="font-semibold">Project Key:</span> {project.key}
+            <div className="text-sm text-muted-foreground">
+              {project.key}
             </div>
           )}
-        <CardTitle className="text-lg font-semibold mt-2">{project.name}</CardTitle>
         <CardDescription className="line-clamp-2">
           {project.description || "No description provided"}
         </CardDescription>
