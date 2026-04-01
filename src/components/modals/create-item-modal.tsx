@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Project, User, WorkItem } from "@/types/schema";
 import { apiRequest } from "@/lib/queryClient";
+import { workItemStore } from "@/lib/local-store";
 import { apiGet } from "@/lib/api-config";
 import { useToast } from "@/hooks/use-toast";
 
@@ -292,7 +293,8 @@ export function CreateItemModal({
         }
       }
 
-      await apiRequest("POST", "/work-items", submitData);
+      // Use local store for creating work items
+      workItemStore.save(submitData);
       toast({ title: "Item created", description: "Created successfully." });
       onSuccess();
       onClose();
