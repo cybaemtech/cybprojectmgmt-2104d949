@@ -44,13 +44,13 @@ const projectFormSchema = z.object({
     return !isNaN(parsedDate.getTime());
   }, { message: "Please enter a valid date" }),
   // Client Details fields
-  clientIndustry: z.string().optional(),
-  clientWebsite: z.string().optional(),
-  clientContactName: z.string().optional(),
-  clientContactEmail: z.string().email({ message: "Please enter a valid email" }).optional().or(z.literal("")),
-  clientContactPhone: z.string().optional(),
+  clientIndustry: z.string().min(1, { message: "Industry is required" }).trim(),
+  clientWebsite: z.string().min(1, { message: "Company website is required" }).trim(),
+  clientContactName: z.string().min(1, { message: "Contact name is required" }).trim(),
+  clientContactEmail: z.string().email({ message: "Please enter a valid email" }).min(1, { message: "Contact email is required" }),
+  clientContactPhone: z.string().min(1, { message: "Phone number is required" }).trim(),
   clientAccountManager: z.string().optional(),
-  clientStatus: z.enum(["LEAD", "ONBOARDING", "ACTIVE", "CHURNED"]).optional(),
+  clientStatus: z.enum(["LEAD", "ONBOARDING", "ACTIVE", "CHURNED"], { required_error: "Client status is required" }),
   clientNotes: z.string().optional(),
 });
 
@@ -74,7 +74,7 @@ export function CreateProject({
   currentUser
 }: CreateProjectProps) {
   const { toast } = useToast();
-  const [clientDetailsOpen, setClientDetailsOpen] = useState(false);
+  const [clientDetailsOpen, setClientDetailsOpen] = useState(true);
   
   const isAdmin = currentUser?.role === 'ADMIN';
   const allUsers = userStore.all();
@@ -312,7 +312,7 @@ export function CreateProject({
                 >
                   <span className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-primary" />
-                    Client Details (Optional)
+                    Client Details
                   </span>
                   {clientDetailsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 </Button>
@@ -326,10 +326,11 @@ export function CreateProject({
                     name="clientIndustry"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Industry / Sector</FormLabel>
+                        <FormLabel>Industry / Sector <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                           <Input {...field} placeholder="e.g., Healthcare, Finance, E-commerce" value={field.value || ""} />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -338,7 +339,7 @@ export function CreateProject({
                     name="clientWebsite"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Company Website</FormLabel>
+                        <FormLabel>Company Website <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                           <Input {...field} type="url" placeholder="https://www.example.com" value={field.value || ""} />
                         </FormControl>
@@ -356,10 +357,11 @@ export function CreateProject({
                     name="clientContactName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Primary Contact Name</FormLabel>
+                        <FormLabel>Primary Contact Name <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                           <Input {...field} placeholder="Name of the main point of contact" value={field.value || ""} />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -369,7 +371,7 @@ export function CreateProject({
                       name="clientContactEmail"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contact Email</FormLabel>
+                          <FormLabel>Contact Email <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
                             <Input {...field} type="email" placeholder="client@example.com" value={field.value || ""} />
                           </FormControl>
@@ -382,10 +384,11 @@ export function CreateProject({
                       name="clientContactPhone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contact Phone Number</FormLabel>
+                          <FormLabel>Contact Phone Number <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
                             <Input {...field} type="tel" placeholder="+1 (555) 000-0000" value={field.value || ""} />
                           </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -421,7 +424,7 @@ export function CreateProject({
                       name="clientStatus"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Client Status</FormLabel>
+                          <FormLabel>Client Status <span className="text-destructive">*</span></FormLabel>
                           <Select value={field.value || ""} onValueChange={field.onChange}>
                             <FormControl>
                               <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
@@ -433,6 +436,7 @@ export function CreateProject({
                               <SelectItem value="CHURNED">Inactive / Churned</SelectItem>
                             </SelectContent>
                           </Select>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
