@@ -18,10 +18,10 @@ import {
 } from "@/components/ui/form";
 import { Team, User } from "@/types/schema";
 import { useToast } from "@/hooks/use-toast";
-import { projectStore, userStore } from "@/lib/local-store";
+import { projectStore, userStore, categoryStore } from "@/lib/local-store";
 import { Combobox } from "@/components/ui/combobox";
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Users } from "lucide-react";
+import { ChevronDown, ChevronRight, Users, Plus } from "lucide-react";
 
 // Define the form schema
 const projectFormSchema = z.object({
