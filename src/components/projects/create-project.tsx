@@ -326,7 +326,7 @@ export function CreateProject({
                     name="clientIndustry"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Industry / Sector</FormLabel>
+                        <FormLabel>Industry / Sector <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                           <Input {...field} placeholder="e.g., Healthcare, Finance, E-commerce" value={field.value || ""} />
                         </FormControl>
