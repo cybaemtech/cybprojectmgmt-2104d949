@@ -9,6 +9,17 @@ const TEAMS_KEY = "local-teams";
 const WORK_ITEMS_KEY = "local-work-items";
 const USERS_KEY = "local-users";
 const TEAM_MEMBERS_KEY = "local-team-members";
+const CATEGORIES_KEY = "local-project-categories";
+
+export interface ProjectCategory {
+  value: string;
+  label: string;
+}
+
+const DEFAULT_CATEGORIES: ProjectCategory[] = [
+  { value: "CLIENT", label: "Client Project" },
+  { value: "IN_HOUSE", label: "In-House Project" },
+];
 
 // Reset all local data if version changed
 (function checkVersion() {
