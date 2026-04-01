@@ -436,6 +436,7 @@ export function CreateProject({
                               <SelectItem value="CHURNED">Inactive / Churned</SelectItem>
                             </SelectContent>
                           </Select>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
