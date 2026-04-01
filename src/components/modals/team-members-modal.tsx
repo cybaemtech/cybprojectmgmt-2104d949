@@ -7,7 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Team } from "@/types/schema";
-import { UserPlus, UserMinus, Users, Trash2 } from "lucide-react";
+import { UserPlus, UserMinus, Users, Trash2, Pencil, Check, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { teamStore, teamMemberStore, userStore, getLocalUser } from "@/lib/local-store";
 
 interface TeamMembersModalProps {
