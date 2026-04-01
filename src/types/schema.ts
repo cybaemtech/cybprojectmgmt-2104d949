@@ -52,6 +52,8 @@ export interface ProjectMember {
   updatedAt: Date | string;
 }
 
+export type ClientStatus = 'LEAD' | 'ONBOARDING' | 'ACTIVE' | 'CHURNED';
+
 export interface Project {
   id: number;
   key: string;
@@ -68,6 +70,15 @@ export interface Project {
   githubUrl: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
+  // Client Details fields
+  clientIndustry: string | null;
+  clientWebsite: string | null;
+  clientContactName: string | null;
+  clientContactEmail: string | null;
+  clientContactPhone: string | null;
+  clientAccountManager: number | null;
+  clientStatus: ClientStatus | null;
+  clientNotes: string | null;
 }
 
 export interface WorkItem {

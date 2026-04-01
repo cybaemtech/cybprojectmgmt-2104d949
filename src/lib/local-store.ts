@@ -59,6 +59,14 @@ export const projectStore = {
       createdByEmail: authUser.email,
       createdAt: project.createdAt || now,
       updatedAt: now,
+      clientIndustry: project.clientIndustry || null,
+      clientWebsite: project.clientWebsite || null,
+      clientContactName: project.clientContactName || null,
+      clientContactEmail: project.clientContactEmail || null,
+      clientContactPhone: project.clientContactPhone || null,
+      clientAccountManager: project.clientAccountManager ?? null,
+      clientStatus: (project.clientStatus as any) || null,
+      clientNotes: project.clientNotes || null,
     };
     const idx = projects.findIndex(p => p.id === newProject.id);
     if (idx >= 0) projects.splice(idx, 1, newProject);
