@@ -196,6 +196,8 @@ export default function Teams() {
                         members={teamMemberStore.usersForTeam(team.id)}
                         projectCount={projects.filter(p => p.teamId === team.id).length}
                         currentUser={currentUser}
+                        onMembersChange={refresh}
+                        onTeamDeleted={refresh}
                       />
                     ))}
                   </div>
