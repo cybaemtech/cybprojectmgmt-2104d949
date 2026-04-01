@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Project, User, WorkItem } from "@/types/schema";
 import { apiRequest } from "@/lib/queryClient";
+import { workItemStore } from "@/lib/local-store";
 import { apiGet } from "@/lib/api-config";
 import { useToast } from "@/hooks/use-toast";
 
