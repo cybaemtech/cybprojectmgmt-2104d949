@@ -38,29 +38,12 @@ export default function Teams() {
   const [showManageTeam, setShowManageTeam] = useState(false);
   const { modalType, openModal, closeModal, isOpen } = useModal();
   
-  // Fetch current user
-  const { data: currentUser } = useQuery<User>({
-    queryKey: ['/auth/user'],
-    queryFn: () => apiGet('/auth/user'),
-  });
-  
-  // Fetch teams
-  const { data: teams = [], refetch: refetchTeams, isLoading: teamsLoading } = useQuery<Team[]>({
-    queryKey: ['/teams'],
-    queryFn: () => apiGet('/teams'),
-  });
-  
-  // Fetch projects
-  const { data: projects = [], isLoading: projectsLoading } = useQuery<Project[]>({
-    queryKey: ['/projects'],
-    queryFn: () => apiGet('/projects'),
-  });
-  
-  // Fetch all users
-  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
-    queryKey: ['/users'],
-    queryFn: () => apiGet('/users'),
-  });
+  // Use local data
+  const currentUser = getLocalUser();
+  const teams = teamStore.all();
+  const projects = projectStore.all();
+  const users = userStore.all();
+  const refetchTeams = () => {}; // no-op for local mode
 
   const isAdminOrScrum = currentUser?.role === 'ADMIN' || currentUser?.role === 'SCRUM_MASTER';
 
