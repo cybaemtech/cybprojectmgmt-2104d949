@@ -815,24 +815,6 @@ export function CreateItemModal({
                     />
                   </div>
 
-                  {/* Parent */}
-                  <FormField
-                    control={form.control}
-                    name="parentId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{getParentLabel()}</FormLabel>
-                        <FormControl>
-                          <Combobox
-                            options={[{ value: "none", label: "None" }, ...getValidParents().map(item => ({ value: item.id.toString(), label: `${item.externalId}: ${item.title}` }))]}
-                            value={field.value?.toString() || "none"}
-                            onValueChange={v => field.onChange(v === "none" ? null : parseInt(v))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
                   {/* For FEATURE: Dates first, then Estimate (auto-calculated) */}
                   {watchedType === 'FEATURE' && (
