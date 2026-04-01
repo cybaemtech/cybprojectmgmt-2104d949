@@ -99,7 +99,8 @@ const workItemFormSchema = z.object({
   message: "Actual hours is required when status is DONE",
   path: ["actualHours"],
 }).refine((data) => {
-  // Estimate is required for all types
+  // Estimate is required for all types except EPIC
+  if (data.type === 'EPIC') return true;
   return data.estimate && data.estimate.trim().length > 0;
 }, {
   message: "Estimate/Story Point is required",
