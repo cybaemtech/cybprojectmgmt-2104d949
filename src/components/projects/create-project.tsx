@@ -365,7 +365,38 @@ export function CreateProject({
                       <FormItem>
                         <FormLabel>Industry / Sector <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="e.g., Healthcare, Finance, E-commerce" value={field.value || ""} />
+                          <Combobox
+                            options={[
+                              { value: "Healthcare", label: "Healthcare" },
+                              { value: "Finance", label: "Finance" },
+                              { value: "Banking", label: "Banking" },
+                              { value: "Insurance", label: "Insurance" },
+                              { value: "E-commerce", label: "E-commerce" },
+                              { value: "Retail", label: "Retail" },
+                              { value: "Technology", label: "Technology" },
+                              { value: "Software", label: "Software" },
+                              { value: "Education", label: "Education" },
+                              { value: "Real Estate", label: "Real Estate" },
+                              { value: "Manufacturing", label: "Manufacturing" },
+                              { value: "Automotive", label: "Automotive" },
+                              { value: "Telecommunications", label: "Telecommunications" },
+                              { value: "Media & Entertainment", label: "Media & Entertainment" },
+                              { value: "Travel & Hospitality", label: "Travel & Hospitality" },
+                              { value: "Food & Beverage", label: "Food & Beverage" },
+                              { value: "Energy", label: "Energy" },
+                              { value: "Agriculture", label: "Agriculture" },
+                              { value: "Construction", label: "Construction" },
+                              { value: "Logistics & Supply Chain", label: "Logistics & Supply Chain" },
+                              { value: "Legal", label: "Legal" },
+                              { value: "Government", label: "Government" },
+                              { value: "Non-Profit", label: "Non-Profit" },
+                              { value: "Pharmaceuticals", label: "Pharmaceuticals" },
+                              { value: "Consulting", label: "Consulting" },
+                              { value: "Other", label: "Other" },
+                            ]}
+                            value={field.value || ""}
+                            onValueChange={field.onChange}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
