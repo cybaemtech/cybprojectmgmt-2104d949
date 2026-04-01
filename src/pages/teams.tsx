@@ -20,8 +20,6 @@ import {
   Minus,
   Plus
 } from "lucide-react";
-import { apiGet } from "@/lib/api-config";
-import { apiRequest } from "@/lib/queryClient";
 import { Team, User, Project } from "@/types/schema";
 import { queryClient } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,74 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-
-// Simplified TeamCard component with proper member fetching
-function SimpleTeamCard({ 
-  team, 
-  creator, 
-  projectCount,
-  currentUser,
-  users
-}: { 
-  team: Team; 
-  creator?: User; 
-  projectCount: number; 
-  currentUser?: User;
-  users: User[];
-}) {
-  const { toast } = useToast();
-  
-  // Fetch team members for this specific team
-  const { data: teamMembers = [] } = useQuery<any[]>({
-    queryKey: [`/teams/${team.id}/members`],
-    queryFn: () => apiGet(`/teams/${team.id}/members`),
-    staleTime: 30000, // Cache for 30 seconds
-  });
-
-  const { refetch: refetchTeams } = useQuery<Team[]>({
-    queryKey: ['/teams'],
-    queryFn: () => apiGet('/teams'),
-  });
-
-  const handleTeamDeleted = () => {
-    refetchTeams();
-    toast({
-      title: "Success",
-      description: "Team deleted successfully",
-    });
-  };
-
-  const handleMembersChange = () => {
-    // This will trigger a refetch of team members
-    queryClient.invalidateQueries({ queryKey: [`/teams/${team.id}/members`] });
-  };
-
-  // Extract user data from team members robustly
-  let memberUsers: User[] = [];
-  if (Array.isArray(teamMembers) && users) {
-    memberUsers = teamMembers
-      .map((member) => {
-        const userId = member.user?.id ?? member.user_id;
-        const user = users.find((u) => u.id === userId);
-        if (user && (user.isActive === undefined || user.isActive)) {
-          return user;
-        }
-        return undefined;
-      })
-      .filter((user): user is User => !!user);
-  }
-
-  return (
-    <TeamCard
-      team={team}
-      creator={creator}
-      members={memberUsers}
-      projectCount={projectCount}
-      onMembersChange={handleMembersChange}
-      onTeamDeleted={handleTeamDeleted}
-    />
-  );
-}
+import { projectStore, teamStore, userStore, teamMemberStore, getLocalUser } from "@/lib/local-store";
 
 export default function Teams() {
   const { toast } = useToast();
