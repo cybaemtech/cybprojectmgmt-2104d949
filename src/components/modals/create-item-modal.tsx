@@ -133,6 +133,15 @@ const workItemFormSchema = z.object({
 }, {
   message: "Current and Expected Behavior are required for Defects and Production Incidents",
   path: ["currentBehavior"],
+}).refine((data) => {
+  // Company Website is required for EPIC (Client Details)
+  if (data.type === 'EPIC') {
+    return data.githubUrl && data.githubUrl.trim().length > 0;
+  }
+  return true;
+}, {
+  message: "Company Website is required",
+  path: ["githubUrl"],
 });
 
 type WorkItemFormValues = z.infer<typeof workItemFormSchema>;
