@@ -242,6 +242,21 @@ export const workItemStore = {
   },
 };
 
+// ---- Project Categories ----
+export const categoryStore = {
+  all: (): ProjectCategory[] => getOrInit(CATEGORIES_KEY, DEFAULT_CATEGORIES),
+  add: (label: string): ProjectCategory => {
+    const categories = categoryStore.all();
+    const value = label.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+    const existing = categories.find(c => c.value === value);
+    if (existing) return existing;
+    const newCat: ProjectCategory = { value, label };
+    categories.push(newCat);
+    save(CATEGORIES_KEY, categories);
+    return newCat;
+  },
+};
+
 // ---- Auth user helper ----
 export function getLocalUser(): User {
   try {
