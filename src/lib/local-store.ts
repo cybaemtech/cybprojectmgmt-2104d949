@@ -9,6 +9,17 @@ const TEAMS_KEY = "local-teams";
 const WORK_ITEMS_KEY = "local-work-items";
 const USERS_KEY = "local-users";
 const TEAM_MEMBERS_KEY = "local-team-members";
+const CATEGORIES_KEY = "local-project-categories";
+
+export interface ProjectCategory {
+  value: string;
+  label: string;
+}
+
+const DEFAULT_CATEGORIES: ProjectCategory[] = [
+  { value: "CLIENT", label: "Client Project" },
+  { value: "IN_HOUSE", label: "In-House Project" },
+];
 
 // Reset all local data if version changed
 (function checkVersion() {
@@ -228,6 +239,21 @@ export const workItemStore = {
   },
   delete: (id: number) => {
     save(WORK_ITEMS_KEY, workItemStore.all().filter(i => i.id !== id));
+  },
+};
+
+// ---- Project Categories ----
+export const categoryStore = {
+  all: (): ProjectCategory[] => getOrInit(CATEGORIES_KEY, DEFAULT_CATEGORIES),
+  add: (label: string): ProjectCategory => {
+    const categories = categoryStore.all();
+    const value = label.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+    const existing = categories.find(c => c.value === value);
+    if (existing) return existing;
+    const newCat: ProjectCategory = { value, label };
+    categories.push(newCat);
+    save(CATEGORIES_KEY, categories);
+    return newCat;
   },
 };
 
