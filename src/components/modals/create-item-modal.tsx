@@ -415,6 +415,30 @@ export function CreateItemModal({
           title: "Automation Complete",
           description: `Created: Epic → Client Requirement → Story "Initial Requirement Gathering" → ${taskCount} task${taskCount !== 1 ? 's' : ''} from template.`,
         });
+      } else if (data.type === 'STORY' && data.autoCreateTemplateTasks && selectedTemplateId) {
+        // STORY (Change Request) automation: create STORY then auto-create TASKs from template
+        const story = workItemStore.save(submitData);
+
+        const templateTasks = availableTemplateTasks
+          .filter(t => t.templateId === selectedTemplateId && t.isActive)
+          .sort((a, b) => (a.itemOrder || 0) - (b.itemOrder || 0));
+
+        templateTasks.forEach((tTask) => {
+          workItemStore.save({
+            title: tTask.title,
+            type: 'TASK',
+            status: 'TODO',
+            priority: 'MEDIUM',
+            parentId: story.id,
+            projectId: submitData.projectId,
+          });
+        });
+
+        const taskCount = templateTasks.length;
+        toast({
+          title: "Automation Complete",
+          description: `Created: Change Request "${data.title}" → ${taskCount} task${taskCount !== 1 ? 's' : ''} from template.`,
+        });
       } else {
         // Normal single item creation
         workItemStore.save(submitData);
