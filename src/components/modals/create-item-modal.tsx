@@ -198,6 +198,18 @@ export function CreateItemModal({
   const availableTemplates = getTemplatesFromStorage().filter(t => t.ownerId === currentLocalUser?.id);
   const availableTemplateTasks = getTemplateTasksFromStorage();
 
+  // Default to "Requirement Gathering" template when modal opens
+  useEffect(() => {
+    if (isOpen && selectedTemplateId === null && availableTemplates.length > 0) {
+      const reqGathering = availableTemplates.find(t => t.name === "Requirement Gathering");
+      if (reqGathering) {
+        setSelectedTemplateId(reqGathering.id);
+      } else {
+        setSelectedTemplateId(availableTemplates[0].id);
+      }
+    }
+  }, [isOpen, availableTemplates.length]);
+
   const form = useForm<WorkItemFormValues>({
     resolver: zodResolver(workItemFormSchema),
     defaultValues: {
