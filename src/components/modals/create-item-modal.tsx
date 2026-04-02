@@ -638,7 +638,7 @@ export function CreateItemModal({
                             Auto-create Template Tasks
                           </FormLabel>
                           <p className="text-xs text-muted-foreground">
-                            Create "Requirement Gathering" tasks automatically for this requirement.
+                            Create "Initial Requirement Gathering" tasks automatically for this requirement.
                           </p>
                         </div>
                       </FormItem>
