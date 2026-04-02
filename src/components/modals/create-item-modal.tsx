@@ -178,7 +178,7 @@ export function CreateItemModal({
       title: "",
       description: "",
       tags: "",
-      type: preselectedType || "STORY",
+      type: preselectedType || "FEATURE",
       status: "TODO",
       priority: "MEDIUM",
       projectId: currentProject?.id || (projects.length > 0 ? projects[0].id : 0),
