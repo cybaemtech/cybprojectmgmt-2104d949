@@ -117,13 +117,13 @@ export function KanbanBoard({
     { 
       id: 'TODO', 
       title: 'To Do',
-      color: 'bg-rose-700',
+      color: 'bg-red-500',
       items: filteredItems.filter(item => item.status === 'TODO')
     },
     { 
       id: 'IN_PROGRESS', 
       title: 'In Progress',
-      color: 'bg-orange-500',
+      color: 'bg-yellow-500',
       items: filteredItems.filter(item => item.status === 'IN_PROGRESS')
     },
     { 
@@ -361,16 +361,18 @@ export function KanbanBoard({
     }
   };
   
-  const getItemTypeBadgeStyles = (type: string) => {
-    switch(type) {
-      case 'STORY':
-        return "bg-blue-100 text-blue-800";
-      case 'TASK':
-        return "bg-green-100 text-green-800";
-      case 'BUG':
+  const getItemTypeBadgeStyles = (type: string, status?: string) => {
+    // Badge color reflects the column/status color
+    switch(status) {
+      case 'TODO':
         return "bg-red-100 text-red-800";
+      case 'IN_PROGRESS':
+        return "bg-yellow-100 text-yellow-800";
+      case 'DONE':
+        return "bg-green-100 text-green-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        if (type === 'BUG') return "bg-red-100 text-red-800";
+        return "bg-green-100 text-green-800";
     }
   };
   
@@ -450,7 +452,7 @@ export function KanbanBoard({
                           >
                             <CardContent className="p-4">
                               <div className="flex items-center justify-between mb-2">
-                                <Badge className={getItemTypeBadgeStyles(item.type)}>
+                                <Badge className={getItemTypeBadgeStyles(item.type, column.id)}>
                                   <span className="flex items-center text-xs font-medium">
                                     {getItemTypeIcon(item.type)}
                                     {item.type.charAt(0) + item.type.slice(1).toLowerCase()}
