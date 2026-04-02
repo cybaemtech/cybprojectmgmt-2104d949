@@ -899,14 +899,7 @@ export default function Timeline() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar
-        user={currentUser}
-        teams={teams}
-        projects={filteredProjects}
-      />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div>
         {/* Tab Navigation */}
         <div className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center space-x-8">
