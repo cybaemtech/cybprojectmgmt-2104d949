@@ -670,7 +670,7 @@ export default function Projects() {
                               <Link to={`/projects/${project.id}`}>
                                 <div className="cursor-pointer hover:text-blue-600 transition-colors">
                                   <p className="font-bold text-gray-900">{project.name}</p>
-                                  <p className="text-sm text-gray-600">{project.key}</p>
+                                  
                                 </div>
                               </Link>
                             </td>
