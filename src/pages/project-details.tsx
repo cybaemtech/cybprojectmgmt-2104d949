@@ -76,7 +76,8 @@ import {
   Users,
   X,
   UserPlus,
-  UserMinus
+  UserMinus,
+  ShieldAlert
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { queryClient } from "@/lib/queryClient";
