@@ -25,9 +25,12 @@ interface Template {
   description: string;
   color: string;
   ownerId: number;
+  isLocked?: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
+const LOCKED_TEMPLATE_NAME = "Requirement Gathering";
 
 interface TemplateTask {
   id: number;
