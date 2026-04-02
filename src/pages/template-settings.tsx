@@ -230,10 +230,7 @@ export default function TemplateSettings() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-screen bg-neutral-50">
-      <Sidebar user={currentUser} teams={teams} projects={projects} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6">
+    <div className="p-6">
           <div className="max-w-5xl mx-auto">
             {/* Header */}
             <div className="mb-6">
