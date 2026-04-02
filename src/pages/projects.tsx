@@ -120,7 +120,8 @@ export default function Projects() {
   });
 
   return (
-    <div className="p-6">
+    <>
+      <div className="p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl font-semibold mb-1">Projects</h1>
