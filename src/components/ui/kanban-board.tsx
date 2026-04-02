@@ -524,7 +524,7 @@ export function KanbanBoard({
                                     <span className="text-neutral-500 mr-2">
                                       {parent.type === 'FEATURE' ? 'Feature:' : 'Story:'}
                                     </span>
-                                    <span className="font-medium">{parent.externalId}</span>
+                                    <span className="font-medium truncate max-w-[200px]" title={`${parent.externalId}: ${parent.title}`}>{parent.title}</span>
                                   </div>
                                 )}
                                 
