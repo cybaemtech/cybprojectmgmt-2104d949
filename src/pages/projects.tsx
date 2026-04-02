@@ -120,35 +120,7 @@ export default function Projects() {
   });
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar
-        user={currentUser}
-        teams={teams}
-        projects={projects}
-        onCreateTeam={isAdminOrScrum ? () => openModal("createTeam") : undefined}
-        onCreateProject={canCreateProject ? () => openModal("createProject") : undefined}
-      />
-
-      {/* Mobile menu toggle */}
-      <div className="md:hidden fixed bottom-4 right-4 z-10">
-        <Button
-          className="rounded-full shadow-lg p-3 h-12 w-12"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          <Layers className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header
-          user={currentUser}
-          onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-        />
-
-        <main className="flex-1 overflow-auto">
-          <div className="p-6">
+    <div className="p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl font-semibold mb-1">Projects</h1>
