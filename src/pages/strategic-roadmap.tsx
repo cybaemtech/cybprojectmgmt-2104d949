@@ -40,90 +40,90 @@ function migrateDate(d: string): string {
   return d;
 }
 
-async function fetchTemplates(): Promise<Template[]> {
+const ROADMAP_TEMPLATES_KEY = 'local-roadmap-templates';
+
+const SAMPLE_TEMPLATES: Template[] = [
+  {
+    id: 1,
+    name: 'Software Product Launch',
+    description: 'End-to-end roadmap for launching a new software product',
+    streams: ['Engineering', 'Design', 'Marketing', 'QA'],
+    projects: [
+      { id: 1, name: 'Core Architecture', startDate: '2026-01-01', endDate: '2026-03-31', stream: 'Engineering', actionPoints: ['Set up CI/CD pipeline', 'Define microservices architecture', 'Database schema design'] },
+      { id: 2, name: 'UI/UX Design', startDate: '2026-02-01', endDate: '2026-04-15', stream: 'Design', actionPoints: ['User research & personas', 'Wireframes & prototypes', 'Design system creation'] },
+      { id: 3, name: 'MVP Development', startDate: '2026-04-01', endDate: '2026-07-31', stream: 'Engineering', actionPoints: ['Feature development sprints', 'API integration', 'Performance optimization'] },
+      { id: 4, name: 'Testing & QA', startDate: '2026-06-01', endDate: '2026-08-31', stream: 'QA', actionPoints: ['Test plan creation', 'Automated testing', 'UAT & bug fixing'] },
+      { id: 5, name: 'Go-to-Market Campaign', startDate: '2026-07-01', endDate: '2026-09-30', stream: 'Marketing', actionPoints: ['Content strategy', 'Launch event planning', 'Social media campaign'] },
+    ],
+  },
+  {
+    id: 2,
+    name: 'Digital Transformation',
+    description: 'Enterprise digital transformation initiative roadmap',
+    streams: ['Infrastructure', 'Applications', 'Data & Analytics', 'Change Management'],
+    projects: [
+      { id: 1, name: 'Cloud Migration', startDate: '2026-01-01', endDate: '2026-06-30', stream: 'Infrastructure', actionPoints: ['Cloud provider selection', 'Migration planning', 'Phased migration execution'] },
+      { id: 2, name: 'Legacy System Modernization', startDate: '2026-03-01', endDate: '2026-09-30', stream: 'Applications', actionPoints: ['System audit', 'API-first redesign', 'Incremental rollout'] },
+      { id: 3, name: 'Data Platform Setup', startDate: '2026-02-01', endDate: '2026-07-31', stream: 'Data & Analytics', actionPoints: ['Data warehouse design', 'ETL pipeline development', 'BI dashboard creation'] },
+      { id: 4, name: 'Training & Adoption', startDate: '2026-05-01', endDate: '2026-12-31', stream: 'Change Management', actionPoints: ['Training program design', 'Champion network setup', 'Feedback & iteration'] },
+    ],
+  },
+  {
+    id: 3,
+    name: 'Agile Team Scaling',
+    description: 'Roadmap for scaling agile practices across the organization',
+    streams: ['Process', 'People', 'Tools'],
+    projects: [
+      { id: 1, name: 'Agile Framework Selection', startDate: '2026-01-01', endDate: '2026-02-28', stream: 'Process', actionPoints: ['Evaluate SAFe vs LeSS', 'Pilot team selection', 'Framework customization'] },
+      { id: 2, name: 'Team Formation', startDate: '2026-02-01', endDate: '2026-04-30', stream: 'People', actionPoints: ['Cross-functional team design', 'Scrum Master hiring', 'Role definition'] },
+      { id: 3, name: 'Tooling Setup', startDate: '2026-03-01', endDate: '2026-05-31', stream: 'Tools', actionPoints: ['Jira/Azure DevOps configuration', 'CI/CD integration', 'Metrics dashboards'] },
+      { id: 4, name: 'Organization-wide Rollout', startDate: '2026-05-01', endDate: '2026-10-31', stream: 'Process', actionPoints: ['Phased department rollout', 'Retrospectives at scale', 'Continuous improvement'] },
+    ],
+  },
+];
+
+function getTemplates(): Template[] {
   try {
-    const res = await fetch('/api/roadmap-templates');
-    if (res.ok) {
-      const data: Template[] = await res.json();
-      data.forEach(t => {
-        t.projects.forEach(p => {
-          p.startDate = migrateDate(p.startDate);
-          p.endDate = migrateDate(p.endDate);
-        });
-      });
-      return data; // Return data even if empty
-    } else {
-      console.error('Failed to fetch templates:', res.status, res.statusText);
-      return []; // Return empty array instead of default templates
-    }
-  } catch (error) {
-    console.error('Error fetching templates:', error);
-    return []; // Return empty array instead of default templates
+    const stored = localStorage.getItem(ROADMAP_TEMPLATES_KEY);
+    if (stored) return JSON.parse(stored);
+    return [];
+  } catch {
+    return [];
   }
 }
 
-async function apiCreateTemplate(t: { name: string; description: string; streams: string[]; projects: RoadmapProject[] }): Promise<Template> {
-  try {
-    const res = await fetch('/api/roadmap-templates', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(t),
-    });
-    if (res.ok) {
-      return await res.json();
-    }
-    throw new Error(`HTTP ${res.status}`);
-  } catch (error) {
-    console.error('Error creating template:', error);
-    // Return a mock template for now
-    return { ...t, id: Date.now() };
-  }
+function saveTemplates(templates: Template[]) {
+  localStorage.setItem(ROADMAP_TEMPLATES_KEY, JSON.stringify(templates));
 }
 
-async function apiUpdateTemplate(t: Template): Promise<Template> {
-  try {
-    const res = await fetch(`/api/roadmap-templates/${t.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(t),
-    });
-    if (res.ok) {
-      return await res.json();
-    }
-    throw new Error(`HTTP ${res.status}`);
-  } catch (error) {
-    console.error('Error updating template:', error);
-    return t; // Return unchanged template on error
-  }
+function createTemplate(t: { name: string; description: string; streams: string[]; projects: RoadmapProject[] }): Template {
+  const templates = getTemplates();
+  const maxId = templates.reduce((m, tpl) => Math.max(m, tpl.id), 0);
+  const newTemplate: Template = { ...t, id: maxId + 1 };
+  templates.push(newTemplate);
+  saveTemplates(templates);
+  return newTemplate;
 }
 
-async function apiDeleteTemplate(id: number): Promise<void> {
-  try {
-    const res = await fetch(`/api/roadmap-templates/${id}`, { method: 'DELETE' });
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
-  } catch (error) {
-    console.error('Error deleting template:', error);
-    throw error; // Re-throw to handle in component
-  }
+function updateTemplate(t: Template): Template {
+  const templates = getTemplates();
+  const idx = templates.findIndex(tpl => tpl.id === t.id);
+  if (idx >= 0) templates[idx] = t;
+  saveTemplates(templates);
+  return t;
 }
 
-async function apiLoadSampleTemplates(): Promise<Template[]> {
-  try {
-    const res = await fetch('/api/roadmap-templates/seed', { 
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    if (res.ok) {
-      // After seeding, fetch the templates
-      return await fetchTemplates();
-    }
-    throw new Error(`HTTP ${res.status}`);
-  } catch (error) {
-    console.error('Error loading sample templates:', error);
-    throw error;
-  }
+function deleteTemplate(id: number) {
+  saveTemplates(getTemplates().filter(t => t.id !== id));
+}
+
+function loadSampleTemplates(): Template[] {
+  const existing = getTemplates();
+  const maxId = existing.reduce((m, t) => Math.max(m, t.id), 0);
+  const samples = SAMPLE_TEMPLATES.map((t, i) => ({ ...t, id: maxId + i + 1 }));
+  const merged = [...existing, ...samples];
+  saveTemplates(merged);
+  return merged;
 }
 
 const TemplateGallery = ({ templates, onSelect, onCreate, onDelete, onDuplicate, onLoadSamples }: {
@@ -699,56 +699,40 @@ export default function StrategicRoadmapPage() {
   }, [user]);
 
   useEffect(() => {
-    fetchTemplates().then(data => {
-      setTemplates(data);
-      setLoading(false);
-    });
+    setTemplates(getTemplates());
+    setLoading(false);
   }, []);
 
   const activeTemplate = templates.find(t => t.id === activeId);
 
-  const handleCreate = async ({ name, description, streams }: { name: string; description: string; streams: string[] }) => {
-    const created = await apiCreateTemplate({ name, description, streams, projects: [] });
-    setTemplates([...templates, created]);
+  const handleCreate = ({ name, description, streams }: { name: string; description: string; streams: string[] }) => {
+    const created = createTemplate({ name, description, streams, projects: [] });
+    setTemplates(prev => [...prev, created]);
     setActiveId(created.id);
     setShowNewModal(false);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number) => {
     if (!confirm('Delete this template?')) return;
-    try {
-      await apiDeleteTemplate(id);
-      setTemplates(templates.filter(t => t.id !== id));
-    } catch (error) {
-      console.error('Failed to delete template:', error);
-      // You might want to show a toast notification here
-    }
+    deleteTemplate(id);
+    setTemplates(prev => prev.filter(t => t.id !== id));
   };
 
-  const handleLoadSamples = async () => {
-    if (!confirm('This will add sample templates to your workspace. Continue?')) return;
-    setLoading(true);
-    try {
-      const newTemplates = await apiLoadSampleTemplates();
-      setTemplates(newTemplates);
-    } catch (error) {
-      console.error('Failed to load sample templates:', error);
-      // You might want to show a toast notification here
-    } finally {
-      setLoading(false);
-    }
+  const handleLoadSamples = () => {
+    const merged = loadSampleTemplates();
+    setTemplates(merged);
   };
 
-  const handleDuplicate = async (id: number) => {
+  const handleDuplicate = (id: number) => {
     const src = templates.find(t => t.id === id);
     if (!src) return;
-    const created = await apiCreateTemplate({
+    const created = createTemplate({
       name: `${src.name} (Copy)`,
       description: src.description,
       streams: src.streams,
       projects: src.projects,
     });
-    setTemplates([...templates, created]);
+    setTemplates(prev => [...prev, created]);
   };
 
   const updateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -756,7 +740,7 @@ export default function StrategicRoadmapPage() {
     setTemplates(prev => prev.map(t => t.id === updated.id ? updated : t));
     if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
     updateTimerRef.current = setTimeout(() => {
-      apiUpdateTemplate(updated);
+      updateTemplate(updated);
     }, 500);
   }, []);
 
