@@ -24,14 +24,16 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Users, Plus } from "lucide-react";
 
 // Define the form schema
+function generateProjectKey(name: string): string {
+  const prefix = name.replace(/[^A-Za-z]/g, '').substring(0, 3).toUpperCase() || 'PRJ';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let suffix = '';
+  for (let i = 0; i < 4; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
+  return `${prefix}${suffix}`;
+}
+
 const projectFormSchema = z.object({
   name: z.string().min(3, { message: "Project name must be at least 3 characters" }).trim(),
-  key: z.string()
-        .min(2, { message: "Project key must be at least 2 characters" })
-        .max(10, { message: "Project key must be at most 10 characters" })
-        .refine(val => /^[A-Z0-9]+$/.test(val), { 
-          message: "Project key must contain only uppercase letters and numbers (A-Z, 0-9)" 
-        }),
   description: z.string().optional(),
   teamId: z.string().optional(),
   status: z.enum(["PLANNING", "ACTIVE", "COMPLETED"]).default("ACTIVE"),
