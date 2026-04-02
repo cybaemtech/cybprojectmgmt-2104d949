@@ -3279,8 +3279,6 @@ export default function ProjectDetails() {
               </div>
             )}
           </div>
-        </main>
-      </div>
 
       {/* Modals */}
       {isOpen && modalType === "createItem" && (
