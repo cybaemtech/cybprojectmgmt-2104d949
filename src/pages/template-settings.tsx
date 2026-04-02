@@ -284,22 +284,32 @@ export default function TemplateSettings() {
   };
 
   // ── Task Row ──────────────────────────────────────────────────────────────
-  const TaskRow = ({ task }: { task: TemplateTask }) => (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-all ${task.isActive ? 'bg-background border-border' : 'bg-muted border-dashed border-border opacity-60'}`}>
-      <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate ${!task.isActive ? 'line-through text-muted-foreground' : ''}`}>{task.title}</p>
-      </div>
-      <div className="flex items-center gap-2">
-        <Switch checked={task.isActive} onCheckedChange={() => handleToggleActive(task)} />
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditTaskTitle(task.title); setEditTaskDialog(task); }}>
-          <Pencil className="h-3.5 w-3.5" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteTaskDialog(task)}>
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-    </div>
+  const TaskRow = ({ task, index }: { task: TemplateTask; index: number }) => (
+    <Draggable draggableId={`task-${task.id}`} index={index}>
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-all ${task.isActive ? 'bg-background border-border' : 'bg-muted border-dashed border-border opacity-60'} ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/20' : ''}`}
+        >
+          <span {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing">
+            <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-medium truncate ${!task.isActive ? 'line-through text-muted-foreground' : ''}`}>{task.title}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={task.isActive} onCheckedChange={() => handleToggleActive(task)} />
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditTaskTitle(task.title); setEditTaskDialog(task); }}>
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteTaskDialog(task)}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </Draggable>
   );
 
   // ── Template Card ─────────────────────────────────────────────────────────
