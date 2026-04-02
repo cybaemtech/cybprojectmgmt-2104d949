@@ -3011,6 +3011,18 @@ export default function ProjectDetails() {
         />
       )}
 
+      {isOpen && (modalType as string) === "viewItem" && (
+        <ViewItemModal
+          isOpen={isOpen}
+          onClose={closeModal}
+          onSuccess={handleWorkItemsUpdate}
+          workItem={modalProps.workItem}
+          projects={projects}
+          workItems={workItems}
+          canEdit={modalProps.canEdit}
+        />
+      )}
+
       {isOpen && modalType === "deleteItem" && (
         <DeleteItemModal
           isOpen={isOpen}
