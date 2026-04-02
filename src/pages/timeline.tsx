@@ -497,10 +497,6 @@ const ProjectGanttChart = ({
             </h1>
             <p className="text-gray-600">Manage and monitor all your projects</p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            New Project
-          </Button>
         </div>
 
         {/* Search and Filters Row */}
