@@ -3,8 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { apiGet, apiPost, API_BASE_URL } from "@/lib/api-config";
 import { Bug, Edit2, Trash2, Check, X, Camera, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
 
 export default function ProjectBugReports() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

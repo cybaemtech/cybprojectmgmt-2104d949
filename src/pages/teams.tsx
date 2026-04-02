@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
 import { TeamCard } from "@/components/teams/team-card";
 import { CreateTeam } from "@/components/teams/create-team";
 import { InviteModal } from "@/components/modals/invite-modal";

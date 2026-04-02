@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Project, User, Team, WorkItem } from "@/types/schema";
-import { Sidebar } from "@/components/layout/sidebar";
+
 import { Button } from "@/components/ui/button";
 import { CreateItemModal } from "@/components/modals/create-item-modal";
 import { EditItemModal } from "@/components/modals/edit-item-modal";
