@@ -14,7 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, GripVertical, LayoutTemplate, Info, Download, Copy } from "lucide-react";
+import { Plus, Pencil, Trash2, GripVertical, LayoutTemplate, Info, Download, Copy, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getLocalUser } from "@/lib/local-store";
 
