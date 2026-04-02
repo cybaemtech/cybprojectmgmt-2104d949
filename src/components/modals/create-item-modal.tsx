@@ -125,7 +125,7 @@ const workItemFormSchema = z.object({
   if (data.type === 'EPIC') return true;
   return data.estimate && data.estimate.trim().length > 0;
 }, {
-  message: "Estimate/Story Point is required",
+  message: "Estimated Hours is required",
   path: ["estimate"],
 }).refine((data) => {
   // Parent is required for FEATURE, STORY, TASK, BUG (not EPIC)
@@ -1118,7 +1118,7 @@ export function CreateItemModal({
                       <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="estimate" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{watchedType === 'STORY' ? 'Story Points' : 'Estimated Hours'} <span className="text-destructive">*</span></FormLabel>
+                            <FormLabel>Estimated Hours <span className="text-destructive">*</span></FormLabel>
                             <FormControl><Input {...field} placeholder="Value" /></FormControl>
                             <FormMessage />
                           </FormItem>

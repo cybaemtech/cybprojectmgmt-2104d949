@@ -408,7 +408,7 @@ export function EditItemModal({
   };
 
   const getEstimateLabel = () => {
-    return workItem?.type === "STORY" ? "Story Points" : "Estimated Hours";
+    return "Estimated Hours";
   };
 
   if (!workItem) return null;

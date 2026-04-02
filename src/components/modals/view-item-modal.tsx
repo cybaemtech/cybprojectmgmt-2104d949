@@ -326,7 +326,7 @@ export function ViewItemModal({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <h4 className="text-sm font-semibold text-neutral-500 mb-1">
-                    {workItem.type === 'STORY' ? 'Story Points' : 'Estimated Hours'}
+                    Estimated Hours
                   </h4>
                   <p className="text-sm">
                     {isParentType && totalEstHours !== null
