@@ -153,6 +153,11 @@ export default function TemplateSettings() {
   };
 
   const deleteTemplate = (id: number) => {
+    const tpl = getTemplates().find(t => t.id === id);
+    if (tpl?.isLocked) {
+      toast({ title: "Locked", description: `"${tpl.name}" is a mandatory template and cannot be deleted.`, variant: "destructive" });
+      return;
+    }
     saveTemplates(getTemplates().filter(t => t.id !== id));
     saveTasksToStorage(getTasks().filter(t => t.templateId !== id));
     reload();
