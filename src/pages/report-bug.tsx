@@ -267,9 +267,6 @@ export default function ReportBug() {
                 </CardContent>
               </Card>
             </div>
-          </div>
-        </main>
-      </div>
     </div>
   );
 }
