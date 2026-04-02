@@ -201,6 +201,18 @@ export default function TemplateSettings() {
     reload();
   };
 
+  const reorderTasks = (templateId: number, startIndex: number, endIndex: number) => {
+    const all = getTasks();
+    const tplTasks = all.filter(t => t.templateId === templateId).sort((a, b) => a.itemOrder - b.itemOrder);
+    const otherTasks = all.filter(t => t.templateId !== templateId);
+    const [moved] = tplTasks.splice(startIndex, 1);
+    tplTasks.splice(endIndex, 0, moved);
+    const now = new Date().toISOString();
+    tplTasks.forEach((t, i) => { t.itemOrder = i + 1; t.updatedAt = now; });
+    saveTasksToStorage([...otherTasks, ...tplTasks]);
+    reload();
+  };
+
   // ── Dialog state ──────────────────────────────────────────────────────────
   const [createTplDialog, setCreateTplDialog] = useState(false);
   const [editTplDialog, setEditTplDialog] = useState<Template | null>(null);
