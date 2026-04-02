@@ -397,7 +397,7 @@ export function KanbanBoard({
           <div key={column.id}>
             <div className="bg-neutral-100 p-3 rounded-t-lg border border-neutral-200 border-b-0 flex items-center justify-between">
               <h3 className="font-medium flex items-center">
-                <span className={`w-3 h-3 rounded-full ${column.color} mr-2`}></span>
+                <span className={`w-3 h-3 rounded-full mr-2 ${column.color}`}></span>
                 {column.title}
               </h3>
               <Badge variant="outline" className="bg-neutral-200 text-neutral-700">
