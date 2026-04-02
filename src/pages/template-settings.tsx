@@ -142,7 +142,14 @@ export default function TemplateSettings() {
   const updateTemplate = (id: number, updates: Partial<Template>) => {
     const all = getTemplates();
     const idx = all.findIndex(t => t.id === id);
-    if (idx >= 0) { all[idx] = { ...all[idx], ...updates, updatedAt: new Date().toISOString() }; saveTemplates(all); reload(); }
+    if (idx < 0) return;
+    // Prevent renaming locked templates
+    if (all[idx].isLocked && updates.name && updates.name !== all[idx].name) {
+      toast({ title: "Locked", description: `"${all[idx].name}" is a mandatory template and cannot be renamed.`, variant: "destructive" });
+      return;
+    }
+    all[idx] = { ...all[idx], ...updates, updatedAt: new Date().toISOString() };
+    saveTemplates(all); reload();
   };
 
   const deleteTemplate = (id: number) => {
