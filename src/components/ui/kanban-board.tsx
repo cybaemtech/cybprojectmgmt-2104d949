@@ -198,32 +198,18 @@ export function KanbanBoard({
 
   const performStatusUpdate = async (workItem: WorkItem, newStatus: string, actualHours: number | null) => {
     try {
-      const updateData: any = { status: newStatus };
+      const updateData: Partial<WorkItem> = { status: newStatus as any };
       
-      // Include actual hours if provided
       if (actualHours !== null) {
-        updateData.actualHours = actualHours;
+        updateData.actualHours = actualHours.toString();
       }
 
-      console.log('Sending update data:', updateData);
-      console.log('Work item ID:', workItem.id);
-      console.log('Using direct API call for proper field processing');
-
-      // Always use direct API call to ensure all fields are processed properly
-      // Don't rely on onStatusChange when we need to update actualHours
-      const response = await apiRequest('PATCH', `/work-items/${workItem.id}`, updateData);
-      console.log('API response:', response);
+      // Use local store directly since this is a client-side app
+      const { workItemStore } = await import('@/lib/local-store');
+      workItemStore.update(workItem.id, updateData);
       
-      // Check if response contains the updated data
-      if (response && typeof response === 'object') {
-        console.log('Response actualHours:', ((response as any).actualHours));
-      } else {
-        console.error('Unexpected API response format:', response);
-      }
-      
-      // Always refresh work items to ensure UI is updated
+      // Refresh work items to ensure UI is updated
       if (onWorkItemsUpdate) {
-        console.log('Refreshing work items after update');
         onWorkItemsUpdate();
       }
       
