@@ -338,6 +338,19 @@ export function CreateProject({
                   <h3 className="font-semibold text-sm text-primary">Core Client Information</h3>
                   <FormField
                     control={form.control}
+                    name="clientCompanyName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Company Name <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Enter company name" value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
                     name="clientIndustry"
                     render={({ field }) => (
                       <FormItem>
