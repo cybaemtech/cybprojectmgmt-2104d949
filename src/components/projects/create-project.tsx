@@ -110,9 +110,10 @@ export function CreateProject({
   
   const onSubmit = async (data: ProjectFormValues) => {
     try {
+      const autoKey = generateProjectKey(data.name);
       const projectData = {
         name: data.name,
-        key: data.key.toUpperCase(),
+        key: autoKey,
         description: data.description || "",
         teamId: data.teamId && data.teamId !== "none" ? parseInt(data.teamId) : null,
         status: data.status,
