@@ -6,6 +6,7 @@ import { Project, User, Team, WorkItem } from "@/types/schema";
 import { Button } from "@/components/ui/button";
 import { CreateItemModal } from "@/components/modals/create-item-modal";
 import { EditItemModal } from "@/components/modals/edit-item-modal";
+import { ViewItemModal } from "@/components/modals/view-item-modal";
 import { DeleteItemModal } from "@/components/modals/delete-item-modal";
 import { ArchiveProjectModal } from "@/components/modals/archive-project-modal";
 import { ProjectMembersModal } from "@/components/modals/project-members-modal";
@@ -2168,19 +2169,14 @@ export default function ProjectDetails() {
                                   ) : (
                                     <div className="flex items-center justify-between">
                                       <div
-                                        className={`text-xs leading-snug break-words ${canUserEditWorkItem(item, currentUser, workItems || [])
-                                          ? 'cursor-pointer hover:text-blue-600 hover:underline'
-                                          : 'text-gray-700'
-                                          } ${item.level === 0 ? 'text-gray-900' :
+                                        className={`text-xs leading-snug break-words cursor-pointer hover:text-blue-600 hover:underline ${item.level === 0 ? 'text-gray-900' :
                                             item.level === 1 ? 'text-gray-800' :
                                               'text-gray-700'}`}
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          if (canUserEditWorkItem(item, currentUser, workItems || [])) {
-                                            openModal("editItem", { workItem: item });
-                                          }
+                                          openModal("viewItem" as any, { workItem: item, canEdit: canUserEditWorkItem(item, currentUser, workItems || []) });
                                         }}
-                                        title={canUserEditWorkItem(item, currentUser, workItems || []) ? 'Click title text to open edit modal' : `${item.type}: ${item.title}`}
+                                        title="Click to view details"
                                       >
                                         <div className="flex flex-col">
                                           <span className="font-medium text-neutral-900 line-clamp-1">{item.title}</span>
@@ -3012,6 +3008,18 @@ export default function ProjectDetails() {
           workItem={modalProps.workItem}
           projects={projects}
           workItems={workItems}
+        />
+      )}
+
+      {isOpen && (modalType as string) === "viewItem" && (
+        <ViewItemModal
+          isOpen={isOpen}
+          onClose={closeModal}
+          onSuccess={handleWorkItemsUpdate}
+          workItem={modalProps.workItem}
+          projects={projects}
+          workItems={workItems}
+          canEdit={modalProps.canEdit}
         />
       )}
 
