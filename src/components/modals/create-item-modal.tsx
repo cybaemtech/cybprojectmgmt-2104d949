@@ -480,7 +480,7 @@ export function CreateItemModal({
                           <FormItem>
                             <FormLabel>Contact Phone Number</FormLabel>
                             <FormControl>
-                              <Input {...field} type="tel" placeholder="+1 (555) 000-0000" value={field.value || ""} />
+                               <Input {...field} type="tel" placeholder="+1 (555) 000-0000" value={field.value || ""} disabled={!!selectedProject?.clientContactPhone} />
                             </FormControl>
                           </FormItem>
                         )}
