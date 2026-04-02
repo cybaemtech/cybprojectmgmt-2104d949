@@ -278,9 +278,9 @@ export function CreateItemModal({
     return (workingDays * 9).toString();
   }, []);
 
-  // Auto-calculate estimated hours for FEATURE when dates change
+  // Auto-calculate estimated hours for FEATURE and STORY when dates change
   useEffect(() => {
-    if (watchedType === 'FEATURE' && watchedStartDate && watchedEndDate) {
+    if ((watchedType === 'FEATURE' || watchedType === 'STORY') && watchedStartDate && watchedEndDate) {
       const hours = calculateWorkingHours(watchedStartDate, watchedEndDate);
       if (hours) form.setValue("estimate", hours);
     }
@@ -1081,8 +1081,8 @@ export function CreateItemModal({
                   )}
 
 
-                  {/* For FEATURE: Dates first, then Estimate (auto-calculated) */}
-                  {watchedType === 'FEATURE' && (
+                  {/* For FEATURE & STORY: Dates first, then Estimate (auto-calculated) */}
+                  {(watchedType === 'FEATURE' || watchedType === 'STORY') && (
                     <>
                       <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="startDate" render={({ field }) => (
@@ -1112,8 +1112,8 @@ export function CreateItemModal({
                     </>
                   )}
 
-                  {/* For non-FEATURE: Original order (Estimate first, then Dates) */}
-                  {watchedType !== 'FEATURE' && (
+                  {/* For non-FEATURE/non-STORY: Original order (Estimate first, then Dates) */}
+                  {watchedType !== 'FEATURE' && watchedType !== 'STORY' && (
                     <>
                       <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="estimate" render={({ field }) => (
