@@ -414,6 +414,11 @@ export function CreateItemModal({
               {/* EPIC / Client Details specific block */}
               {watchedType === 'EPIC' && (
                 <div className="space-y-6">
+                  {hasProjectClientData && (
+                    <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                      Fields pre-filled from project client details are non-editable.
+                    </p>
+                  )}
                   {/* Core Client Information */}
                   <div className="space-y-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
                     <h3 className="font-semibold text-sm text-primary">Core Client Information</h3>
