@@ -37,6 +37,7 @@ interface TemplateTaskOption {
   id: number;
   templateId: number;
   title: string;
+  itemOrder: number;
   isActive: boolean;
 }
 function getTemplatesFromStorage(): TemplateOption[] {
@@ -128,6 +129,8 @@ const workItemFormSchema = z.object({
   path: ["estimate"],
 }).refine((data) => {
   // Parent is required for FEATURE, STORY, TASK, BUG (not EPIC)
+  // Skip for FEATURE when autoCreateTemplateTasks is on (EPIC will be auto-created)
+  if (data.type === 'FEATURE' && data.autoCreateTemplateTasks) return true;
   if (['FEATURE', 'STORY', 'TASK', 'BUG'].includes(data.type)) {
     return data.parentId && data.parentId > 0;
   }
@@ -197,6 +200,18 @@ export function CreateItemModal({
   const currentLocalUser = getLocalUser();
   const availableTemplates = getTemplatesFromStorage().filter(t => t.ownerId === currentLocalUser?.id);
   const availableTemplateTasks = getTemplateTasksFromStorage();
+
+  // Default to "Requirement Gathering" template when modal opens
+  useEffect(() => {
+    if (isOpen && selectedTemplateId === null && availableTemplates.length > 0) {
+      const reqGathering = availableTemplates.find(t => t.name === "Requirement Gathering");
+      if (reqGathering) {
+        setSelectedTemplateId(reqGathering.id);
+      } else {
+        setSelectedTemplateId(availableTemplates[0].id);
+      }
+    }
+  }, [isOpen, availableTemplates.length]);
 
   const form = useForm<WorkItemFormValues>({
     resolver: zodResolver(workItemFormSchema),
@@ -334,13 +349,83 @@ export function CreateItemModal({
         }
       }
 
-      // Use local store for creating work items
-      workItemStore.save(submitData);
-      toast({ title: "Item created", description: "Created successfully." });
+      // ── FEATURE automation chain ──────────────────────────────────────
+      if (data.type === 'FEATURE' && data.autoCreateTemplateTasks && selectedTemplateId) {
+        const projectName = selectedProject?.name || "Project";
+
+        // 1. Auto-create EPIC (Client Details) if no parent selected
+        let epicId = data.parentId;
+        if (!epicId) {
+          const existingEpics = workItems.filter(
+            w => w.type === 'EPIC' && w.projectId === selectedProjectId
+          );
+          if (existingEpics.length > 0) {
+            epicId = existingEpics[0].id;
+          } else {
+            const epic = workItemStore.save({
+              title: projectName,
+              type: 'EPIC',
+              projectId: selectedProjectId,
+              status: 'TODO',
+              priority: 'MEDIUM',
+              tags: selectedProject?.clientIndustry || null,
+              githubUrl: selectedProject?.clientWebsite || null,
+              currentBehavior: selectedProject?.clientContactName || null,
+              expectedBehavior: selectedProject?.clientContactEmail || null,
+              referenceUrl: selectedProject?.clientContactPhone || null,
+            });
+            epicId = epic.id;
+          }
+        }
+
+        // 2. Create the FEATURE (Client Requirement) under the EPIC
+        submitData.parentId = epicId;
+        const feature = workItemStore.save(submitData);
+
+        // 3. Auto-create STORY "Initial Requirement Gathering" under the FEATURE
+        const story = workItemStore.save({
+          title: "Initial Requirement Gathering",
+          type: 'STORY',
+          projectId: selectedProjectId,
+          status: 'TODO',
+          priority: 'MEDIUM',
+          parentId: feature.id,
+          description: `Requirement gathering tasks for "${data.title}"`,
+        });
+
+        // 4. Auto-create TASKs from selected template under the STORY
+        const templateTasks = availableTemplateTasks
+          .filter(t => t.templateId === selectedTemplateId && t.isActive)
+          .sort((a, b) => (a.itemOrder || 0) - (b.itemOrder || 0));
+
+        templateTasks.forEach((tTask) => {
+          workItemStore.save({
+            title: tTask.title,
+            type: 'TASK',
+            projectId: selectedProjectId,
+            status: 'TODO',
+            priority: 'MEDIUM',
+            parentId: story.id,
+            estimate: "9",
+          });
+        });
+
+        const taskCount = templateTasks.length;
+        toast({
+          title: "Automation Complete",
+          description: `Created: Epic → Client Requirement → Story "Initial Requirement Gathering" → ${taskCount} task${taskCount !== 1 ? 's' : ''} from template.`,
+        });
+      } else {
+        // Normal single item creation
+        workItemStore.save(submitData);
+        toast({ title: "Item created", description: "Created successfully." });
+      }
+
       onSuccess();
       onClose();
       form.reset();
       setSelectedAttachmentFile(null);
+      setSelectedTemplateId(null);
     } catch (e) {
       toast({ title: "Error", description: "Could not create item.", variant: "destructive" });
     }
