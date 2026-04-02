@@ -454,7 +454,7 @@ export function CreateItemModal({
                         <FormItem>
                           <FormLabel>Primary Contact Name</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Name of the main point of contact" value={field.value || ""} />
+                             <Input {...field} placeholder="Name of the main point of contact" value={field.value || ""} disabled={!!selectedProject?.clientContactName} />
                           </FormControl>
                           <p className="text-xs text-muted-foreground">The main person you speak to at the company</p>
                         </FormItem>
