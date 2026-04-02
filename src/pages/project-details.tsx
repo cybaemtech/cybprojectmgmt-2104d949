@@ -1368,16 +1368,6 @@ export default function ProjectDetails() {
                 </a>
                 <a
                   href="#"
-                  onClick={(e) => { e.preventDefault(); setProjectView('board'); }}
-                  className={`border-b-2 ${projectView === 'board'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-neutral-600 hover:text-neutral-900'
-                    } font-medium py-3`}
-                >
-                  Board
-                </a>
-                <a
-                  href="#"
                   onClick={(e) => { e.preventDefault(); setProjectView('backlog'); }}
                   className={`border-b-2 ${projectView === 'backlog'
                     ? 'border-primary text-primary'
@@ -1385,6 +1375,16 @@ export default function ProjectDetails() {
                     } font-medium py-3`}
                 >
                   Backlog View
+                </a>
+                <a
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); setProjectView('board'); }}
+                  className={`border-b-2 ${projectView === 'board'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-neutral-600 hover:text-neutral-900'
+                    } font-medium py-3`}
+                >
+                  Board
                 </a>
                 <a
                   href="#"
