@@ -719,7 +719,6 @@ export default function StrategicRoadmapPage() {
   };
 
   const handleLoadSamples = () => {
-    if (!confirm('This will add sample templates to your workspace. Continue?')) return;
     const merged = loadSampleTemplates();
     setTemplates(merged);
   };
