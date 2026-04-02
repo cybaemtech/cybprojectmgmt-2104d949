@@ -637,10 +637,10 @@ export default function Projects() {
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">PROJECT</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">PROJECT CATEGORY</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">STATUS</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">TEAM</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">WORK ITEMS</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">ISSUES</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">TARGET DATE</th>
                       </tr>
                     </thead>
@@ -675,6 +675,11 @@ export default function Projects() {
                               </Link>
                             </td>
                             <td className="px-6 py-4">
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${project.category === 'CLIENT' ? 'bg-purple-100 text-purple-800' : 'bg-teal-100 text-teal-800'}`}>
+                                {project.category === 'CLIENT' ? 'Client' : 'In-House'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
                               <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
                                 {project.status}
                               </span>
@@ -693,11 +698,6 @@ export default function Projects() {
                                 <span className="text-green-600">{stories} Stories</span>
                                 <span className="text-orange-600">{tasks} Tasks</span>
                               </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className={`text-sm ${bugs > 0 ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
-                                {bugs > 0 ? `${bugs} 🔴` : 'None'}
-                              </span>
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-700">
                               {project.targetDate ? new Date(project.targetDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
