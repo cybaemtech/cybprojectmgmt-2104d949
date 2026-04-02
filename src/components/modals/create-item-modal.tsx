@@ -417,6 +417,9 @@ export function CreateItemModal({
         });
       } else if (data.type === 'STORY' && data.autoCreateTemplateTasks && selectedTemplateId) {
         // STORY (Change Request) automation: create STORY then auto-create TASKs from template
+        // Auto-assign the current user as assignee on the story
+        const creatorId = currentUser?.id || currentLocalUser?.id || null;
+        submitData.assigneeId = creatorId;
         const story = workItemStore.save(submitData);
 
         const templateTasks = availableTemplateTasks
@@ -431,6 +434,7 @@ export function CreateItemModal({
             priority: 'MEDIUM',
             parentId: story.id,
             projectId: submitData.projectId,
+            assigneeId: creatorId,
           });
         });
 
