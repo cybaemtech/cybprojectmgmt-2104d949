@@ -3142,6 +3142,27 @@ export default function ProjectDetails() {
                       </div>
                     </div>
 
+                    {/* Client Information Visibility - Admin Only */}
+                    {currentUser?.role === 'ADMIN' && (
+                      <div>
+                        <h4 className="text-md font-medium mb-4">Client Information Visibility</h4>
+                        <div className="border rounded-md p-4 max-w-3xl">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium">Allow other users to view client information</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                When enabled, all project members can see the Client Information section in the Overview tab. When disabled, only admins can view it.
+                              </p>
+                            </div>
+                            <Switch
+                              checked={clientInfoVisible}
+                              onCheckedChange={toggleClientInfoVisibility}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Team Assignment Section */}
                     <div>
                       <h4 className="text-md font-medium mb-4">Team Assignment</h4>
