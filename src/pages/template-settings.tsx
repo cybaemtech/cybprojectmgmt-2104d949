@@ -310,8 +310,6 @@ export default function TemplateSettings() {
               </Tabs>
             )}
           </div>
-        </main>
-      </div>
 
       {/* Add Task Dialog */}
       <Dialog open={addDialog.open} onOpenChange={o => setAddDialog(v => ({ ...v, open: o }))}>

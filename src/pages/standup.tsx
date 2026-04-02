@@ -404,8 +404,6 @@ export default function DailyStandup() {
               );
             })}
           </div>
-        </main>
-      </div>
     </div>
   );
 }
