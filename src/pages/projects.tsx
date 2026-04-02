@@ -675,6 +675,11 @@ export default function Projects() {
                               </Link>
                             </td>
                             <td className="px-6 py-4">
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${project.category === 'CLIENT' ? 'bg-purple-100 text-purple-800' : 'bg-teal-100 text-teal-800'}`}>
+                                {project.category === 'CLIENT' ? 'Client' : 'In-House'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
                               <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
                                 {project.status}
                               </span>
