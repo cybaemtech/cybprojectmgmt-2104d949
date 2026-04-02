@@ -699,56 +699,41 @@ export default function StrategicRoadmapPage() {
   }, [user]);
 
   useEffect(() => {
-    fetchTemplates().then(data => {
-      setTemplates(data);
-      setLoading(false);
-    });
+    setTemplates(getTemplates());
+    setLoading(false);
   }, []);
 
   const activeTemplate = templates.find(t => t.id === activeId);
 
-  const handleCreate = async ({ name, description, streams }: { name: string; description: string; streams: string[] }) => {
-    const created = await apiCreateTemplate({ name, description, streams, projects: [] });
-    setTemplates([...templates, created]);
+  const handleCreate = ({ name, description, streams }: { name: string; description: string; streams: string[] }) => {
+    const created = createTemplate({ name, description, streams, projects: [] });
+    setTemplates(prev => [...prev, created]);
     setActiveId(created.id);
     setShowNewModal(false);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number) => {
     if (!confirm('Delete this template?')) return;
-    try {
-      await apiDeleteTemplate(id);
-      setTemplates(templates.filter(t => t.id !== id));
-    } catch (error) {
-      console.error('Failed to delete template:', error);
-      // You might want to show a toast notification here
-    }
+    deleteTemplate(id);
+    setTemplates(prev => prev.filter(t => t.id !== id));
   };
 
-  const handleLoadSamples = async () => {
+  const handleLoadSamples = () => {
     if (!confirm('This will add sample templates to your workspace. Continue?')) return;
-    setLoading(true);
-    try {
-      const newTemplates = await apiLoadSampleTemplates();
-      setTemplates(newTemplates);
-    } catch (error) {
-      console.error('Failed to load sample templates:', error);
-      // You might want to show a toast notification here
-    } finally {
-      setLoading(false);
-    }
+    const merged = loadSampleTemplates();
+    setTemplates(merged);
   };
 
-  const handleDuplicate = async (id: number) => {
+  const handleDuplicate = (id: number) => {
     const src = templates.find(t => t.id === id);
     if (!src) return;
-    const created = await apiCreateTemplate({
+    const created = createTemplate({
       name: `${src.name} (Copy)`,
       description: src.description,
       streams: src.streams,
       projects: src.projects,
     });
-    setTemplates([...templates, created]);
+    setTemplates(prev => [...prev, created]);
   };
 
   const updateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -756,7 +741,7 @@ export default function StrategicRoadmapPage() {
     setTemplates(prev => prev.map(t => t.id === updated.id ? updated : t));
     if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
     updateTimerRef.current = setTimeout(() => {
-      apiUpdateTemplate(updated);
+      updateTemplate(updated);
     }, 500);
   }, []);
 
