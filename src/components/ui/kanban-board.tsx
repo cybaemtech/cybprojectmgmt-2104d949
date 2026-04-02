@@ -108,9 +108,8 @@ export function KanbanBoard({
       return false;
     }
     
-    // By default, only show Stories, Tasks, and Bugs in Kanban
-    // If showAllTypes is true, then show all types
-    return showAllTypes || ['STORY', 'TASK', 'BUG'].includes(item.type);
+    // Only show Tasks and Bugs in Kanban for a focused view
+    return showAllTypes || ['TASK', 'BUG'].includes(item.type);
   });
   
   // Organize items by status
