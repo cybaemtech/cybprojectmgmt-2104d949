@@ -732,8 +732,6 @@ export default function Projects() {
               )
             )}
           </div>
-        </main>
-      </div>
 
       {/* Modals */}
       <CreateProject
@@ -741,7 +739,7 @@ export default function Projects() {
         onClose={closeModal}
         onSuccess={handleProjectSuccess}
         teams={teams}
-        userId={currentUser?.id || 22} // Default to admin user
+        userId={currentUser?.id || 22}
         currentUser={currentUser}
       />
     </div>

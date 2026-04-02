@@ -68,11 +68,7 @@ export default function TeamDetails() {
   const availableMembers = users.filter(u => !memberUserIds.has(u.id));
 
   return (
-    <div className="flex h-screen bg-neutral-50">
-      <Sidebar user={currentUser} teams={teams} projects={projects} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header user={currentUser} onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
-        <main className="flex-1 overflow-auto p-6">
+    <div className="p-6">
           <div className="flex items-center mb-6">
             <Button variant="ghost" className="mr-6 font-medium" onClick={() => navigate('/teams')}>
               <ArrowLeft className="mr-1 h-4 w-4" /> Back to teams
