@@ -149,6 +149,44 @@ export default function ProjectDetails() {
   });
 
 
+  // Resizable column widths for backlog table
+  const [columnWidths, setColumnWidths] = useState({
+    title: 320,
+    status: 80,
+    priority: 80,
+    severity: 80,
+    estHr: 80,
+    actualHrs: 96,
+    assignee: 96,
+  });
+  const resizingCol = useRef<{ col: string; startX: number; startWidth: number } | null>(null);
+
+  const handleResizeStart = useCallback((col: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startWidth = columnWidths[col as keyof typeof columnWidths];
+    resizingCol.current = { col, startX, startWidth };
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!resizingCol.current) return;
+      const diff = ev.clientX - resizingCol.current.startX;
+      const newWidth = Math.max(50, resizingCol.current.startWidth + diff);
+      setColumnWidths(prev => ({ ...prev, [resizingCol.current!.col]: newWidth }));
+    };
+    const onMouseUp = () => {
+      resizingCol.current = null;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, [columnWidths]);
+
 
   // New project view tab state
   const [projectView, setProjectView] = useState<'overview' | 'board' | 'backlog' | 'settings'>('overview');
