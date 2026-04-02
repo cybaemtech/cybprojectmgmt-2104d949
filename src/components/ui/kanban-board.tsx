@@ -123,7 +123,7 @@ export function KanbanBoard({
     { 
       id: 'IN_PROGRESS', 
       title: 'In Progress',
-      color: 'bg-orange-500',
+      color: 'bg-yellow-500',
       items: filteredItems.filter(item => item.status === 'IN_PROGRESS')
     },
     { 
