@@ -637,10 +637,10 @@ export default function Projects() {
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">PROJECT</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">PROJECT CATEGORY</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">STATUS</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">TEAM</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">WORK ITEMS</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">ISSUES</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">TARGET DATE</th>
                       </tr>
                     </thead>
