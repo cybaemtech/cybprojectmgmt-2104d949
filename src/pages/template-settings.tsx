@@ -359,7 +359,19 @@ export default function TemplateSettings() {
               No tasks yet. <span className="text-xs">Click "Add Task" to start.</span>
             </div>
           )}
-          {tplTasks.map(task => <TaskRow key={task.id} task={task} />)}
+          <DragDropContext onDragEnd={(result: DropResult) => {
+            if (!result.destination || result.source.index === result.destination.index) return;
+            reorderTasks(template.id, result.source.index, result.destination.index);
+          }}>
+            <Droppable droppableId={`template-${template.id}`}>
+              {(provided) => (
+                <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2">
+                  {tplTasks.map((task, index) => <TaskRow key={task.id} task={task} index={index} />)}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
           <Button variant="outline" size="sm" className="w-full mt-3 border-dashed" onClick={() => { setNewTaskTitle(""); setAddTaskDialog({ open: true, templateId: template.id }); }}>
             <Plus className="h-4 w-4 mr-1" /> Add Task
           </Button>
