@@ -304,18 +304,29 @@ export default function TemplateSettings() {
               <Badge variant="secondary">{tplTasks.filter(t => t.isActive).length} active</Badge>
             </div>
           </div>
-          <div className="flex items-center justify-between mt-1">
-            <CardDescription className="text-inherit opacity-80 text-xs">{template.description || "No description"}</CardDescription>
+           <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center gap-1.5">
+              <CardDescription className="text-inherit opacity-80 text-xs">{template.description || "No description"}</CardDescription>
+              {template.isLocked && (
+                <span title="Mandatory template — cannot be renamed or deleted">
+                  <Lock className="h-3.5 w-3.5 text-amber-700 opacity-80" />
+                </span>
+              )}
+            </div>
             <div className="flex gap-1 flex-shrink-0">
               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => duplicateTemplate(template)} title="Duplicate">
                 <Copy className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setTplName(template.name); setTplDesc(template.description); setEditTplDialog(template); }} title="Edit">
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6 hover:text-destructive" onClick={() => setDeleteTplDialog(template)} title="Delete">
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+              {!template.isLocked && (
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setTplName(template.name); setTplDesc(template.description); setEditTplDialog(template); }} title="Edit">
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              {!template.isLocked && (
+                <Button variant="ghost" size="icon" className="h-6 w-6 hover:text-destructive" onClick={() => setDeleteTplDialog(template)} title="Delete">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
