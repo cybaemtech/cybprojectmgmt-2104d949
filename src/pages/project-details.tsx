@@ -1482,6 +1482,10 @@ export default function ProjectDetails() {
                             : 'No team assigned'}
                         </p>
                       </div>
+                      <div className="md:col-span-2 lg:col-span-3">
+                        <h4 className="text-sm font-medium mb-1 text-neutral-500">Description</h4>
+                        <p className="text-sm">{project?.description || 'No description provided'}</p>
+                      </div>
                     </div>
                   </div>
 
