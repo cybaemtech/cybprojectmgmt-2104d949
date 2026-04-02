@@ -153,6 +153,18 @@ export default function ProjectDetails() {
   // New project view tab state
   const [projectView, setProjectView] = useState<'overview' | 'board' | 'list' | 'backlog' | 'settings'>('overview');
 
+  // Client info visibility toggle (persisted per project in localStorage)
+  const [clientInfoVisible, setClientInfoVisible] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem(`project-${projectId}-client-info-visible`);
+      return stored === 'true';
+    } catch { return false; }
+  });
+  const toggleClientInfoVisibility = (checked: boolean) => {
+    setClientInfoVisible(checked);
+    localStorage.setItem(`project-${projectId}-client-info-visible`, String(checked));
+  };
+
   // Timeline view settings
   const [timeUnit, setTimeUnit] = useState<'Quarter' | 'Month' | 'Week'>('Quarter');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
