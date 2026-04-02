@@ -452,7 +452,7 @@ export function KanbanBoard({
                           >
                             <CardContent className="p-4">
                               <div className="flex items-center justify-between mb-2">
-                                <Badge className={getItemTypeBadgeStyles(item.type)}>
+                                <Badge className={getItemTypeBadgeStyles(item.type, column.id)}>
                                   <span className="flex items-center text-xs font-medium">
                                     {getItemTypeIcon(item.type)}
                                     {item.type.charAt(0) + item.type.slice(1).toLowerCase()}
