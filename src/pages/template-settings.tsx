@@ -14,7 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, GripVertical, LayoutTemplate, Info, Download, Copy } from "lucide-react";
+import { Plus, Pencil, Trash2, GripVertical, LayoutTemplate, Info, Download, Copy, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getLocalUser } from "@/lib/local-store";
 
@@ -25,9 +25,12 @@ interface Template {
   description: string;
   color: string;
   ownerId: number;
+  isLocked?: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
+const LOCKED_TEMPLATE_NAME = "Requirement Gathering";
 
 interface TemplateTask {
   id: number;
@@ -74,7 +77,7 @@ function loadSamples(userId: number) {
   const maxTplId = [...templates, ...getTemplates()].reduce((m, t) => Math.max(m, t.id), 0);
 
   const sampleTemplates: Template[] = [
-    { id: maxTplId + 1, name: "Requirement Gathering", description: "Tasks for initial requirement analysis and client sign-off.", color: COLORS[0], ownerId: userId, createdAt: now, updatedAt: now },
+    { id: maxTplId + 1, name: "Requirement Gathering", description: "Tasks for initial requirement analysis and client sign-off.", color: COLORS[0], ownerId: userId, isLocked: true, createdAt: now, updatedAt: now },
     { id: maxTplId + 2, name: "Developer Checklist", description: "Standard development workflow tasks.", color: COLORS[1], ownerId: userId, createdAt: now, updatedAt: now },
     { id: maxTplId + 3, name: "QA & Testing", description: "Quality assurance and testing workflow.", color: COLORS[2], ownerId: userId, createdAt: now, updatedAt: now },
   ];
@@ -139,10 +142,22 @@ export default function TemplateSettings() {
   const updateTemplate = (id: number, updates: Partial<Template>) => {
     const all = getTemplates();
     const idx = all.findIndex(t => t.id === id);
-    if (idx >= 0) { all[idx] = { ...all[idx], ...updates, updatedAt: new Date().toISOString() }; saveTemplates(all); reload(); }
+    if (idx < 0) return;
+    // Prevent renaming locked templates
+    if (all[idx].isLocked && updates.name && updates.name !== all[idx].name) {
+      toast({ title: "Locked", description: `"${all[idx].name}" is a mandatory template and cannot be renamed.`, variant: "destructive" });
+      return;
+    }
+    all[idx] = { ...all[idx], ...updates, updatedAt: new Date().toISOString() };
+    saveTemplates(all); reload();
   };
 
   const deleteTemplate = (id: number) => {
+    const tpl = getTemplates().find(t => t.id === id);
+    if (tpl?.isLocked) {
+      toast({ title: "Locked", description: `"${tpl.name}" is a mandatory template and cannot be deleted.`, variant: "destructive" });
+      return;
+    }
     saveTemplates(getTemplates().filter(t => t.id !== id));
     saveTasksToStorage(getTasks().filter(t => t.templateId !== id));
     reload();
@@ -289,18 +304,29 @@ export default function TemplateSettings() {
               <Badge variant="secondary">{tplTasks.filter(t => t.isActive).length} active</Badge>
             </div>
           </div>
-          <div className="flex items-center justify-between mt-1">
-            <CardDescription className="text-inherit opacity-80 text-xs">{template.description || "No description"}</CardDescription>
+           <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center gap-1.5">
+              <CardDescription className="text-inherit opacity-80 text-xs">{template.description || "No description"}</CardDescription>
+              {template.isLocked && (
+                <span title="Mandatory template — cannot be renamed or deleted">
+                  <Lock className="h-3.5 w-3.5 text-amber-700 opacity-80" />
+                </span>
+              )}
+            </div>
             <div className="flex gap-1 flex-shrink-0">
               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => duplicateTemplate(template)} title="Duplicate">
                 <Copy className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setTplName(template.name); setTplDesc(template.description); setEditTplDialog(template); }} title="Edit">
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6 hover:text-destructive" onClick={() => setDeleteTplDialog(template)} title="Delete">
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+              {!template.isLocked && (
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setTplName(template.name); setTplDesc(template.description); setEditTplDialog(template); }} title="Edit">
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              {!template.isLocked && (
+                <Button variant="ghost" size="icon" className="h-6 w-6 hover:text-destructive" onClick={() => setDeleteTplDialog(template)} title="Delete">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
