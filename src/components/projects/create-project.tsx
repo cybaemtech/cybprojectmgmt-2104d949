@@ -96,6 +96,7 @@ export function CreateProject({
       githubUrl: "",
       startDate: "",
       targetDate: "",
+      clientCompanyName: "",
       clientIndustry: "",
       clientWebsite: "",
       clientContactName: "",
