@@ -668,7 +668,7 @@ export function CreateItemModal({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        {watchedType === 'STORY' ? 'Requirement Point' : 'Description'}
+                        {watchedType === 'STORY' ? 'Requirement Points' : 'Description'}
                         {watchedType === 'STORY' && <span className="text-destructive"> *</span>}
                       </FormLabel>
                       <FormControl>
