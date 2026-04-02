@@ -178,7 +178,7 @@ export function CreateItemModal({
       title: "",
       description: "",
       tags: "",
-      type: preselectedType || "STORY",
+      type: preselectedType || "FEATURE",
       status: "TODO",
       priority: "MEDIUM",
       projectId: currentProject?.id || (projects.length > 0 ? projects[0].id : 0),
@@ -261,6 +261,21 @@ export function CreateItemModal({
       form.setValue("assigneeId", currentUser.id);
     }
   }, [currentUser, isOpen, form]);
+
+  // Auto-populate EPIC (Client Details) fields from the selected project's client info
+  const selectedProject = projects.find(p => p.id === selectedProjectId);
+  const hasProjectClientData = !!(selectedProject?.clientCompanyName || selectedProject?.clientIndustry || selectedProject?.clientWebsite || selectedProject?.clientContactName || selectedProject?.clientContactEmail || selectedProject?.clientContactPhone);
+
+  useEffect(() => {
+    if (isOpen && watchedType === 'EPIC' && selectedProject) {
+      if (selectedProject.clientCompanyName) form.setValue("title", selectedProject.clientCompanyName);
+      if (selectedProject.clientIndustry) form.setValue("tags", selectedProject.clientIndustry);
+      if (selectedProject.clientWebsite) form.setValue("githubUrl", selectedProject.clientWebsite);
+      if (selectedProject.clientContactName) form.setValue("currentBehavior", selectedProject.clientContactName);
+      if (selectedProject.clientContactEmail) form.setValue("expectedBehavior", selectedProject.clientContactEmail);
+      if (selectedProject.clientContactPhone) form.setValue("referenceUrl", selectedProject.clientContactPhone);
+    }
+  }, [isOpen, watchedType, selectedProject?.id]);
 
   const onSubmit = async (data: WorkItemFormValues) => {
     try {
@@ -389,7 +404,7 @@ export function CreateItemModal({
                   <FormItem>
                     <FormLabel>{watchedType === 'EPIC' ? 'Client / Company Name' : 'Title'} <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder={watchedType === 'EPIC' ? "Enter client or company name" : "Enter work item title"} maxLength={200} className="py-2" />
+                      <Input {...field} placeholder={watchedType === 'EPIC' ? "Enter client or company name" : "Enter work item title"} maxLength={200} className="py-2" disabled={watchedType === 'EPIC' && !!selectedProject?.clientCompanyName} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -399,6 +414,11 @@ export function CreateItemModal({
               {/* EPIC / Client Details specific block */}
               {watchedType === 'EPIC' && (
                 <div className="space-y-6">
+                  {hasProjectClientData && (
+                    <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                      Fields pre-filled from project client details are non-editable.
+                    </p>
+                  )}
                   {/* Core Client Information */}
                   <div className="space-y-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
                     <h3 className="font-semibold text-sm text-primary">Core Client Information</h3>
@@ -409,7 +429,7 @@ export function CreateItemModal({
                         <FormItem>
                           <FormLabel>Industry / Sector</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="e.g., Healthcare, Finance, E-commerce" value={field.value || ""} />
+                            <Input {...field} placeholder="e.g., Healthcare, Finance, E-commerce" value={field.value || ""} disabled={!!selectedProject?.clientIndustry} />
                           </FormControl>
                         </FormItem>
                       )}
@@ -421,7 +441,7 @@ export function CreateItemModal({
                         <FormItem>
                           <FormLabel>Company Website <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
-                            <Input {...field} type="url" placeholder="https://www.example.com" value={field.value || ""} />
+                            <Input {...field} type="url" placeholder="https://www.example.com" value={field.value || ""} disabled={!!selectedProject?.clientWebsite} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -439,7 +459,7 @@ export function CreateItemModal({
                         <FormItem>
                           <FormLabel>Primary Contact Name</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Name of the main point of contact" value={field.value || ""} />
+                             <Input {...field} placeholder="Name of the main point of contact" value={field.value || ""} disabled={!!selectedProject?.clientContactName} />
                           </FormControl>
                           <p className="text-xs text-muted-foreground">The main person you speak to at the company</p>
                         </FormItem>
@@ -453,7 +473,7 @@ export function CreateItemModal({
                           <FormItem>
                             <FormLabel>Contact Email</FormLabel>
                             <FormControl>
-                              <Input {...field} type="email" placeholder="client@example.com" value={field.value || ""} />
+                               <Input {...field} type="email" placeholder="client@example.com" value={field.value || ""} disabled={!!selectedProject?.clientContactEmail} />
                             </FormControl>
                           </FormItem>
                         )}
@@ -465,7 +485,7 @@ export function CreateItemModal({
                           <FormItem>
                             <FormLabel>Contact Phone Number</FormLabel>
                             <FormControl>
-                              <Input {...field} type="tel" placeholder="+1 (555) 000-0000" value={field.value || ""} />
+                               <Input {...field} type="tel" placeholder="+1 (555) 000-0000" value={field.value || ""} disabled={!!selectedProject?.clientContactPhone} />
                             </FormControl>
                           </FormItem>
                         )}
