@@ -699,11 +699,6 @@ export default function Projects() {
                                 <span className="text-orange-600">{tasks} Tasks</span>
                               </div>
                             </td>
-                            <td className="px-6 py-4">
-                              <span className={`text-sm ${bugs > 0 ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
-                                {bugs > 0 ? `${bugs} 🔴` : 'None'}
-                              </span>
-                            </td>
                             <td className="px-6 py-4 text-sm text-gray-700">
                               {project.targetDate ? new Date(project.targetDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
                             </td>
