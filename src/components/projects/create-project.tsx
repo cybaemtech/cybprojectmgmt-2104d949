@@ -46,6 +46,7 @@ const projectFormSchema = z.object({
     return !isNaN(parsedDate.getTime());
   }, { message: "Please enter a valid date" }),
   // Client Details fields
+  clientCompanyName: z.string().min(1, { message: "Company name is required" }).trim(),
   clientIndustry: z.string().min(1, { message: "Industry is required" }).trim(),
   clientWebsite: z.string().min(1, { message: "Company website is required" }).trim(),
   clientContactName: z.string().min(1, { message: "Contact name is required" }).trim(),
