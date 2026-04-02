@@ -2016,30 +2016,46 @@ export default function ProjectDetails() {
                   </div>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full table-fixed">
+                  <table className="w-full" style={{ tableLayout: 'fixed' }}>
+                    <colgroup>
+                      <col style={{ width: columnWidths.title }} />
+                      <col style={{ width: columnWidths.status }} />
+                      <col style={{ width: columnWidths.priority }} />
+                      <col style={{ width: columnWidths.severity }} />
+                      <col style={{ width: columnWidths.estHr }} />
+                      <col style={{ width: columnWidths.actualHrs }} />
+                      <col style={{ width: columnWidths.assignee }} />
+                    </colgroup>
                     <thead>
                       <tr className="bg-gray-100 border-b border-gray-200">
-                        <th className="px-2 py-1 text-left text-[10px] font-bold text-gray-700 uppercase tracking-wider w-80">
+                        <th className="px-2 py-1 text-left text-[10px] font-bold text-gray-700 uppercase tracking-wider relative group" style={{ width: columnWidths.title }}>
                           Title & Hierarchy
                           <div className="text-[8px] font-normal text-gray-500 normal-case mt-0.5">Click title text for modal • Click row for inline edit</div>
+                          <div className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/40 bg-transparent group-hover:bg-border transition-colors" onMouseDown={(e) => handleResizeStart('title', e)} />
                         </th>
-                        <th className="px-2 py-1 text-left text-[10px] font-bold text-gray-700 uppercase tracking-wider w-20">
+                        <th className="px-2 py-1 text-left text-[10px] font-bold text-gray-700 uppercase tracking-wider relative group" style={{ width: columnWidths.status }}>
                           Status
+                          <div className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/40 bg-transparent group-hover:bg-border transition-colors" onMouseDown={(e) => handleResizeStart('status', e)} />
                         </th>
-                        <th className="px-2 py-1 text-left text-[10px] font-bold text-gray-700 uppercase tracking-wider w-18">
+                        <th className="px-2 py-1 text-left text-[10px] font-bold text-gray-700 uppercase tracking-wider relative group" style={{ width: columnWidths.priority }}>
                           Priority
+                          <div className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/40 bg-transparent group-hover:bg-border transition-colors" onMouseDown={(e) => handleResizeStart('priority', e)} />
                         </th>
-                        <th className="px-2 py-1 text-left text-[10px] font-bold text-gray-700 uppercase tracking-wider w-20">
+                        <th className="px-2 py-1 text-left text-[10px] font-bold text-gray-700 uppercase tracking-wider relative group" style={{ width: columnWidths.severity }}>
                           Severity
+                          <div className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/40 bg-transparent group-hover:bg-border transition-colors" onMouseDown={(e) => handleResizeStart('severity', e)} />
                         </th>
-                        <th className="px-2 py-1 text-left text-[10px] font-bold text-gray-700 uppercase tracking-wider w-20">
+                        <th className="px-2 py-1 text-left text-[10px] font-bold text-gray-700 uppercase tracking-wider relative group" style={{ width: columnWidths.estHr }}>
                           Est.Hr
+                          <div className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/40 bg-transparent group-hover:bg-border transition-colors" onMouseDown={(e) => handleResizeStart('estHr', e)} />
                         </th>
-                        <th className="px-2 py-1 text-left text-[10px] font-bold text-gray-700 uppercase tracking-wider w-24">
+                        <th className="px-2 py-1 text-left text-[10px] font-bold text-gray-700 uppercase tracking-wider relative group" style={{ width: columnWidths.actualHrs }}>
                           Actual Hrs
+                          <div className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/40 bg-transparent group-hover:bg-border transition-colors" onMouseDown={(e) => handleResizeStart('actualHrs', e)} />
                         </th>
-                        <th className="px-2 py-1 text-left text-[10px] font-bold text-gray-700 uppercase tracking-wider w-24">
+                        <th className="px-2 py-1 text-left text-[10px] font-bold text-gray-700 uppercase tracking-wider relative group" style={{ width: columnWidths.assignee }}>
                           Assignee
+                          <div className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/40 bg-transparent group-hover:bg-border transition-colors" onMouseDown={(e) => handleResizeStart('assignee', e)} />
                         </th>
                       </tr>
                     </thead>
