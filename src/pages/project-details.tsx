@@ -1378,16 +1378,6 @@ export default function ProjectDetails() {
                 </a>
                 <a
                   href="#"
-                  onClick={(e) => { e.preventDefault(); setProjectView('list'); }}
-                  className={`border-b-2 ${projectView === 'list'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-neutral-600 hover:text-neutral-900'
-                    } font-medium py-3`}
-                >
-                  List
-                </a>
-                <a
-                  href="#"
                   onClick={(e) => { e.preventDefault(); setProjectView('backlog'); }}
                   className={`border-b-2 ${projectView === 'backlog'
                     ? 'border-primary text-primary'
