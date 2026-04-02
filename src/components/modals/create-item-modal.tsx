@@ -346,13 +346,83 @@ export function CreateItemModal({
         }
       }
 
-      // Use local store for creating work items
-      workItemStore.save(submitData);
-      toast({ title: "Item created", description: "Created successfully." });
+      // ── FEATURE automation chain ──────────────────────────────────────
+      if (data.type === 'FEATURE' && data.autoCreateTemplateTasks && selectedTemplateId) {
+        const projectName = selectedProject?.name || "Project";
+
+        // 1. Auto-create EPIC (Client Details) if no parent selected
+        let epicId = data.parentId;
+        if (!epicId) {
+          const existingEpics = workItems.filter(
+            w => w.type === 'EPIC' && w.projectId === selectedProjectId
+          );
+          if (existingEpics.length > 0) {
+            epicId = existingEpics[0].id;
+          } else {
+            const epic = workItemStore.save({
+              title: projectName,
+              type: 'EPIC',
+              projectId: selectedProjectId,
+              status: 'TODO',
+              priority: 'MEDIUM',
+              tags: selectedProject?.clientIndustry || null,
+              githubUrl: selectedProject?.clientWebsite || null,
+              currentBehavior: selectedProject?.clientContactName || null,
+              expectedBehavior: selectedProject?.clientContactEmail || null,
+              referenceUrl: selectedProject?.clientContactPhone || null,
+            });
+            epicId = epic.id;
+          }
+        }
+
+        // 2. Create the FEATURE (Client Requirement) under the EPIC
+        submitData.parentId = epicId;
+        const feature = workItemStore.save(submitData);
+
+        // 3. Auto-create STORY "Initial Requirement Gathering" under the FEATURE
+        const story = workItemStore.save({
+          title: "Initial Requirement Gathering",
+          type: 'STORY',
+          projectId: selectedProjectId,
+          status: 'TODO',
+          priority: 'MEDIUM',
+          parentId: feature.id,
+          description: `Requirement gathering tasks for "${data.title}"`,
+        });
+
+        // 4. Auto-create TASKs from selected template under the STORY
+        const templateTasks = availableTemplateTasks
+          .filter(t => t.templateId === selectedTemplateId && t.isActive)
+          .sort((a, b) => (a.itemOrder || 0) - (b.itemOrder || 0));
+
+        templateTasks.forEach((tTask) => {
+          workItemStore.save({
+            title: tTask.title,
+            type: 'TASK',
+            projectId: selectedProjectId,
+            status: 'TODO',
+            priority: 'MEDIUM',
+            parentId: story.id,
+            estimate: "9",
+          });
+        });
+
+        const taskCount = templateTasks.length;
+        toast({
+          title: "Automation Complete",
+          description: `Created: Epic → Client Requirement → Story "Initial Requirement Gathering" → ${taskCount} task${taskCount !== 1 ? 's' : ''} from template.`,
+        });
+      } else {
+        // Normal single item creation
+        workItemStore.save(submitData);
+        toast({ title: "Item created", description: "Created successfully." });
+      }
+
       onSuccess();
       onClose();
       form.reset();
       setSelectedAttachmentFile(null);
+      setSelectedTemplateId(null);
     } catch (e) {
       toast({ title: "Error", description: "Could not create item.", variant: "destructive" });
     }
