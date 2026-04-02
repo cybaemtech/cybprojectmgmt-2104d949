@@ -23,8 +23,28 @@ import {
 } from "@/components/ui/form";
 import { Project, User, WorkItem } from "@/types/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { workItemStore } from "@/lib/local-store";
+import { workItemStore, getLocalUser } from "@/lib/local-store";
 import { apiGet } from "@/lib/api-config";
+
+// Template types & storage helpers (mirrored from template-settings)
+interface TemplateOption {
+  id: number;
+  name: string;
+  ownerId: number;
+  isLocked?: boolean;
+}
+interface TemplateTaskOption {
+  id: number;
+  templateId: number;
+  title: string;
+  isActive: boolean;
+}
+function getTemplatesFromStorage(): TemplateOption[] {
+  try { return JSON.parse(localStorage.getItem("user-templates") || "[]"); } catch { return []; }
+}
+function getTemplateTasksFromStorage(): TemplateTaskOption[] {
+  try { return JSON.parse(localStorage.getItem("user-template-tasks") || "[]"); } catch { return []; }
+}
 import { useToast } from "@/hooks/use-toast";
 
 // Function to get user-friendly display names for work item types
@@ -171,6 +191,12 @@ export function CreateItemModal({
   const { toast } = useToast();
   const [selectedProjectId, setSelectedProjectId] = useState<number>(currentProject?.id || (projects.length > 0 ? projects[0].id : 0));
   const [selectedAttachmentFile, setSelectedAttachmentFile] = useState<File | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
+
+  // Load available templates for the current user
+  const currentLocalUser = getLocalUser();
+  const availableTemplates = getTemplatesFromStorage().filter(t => t.ownerId === currentLocalUser?.id);
+  const availableTemplateTasks = getTemplateTasksFromStorage();
 
   const form = useForm<WorkItemFormValues>({
     resolver: zodResolver(workItemFormSchema),
@@ -626,21 +652,61 @@ export function CreateItemModal({
                     control={form.control}
                     name="autoCreateTemplateTasks"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-background shadow-sm">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel className="font-semibold text-orange-900 cursor-pointer">
-                            Auto-create Template Tasks
-                          </FormLabel>
-                          <p className="text-xs text-muted-foreground">
-                            Create "Initial Requirement Gathering" tasks automatically for this requirement.
-                          </p>
+                      <FormItem className="rounded-md border p-4 bg-background shadow-sm space-y-3">
+                        <div className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="font-semibold text-orange-900 cursor-pointer">
+                              Auto-create Template Tasks
+                            </FormLabel>
+                            <p className="text-xs text-muted-foreground">
+                              Automatically create tasks from the selected template for this requirement.
+                            </p>
+                          </div>
                         </div>
+                        {field.value && (
+                          <div className="pl-7 space-y-2">
+                            <Label className="text-sm font-medium">Select Template</Label>
+                            <Select
+                              value={selectedTemplateId?.toString() || ""}
+                              onValueChange={(v) => setSelectedTemplateId(parseInt(v))}
+                            >
+                              <SelectTrigger className="h-9 text-sm">
+                                <SelectValue placeholder="Choose a template..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableTemplates.map((tpl) => (
+                                  <SelectItem key={tpl.id} value={tpl.id.toString()}>
+                                    {tpl.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {selectedTemplateId && (
+                              <div className="space-y-1 mt-2">
+                                <p className="text-xs text-muted-foreground font-medium">Tasks that will be created:</p>
+                                <ul className="text-xs text-muted-foreground space-y-0.5 list-disc list-inside">
+                                  {availableTemplateTasks
+                                    .filter(t => t.templateId === selectedTemplateId && t.isActive)
+                                    .map(t => (
+                                      <li key={t.id}>{t.title}</li>
+                                    ))}
+                                </ul>
+                                {availableTemplateTasks.filter(t => t.templateId === selectedTemplateId && t.isActive).length === 0 && (
+                                  <p className="text-xs text-muted-foreground italic">No active tasks in this template.</p>
+                                )}
+                              </div>
+                            )}
+                            {availableTemplates.length === 0 && (
+                              <p className="text-xs text-muted-foreground italic">No templates available. Create templates in Template Settings.</p>
+                            )}
+                          </div>
+                        )}
                       </FormItem>
                     )}
                   />
