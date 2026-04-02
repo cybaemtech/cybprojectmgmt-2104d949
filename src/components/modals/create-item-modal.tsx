@@ -404,7 +404,7 @@ export function CreateItemModal({
                   <FormItem>
                     <FormLabel>{watchedType === 'EPIC' ? 'Client / Company Name' : 'Title'} <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder={watchedType === 'EPIC' ? "Enter client or company name" : "Enter work item title"} maxLength={200} className="py-2" />
+                      <Input {...field} placeholder={watchedType === 'EPIC' ? "Enter client or company name" : "Enter work item title"} maxLength={200} className="py-2" disabled={watchedType === 'EPIC' && !!selectedProject?.clientCompanyName} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
