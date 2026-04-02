@@ -181,33 +181,6 @@ export function CreateProject({
               )}
             />
             
-            <FormField
-              control={form.control}
-              name="key"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Project Key</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      placeholder="e.g. PROJ, CRM, HR" 
-                      maxLength={10} 
-                      style={{ textTransform: 'uppercase' }}
-                      onChange={(e) => {
-                        const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                        field.onChange(value);
-                      }}
-                      value={field.value || ''}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Short uppercase key used for work item IDs (e.g., PROJ-123)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
 
             {/* Project Dates */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
