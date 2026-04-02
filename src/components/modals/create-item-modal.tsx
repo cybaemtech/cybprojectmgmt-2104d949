@@ -125,7 +125,7 @@ const workItemFormSchema = z.object({
   if (data.type === 'EPIC') return true;
   return data.estimate && data.estimate.trim().length > 0;
 }, {
-  message: "Estimate/Story Point is required",
+  message: "Estimated Hours is required",
   path: ["estimate"],
 }).refine((data) => {
   // Parent is required for FEATURE, STORY, TASK, BUG (not EPIC)
