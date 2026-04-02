@@ -15,6 +15,7 @@ import { DeadlinesView } from "@/components/ui/deadlines-view";
 import { ProjectCalendar } from "@/components/ui/project-calendar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { projectStore, teamStore, workItemStore, getLocalUser } from "@/lib/local-store";
@@ -151,6 +152,18 @@ export default function ProjectDetails() {
 
   // New project view tab state
   const [projectView, setProjectView] = useState<'overview' | 'board' | 'list' | 'backlog' | 'settings'>('overview');
+
+  // Client info visibility toggle (persisted per project in localStorage)
+  const [clientInfoVisible, setClientInfoVisible] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem(`project-${projectId}-client-info-visible`);
+      return stored === 'true';
+    } catch { return false; }
+  });
+  const toggleClientInfoVisibility = (checked: boolean) => {
+    setClientInfoVisible(checked);
+    localStorage.setItem(`project-${projectId}-client-info-visible`, String(checked));
+  };
 
   // Timeline view settings
   const [timeUnit, setTimeUnit] = useState<'Quarter' | 'Month' | 'Week'>('Quarter');
@@ -1473,7 +1486,7 @@ export default function ProjectDetails() {
                   </div>
 
                   {/* Client Information - Confidential (Admin Only) */}
-                  {currentUser?.role === 'ADMIN' && project && (
+                  {(currentUser?.role === 'ADMIN' || clientInfoVisible) && project && (
                     <div className="bg-white border border-amber-200 rounded-md shadow-sm p-4 mt-6">
                       <div className="flex items-center gap-2 mb-4">
                         <h3 className="text-lg font-medium">Client Information</h3>
@@ -3128,6 +3141,27 @@ export default function ProjectDetails() {
                         )}
                       </div>
                     </div>
+
+                    {/* Client Information Visibility - Admin Only */}
+                    {currentUser?.role === 'ADMIN' && (
+                      <div>
+                        <h4 className="text-md font-medium mb-4">Client Information Visibility</h4>
+                        <div className="border rounded-md p-4 max-w-3xl">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium">Allow other users to view client information</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                When enabled, all project members can see the Client Information section in the Overview tab. When disabled, only admins can view it.
+                              </p>
+                            </div>
+                            <Switch
+                              checked={clientInfoVisible}
+                              onCheckedChange={toggleClientInfoVisibility}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Team Assignment Section */}
                     <div>
