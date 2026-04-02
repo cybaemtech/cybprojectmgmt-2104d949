@@ -279,8 +279,6 @@ export default function TeamDetails() {
               </TabsContent>
             </Tabs>
           )}
-        </main>
-      </div>
     </div>
   );
 }

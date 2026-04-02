@@ -248,8 +248,6 @@ export default function Teams() {
               </TabsContent>
             </Tabs>
           </div>
-        </main>
-      </div>
 
       <CreateTeam
         isOpen={isOpen && modalType === "createTeam"}
@@ -269,6 +267,6 @@ export default function Teams() {
         isOpen={showManageTeam}
         onClose={() => setShowManageTeam(false)}
       />
-    </div>
+    </>
   );
 }

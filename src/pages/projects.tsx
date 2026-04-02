@@ -742,6 +742,6 @@ export default function Projects() {
         userId={currentUser?.id || 22}
         currentUser={currentUser}
       />
-    </div>
+    </>
   );
 }
