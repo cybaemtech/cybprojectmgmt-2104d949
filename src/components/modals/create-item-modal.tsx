@@ -23,8 +23,28 @@ import {
 } from "@/components/ui/form";
 import { Project, User, WorkItem } from "@/types/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { workItemStore } from "@/lib/local-store";
+import { workItemStore, getLocalUser } from "@/lib/local-store";
 import { apiGet } from "@/lib/api-config";
+
+// Template types & storage helpers (mirrored from template-settings)
+interface TemplateOption {
+  id: number;
+  name: string;
+  ownerId: number;
+  isLocked?: boolean;
+}
+interface TemplateTaskOption {
+  id: number;
+  templateId: number;
+  title: string;
+  isActive: boolean;
+}
+function getTemplatesFromStorage(): TemplateOption[] {
+  try { return JSON.parse(localStorage.getItem("user-templates") || "[]"); } catch { return []; }
+}
+function getTemplateTasksFromStorage(): TemplateTaskOption[] {
+  try { return JSON.parse(localStorage.getItem("user-template-tasks") || "[]"); } catch { return []; }
+}
 import { useToast } from "@/hooks/use-toast";
 
 // Function to get user-friendly display names for work item types
