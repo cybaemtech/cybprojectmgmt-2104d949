@@ -1118,7 +1118,7 @@ export function CreateItemModal({
                       <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="estimate" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{watchedType === 'STORY' ? 'Story Points' : 'Estimated Hours'} <span className="text-destructive">*</span></FormLabel>
+                            <FormLabel>Estimated Hours <span className="text-destructive">*</span></FormLabel>
                             <FormControl><Input {...field} placeholder="Value" /></FormControl>
                             <FormMessage />
                           </FormItem>
