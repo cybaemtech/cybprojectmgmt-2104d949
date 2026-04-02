@@ -1402,7 +1402,7 @@ export default function ProjectDetails() {
             <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-semibold mb-1">{project?.name || 'Loading project...'}</h1>
-                <p className="text-neutral-600">{project?.description || 'No description provided'}</p>
+                
               </div>
               {/* Only show Create Item button on specific tabs */}
               {projectView !== 'overview' && projectView !== 'settings' && (
