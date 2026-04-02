@@ -77,7 +77,7 @@ function loadSamples(userId: number) {
   const maxTplId = [...templates, ...getTemplates()].reduce((m, t) => Math.max(m, t.id), 0);
 
   const sampleTemplates: Template[] = [
-    { id: maxTplId + 1, name: "Requirement Gathering", description: "Tasks for initial requirement analysis and client sign-off.", color: COLORS[0], ownerId: userId, createdAt: now, updatedAt: now },
+    { id: maxTplId + 1, name: "Requirement Gathering", description: "Tasks for initial requirement analysis and client sign-off.", color: COLORS[0], ownerId: userId, isLocked: true, createdAt: now, updatedAt: now },
     { id: maxTplId + 2, name: "Developer Checklist", description: "Standard development workflow tasks.", color: COLORS[1], ownerId: userId, createdAt: now, updatedAt: now },
     { id: maxTplId + 3, name: "QA & Testing", description: "Quality assurance and testing workflow.", color: COLORS[2], ownerId: userId, createdAt: now, updatedAt: now },
   ];
