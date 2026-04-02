@@ -122,6 +122,7 @@ export function CreateProject({
         githubUrl: data.githubUrl || null,
         startDate: data.startDate || null,
         targetDate: data.targetDate || null,
+        clientCompanyName: data.clientCompanyName || null,
         clientIndustry: data.clientIndustry || null,
         clientWebsite: data.clientWebsite || null,
         clientContactName: data.clientContactName || null,
