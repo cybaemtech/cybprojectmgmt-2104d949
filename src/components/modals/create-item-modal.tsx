@@ -278,9 +278,9 @@ export function CreateItemModal({
     return (workingDays * 9).toString();
   }, []);
 
-  // Auto-calculate estimated hours for FEATURE when dates change
+  // Auto-calculate estimated hours for FEATURE and STORY when dates change
   useEffect(() => {
-    if (watchedType === 'FEATURE' && watchedStartDate && watchedEndDate) {
+    if ((watchedType === 'FEATURE' || watchedType === 'STORY') && watchedStartDate && watchedEndDate) {
       const hours = calculateWorkingHours(watchedStartDate, watchedEndDate);
       if (hours) form.setValue("estimate", hours);
     }
