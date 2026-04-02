@@ -1486,7 +1486,7 @@ export default function ProjectDetails() {
                   </div>
 
                   {/* Client Information - Confidential (Admin Only) */}
-                  {currentUser?.role === 'ADMIN' && project && (
+                  {(currentUser?.role === 'ADMIN' || clientInfoVisible) && project && (
                     <div className="bg-white border border-amber-200 rounded-md shadow-sm p-4 mt-6">
                       <div className="flex items-center gap-2 mb-4">
                         <h3 className="text-lg font-medium">Client Information</h3>
