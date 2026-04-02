@@ -424,7 +424,7 @@ export function CreateItemModal({
                         <FormItem>
                           <FormLabel>Industry / Sector</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="e.g., Healthcare, Finance, E-commerce" value={field.value || ""} />
+                            <Input {...field} placeholder="e.g., Healthcare, Finance, E-commerce" value={field.value || ""} disabled={!!selectedProject?.clientIndustry} />
                           </FormControl>
                         </FormItem>
                       )}
