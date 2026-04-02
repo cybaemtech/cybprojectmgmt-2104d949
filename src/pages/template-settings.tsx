@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Sidebar } from "@/components/layout/sidebar";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -230,10 +230,7 @@ export default function TemplateSettings() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-screen bg-neutral-50">
-      <Sidebar user={currentUser} teams={teams} projects={projects} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6">
+    <div className="p-6">
           <div className="max-w-5xl mx-auto">
             {/* Header */}
             <div className="mb-6">
@@ -313,8 +310,6 @@ export default function TemplateSettings() {
               </Tabs>
             )}
           </div>
-        </main>
-      </div>
 
       {/* Add Task Dialog */}
       <Dialog open={addDialog.open} onOpenChange={o => setAddDialog(v => ({ ...v, open: o }))}>

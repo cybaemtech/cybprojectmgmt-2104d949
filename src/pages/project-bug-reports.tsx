@@ -3,8 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { apiGet, apiPost, API_BASE_URL } from "@/lib/api-config";
 import { Bug, Edit2, Trash2, Check, X, Camera, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
 
 export default function ProjectBugReports() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -213,15 +211,8 @@ export default function ProjectBugReports() {
   };
 
   return (
-    <div className="flex h-screen bg-neutral-50">
-      <Sidebar user={currentUser} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header
-          user={currentUser}
-          onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-        />
-        <main className="flex-1 p-8 overflow-auto">
-          <div className="max-w-7xl mx-auto">
+    <div className="p-8">
+      <div className="max-w-7xl mx-auto">
             <h1 className="text-2xl font-bold mb-6 flex items-center">
               <Bug className="h-6 w-6 mr-2 text-red-500" /> Submit Feedback / Bug Report
             </h1>
@@ -564,10 +555,8 @@ export default function ProjectBugReports() {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        </main>
       </div>
+    </div>
     </div>
   );
 }

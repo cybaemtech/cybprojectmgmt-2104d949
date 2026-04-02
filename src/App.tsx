@@ -4,9 +4,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
-// Session hooks removed - no backend
 import { DemoModeProvider, useDemoMode } from "@/hooks/useDemoMode";
 import { useEffect } from "react";
+import { AuthenticatedLayout } from "@/components/layout/authenticated-layout";
 
 import LoginPage from "@/pages/login";
 import Register from "@/pages/register";
@@ -31,8 +31,6 @@ function AppRoutes() {
   const { isDemoMode } = useDemoMode();
 
   const effectivelyAuthenticated = isAuthenticated || isDemoMode;
-
-  // No backend session hooks needed
 
   useEffect(() => {
     if (isDemoMode) return;
@@ -62,19 +60,24 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/dashboard" element={effectivelyAuthenticated ? <Dashboard /> : <LoginPage />} />
-      <Route path="/projects" element={effectivelyAuthenticated ? <Projects /> : <LoginPage />} />
-      <Route path="/projects/:id" element={effectivelyAuthenticated ? <ProjectDetails /> : <LoginPage />} />
-      <Route path="/teams" element={effectivelyAuthenticated ? <Teams /> : <LoginPage />} />
-      <Route path="/teams/:id" element={effectivelyAuthenticated ? <TeamDetails /> : <LoginPage />} />
-      <Route path="/timeline" element={effectivelyAuthenticated ? <Timeline /> : <LoginPage />} />
-      <Route path="/calendar" element={effectivelyAuthenticated ? <Timeline /> : <LoginPage />} />
-      <Route path="/reports" element={effectivelyAuthenticated ? <Reports /> : <LoginPage />} />
-      <Route path="/report-bug" element={effectivelyAuthenticated ? <ReportBug /> : <LoginPage />} />
-      <Route path="/project-bug-reports" element={effectivelyAuthenticated ? <ProjectBugReports /> : <LoginPage />} />
-      <Route path="/standup" element={effectivelyAuthenticated ? <DailyStandup /> : <LoginPage />} />
-      <Route path="/roadmap" element={effectivelyAuthenticated ? <StrategicRoadmap /> : <LoginPage />} />
-      <Route path="/templates" element={effectivelyAuthenticated ? <TemplateSettings /> : <LoginPage />} />
+      
+      {/* Authenticated routes with shared layout */}
+      <Route element={effectivelyAuthenticated ? <AuthenticatedLayout /> : <LoginPage />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/projects/:id" element={<ProjectDetails />} />
+        <Route path="/teams" element={<Teams />} />
+        <Route path="/teams/:id" element={<TeamDetails />} />
+        <Route path="/timeline" element={<Timeline />} />
+        <Route path="/calendar" element={<Timeline />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/report-bug" element={<ReportBug />} />
+        <Route path="/project-bug-reports" element={<ProjectBugReports />} />
+        <Route path="/standup" element={<DailyStandup />} />
+        <Route path="/roadmap" element={<StrategicRoadmap />} />
+        <Route path="/templates" element={<TemplateSettings />} />
+      </Route>
+      
       <Route path="*" element={effectivelyAuthenticated ? <NotFound /> : <LoginPage />} />
     </Routes>
   );

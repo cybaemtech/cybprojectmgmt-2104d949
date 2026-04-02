@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Sidebar } from "@/components/layout/sidebar";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -899,14 +899,7 @@ export default function Timeline() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar
-        user={currentUser}
-        teams={teams}
-        projects={filteredProjects}
-      />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div>
         {/* Tab Navigation */}
         <div className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center space-x-8">
@@ -945,7 +938,7 @@ export default function Timeline() {
           </div>
         </div>
 
-        <main className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-6">
           {activeTab === 'gantt' && (
             <ProjectGanttChart 
               projects={filteredProjects}
@@ -967,8 +960,7 @@ export default function Timeline() {
               users={users}
             />
           )}
-        </main>
-      </div>
+        </div>
     </div>
   );
 }

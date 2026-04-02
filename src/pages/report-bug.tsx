@@ -3,8 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -114,21 +112,7 @@ export default function ReportBug() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar 
-        user={currentUser}
-        teams={teams}
-        projects={projects}
-      />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header 
-          user={currentUser} 
-          onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} 
-        />
-        
-        <main className="flex-1 overflow-auto">
-          <div className="p-6">
+    <div className="p-6">
             <div className="max-w-2xl mx-auto">
               <div className="mb-6">
                 <div className="flex items-center mb-2">
@@ -283,9 +267,6 @@ export default function ReportBug() {
                 </CardContent>
               </Card>
             </div>
-          </div>
-        </main>
-      </div>
     </div>
   );
 }

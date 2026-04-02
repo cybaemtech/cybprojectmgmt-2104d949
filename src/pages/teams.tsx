@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
 import { TeamCard } from "@/components/teams/team-card";
 import { CreateTeam } from "@/components/teams/create-team";
 import { InviteModal } from "@/components/modals/invite-modal";
@@ -132,20 +130,8 @@ export default function Teams() {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar 
-        user={currentUser}
-        teams={teams}
-        projects={projects}
-        onCreateTeam={isAdminOrScrum ? () => openModal("createTeam") : undefined}
-        onCreateProject={isAdminOrScrum ? () => openModal("createProject") : undefined}
-      />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header user={currentUser} onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
-        
-        <main className="flex-1 overflow-auto">
-          <div className="p-6">
+    <>
+      <div className="p-6">
             <div className="mb-4">
               <h1 className="text-2xl font-semibold mb-1">Team Management</h1>
               <p className="text-neutral-600 text-sm">Manage your teams, members, and organizational users</p>
@@ -263,8 +249,6 @@ export default function Teams() {
               </TabsContent>
             </Tabs>
           </div>
-        </main>
-      </div>
 
       <CreateTeam
         isOpen={isOpen && modalType === "createTeam"}
@@ -284,6 +268,6 @@ export default function Teams() {
         isOpen={showManageTeam}
         onClose={() => setShowManageTeam(false)}
       />
-    </div>
+    </>
   );
 }

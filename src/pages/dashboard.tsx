@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, AlertCircle, BarChart3, Calendar, Clock, Target, TrendingUp, Users, CheckCircle, AlertTriangle, Bug, Zap } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Sidebar } from "@/components/layout/sidebar";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -231,22 +231,15 @@ export default function Dashboard() {
 
   if (isLoadingProjects || isLoadingWorkItems) {
     return (
-      <div className="flex h-screen bg-neutral-50">
-        <Sidebar user={currentUser} teams={teams} projects={projects} />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <span className="ml-2">Loading dashboard...</span>
-        </div>
+      <div className="flex-1 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-2">Loading dashboard...</span>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-neutral-50">
-      <Sidebar user={currentUser} teams={teams} projects={projects} />
-
-      <div className="flex-1 overflow-auto">
-        <main className="p-6">
+    <div className="p-6">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
             <p className="text-gray-600">Overview of your project portfolio and work progress</p>
@@ -561,8 +554,6 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </div>
-        </main>
-      </div>
     </div>
   );
 }

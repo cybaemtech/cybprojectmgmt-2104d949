@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, X, CheckCircle, Edit2, ChevronDown, ChevronRight, LayoutTemplate, Trash2, Copy, ArrowLeft, GripVertical } from 'lucide-react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { Header } from '@/components/layout/header';
 import { useAuth } from '@/hooks/useAuth';
 
 const colorPalette = [
@@ -783,14 +781,8 @@ export default function StrategicRoadmapPage() {
   );
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar user={user as any} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header user={user as any} />
-        <main className="flex-1 overflow-auto">
-          {content}
-        </main>
-      </div>
+    <div>
+      {content}
     </div>
   );
 }

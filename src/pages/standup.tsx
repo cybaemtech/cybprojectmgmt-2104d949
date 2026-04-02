@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useModal } from "@/hooks/use-modal";
@@ -122,17 +120,7 @@ export default function DailyStandup() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f8f9fa]">
-      <Sidebar
-        user={currentUser}
-        teams={teams}
-        projects={projects}
-        onCreateTeam={isAdminOrScrum ? () => openModal("createTeam") : undefined}
-        onCreateProject={isAdminOrScrum ? () => openModal("createProject") : undefined}
-      />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header user={currentUser} onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
-        <main className="flex-1 overflow-auto p-4">
+    <div className="p-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
             <div>
               <h1 className="text-2xl font-semibold mb-1">Daily Standup</h1>
@@ -416,8 +404,6 @@ export default function DailyStandup() {
               );
             })}
           </div>
-        </main>
-      </div>
     </div>
   );
 }
