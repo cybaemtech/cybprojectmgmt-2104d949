@@ -211,15 +211,8 @@ export default function ProjectBugReports() {
   };
 
   return (
-    <div className="flex h-screen bg-neutral-50">
-      <Sidebar user={currentUser} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header
-          user={currentUser}
-          onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-        />
-        <main className="flex-1 p-8 overflow-auto">
-          <div className="max-w-7xl mx-auto">
+    <div className="p-8">
+      <div className="max-w-7xl mx-auto">
             <h1 className="text-2xl font-bold mb-6 flex items-center">
               <Bug className="h-6 w-6 mr-2 text-red-500" /> Submit Feedback / Bug Report
             </h1>
