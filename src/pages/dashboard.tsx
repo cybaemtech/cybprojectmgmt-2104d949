@@ -231,12 +231,9 @@ export default function Dashboard() {
 
   if (isLoadingProjects || isLoadingWorkItems) {
     return (
-      <div className="flex h-screen bg-neutral-50">
-        <Sidebar user={currentUser} teams={teams} projects={projects} />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <span className="ml-2">Loading dashboard...</span>
-        </div>
+      <div className="flex-1 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-2">Loading dashboard...</span>
       </div>
     );
   }
