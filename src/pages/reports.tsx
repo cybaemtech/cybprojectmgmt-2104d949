@@ -285,36 +285,27 @@ export default function Reports() {
   
   if (isLoadingProjects || isLoadingWorkItems) {
     return (
-      <div className="flex h-screen bg-neutral-50">
-        <Sidebar user={currentUser} teams={teams} projects={filteredProjects} />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <span className="ml-2">Loading reports...</span>
-        </div>
+      <div className="flex-1 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-2">Loading reports...</span>
       </div>
     );
   }
 
   if (filteredProjects.length === 0) {
     return (
-      <div className="flex h-screen bg-neutral-50">
-        <Sidebar user={currentUser} teams={teams} projects={filteredProjects} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No Projects Found</h3>
-            <p className="text-neutral-600 mb-4">You don't have any projects to report on yet.</p>
-          </div>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold mb-2">No Projects Found</h3>
+          <p className="text-neutral-600 mb-4">You don't have any projects to report on yet.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-neutral-50">
-      <Sidebar user={currentUser} teams={teams} projects={filteredProjects} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6">
+    <div className="p-6">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Reports & Analytics</h1>
