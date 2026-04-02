@@ -468,7 +468,7 @@ export function CreateItemModal({
                           <FormItem>
                             <FormLabel>Contact Email</FormLabel>
                             <FormControl>
-                              <Input {...field} type="email" placeholder="client@example.com" value={field.value || ""} />
+                               <Input {...field} type="email" placeholder="client@example.com" value={field.value || ""} disabled={!!selectedProject?.clientContactEmail} />
                             </FormControl>
                           </FormItem>
                         )}
