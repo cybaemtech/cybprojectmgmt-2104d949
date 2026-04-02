@@ -89,7 +89,6 @@ export function CreateProject({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
       name: "",
-      key: "",
       description: "",
       teamId: teams.length > 0 ? teams[0].id.toString() : "none",
       status: "ACTIVE",
