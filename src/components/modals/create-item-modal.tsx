@@ -191,6 +191,12 @@ export function CreateItemModal({
   const { toast } = useToast();
   const [selectedProjectId, setSelectedProjectId] = useState<number>(currentProject?.id || (projects.length > 0 ? projects[0].id : 0));
   const [selectedAttachmentFile, setSelectedAttachmentFile] = useState<File | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
+
+  // Load available templates for the current user
+  const currentLocalUser = getLocalUser();
+  const availableTemplates = getTemplatesFromStorage().filter(t => t.ownerId === currentLocalUser?.id);
+  const availableTemplateTasks = getTemplateTasksFromStorage();
 
   const form = useForm<WorkItemFormValues>({
     resolver: zodResolver(workItemFormSchema),
