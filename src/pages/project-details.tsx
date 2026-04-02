@@ -1556,7 +1556,8 @@ export default function ProjectDetails() {
                         </div>
                       </div>
                     </div>
-                  )
+                  )}
+
 
                   {/* Items with Deadlines section - moved after Project Information */}
                   <div className="bg-white border rounded-md shadow-sm mb-6 mt-6">
