@@ -415,6 +415,30 @@ export function CreateItemModal({
           title: "Automation Complete",
           description: `Created: Epic → Client Requirement → Story "Initial Requirement Gathering" → ${taskCount} task${taskCount !== 1 ? 's' : ''} from template.`,
         });
+      } else if (data.type === 'STORY' && data.autoCreateTemplateTasks && selectedTemplateId) {
+        // STORY (Change Request) automation: create STORY then auto-create TASKs from template
+        const story = workItemStore.save(submitData);
+
+        const templateTasks = availableTemplateTasks
+          .filter(t => t.templateId === selectedTemplateId && t.isActive)
+          .sort((a, b) => (a.itemOrder || 0) - (b.itemOrder || 0));
+
+        templateTasks.forEach((tTask) => {
+          workItemStore.save({
+            title: tTask.title,
+            type: 'TASK',
+            status: 'TODO',
+            priority: 'MEDIUM',
+            parentId: story.id,
+            projectId: submitData.projectId,
+          });
+        });
+
+        const taskCount = templateTasks.length;
+        toast({
+          title: "Automation Complete",
+          description: `Created: Change Request "${data.title}" → ${taskCount} task${taskCount !== 1 ? 's' : ''} from template.`,
+        });
       } else {
         // Normal single item creation
         workItemStore.save(submitData);
@@ -662,6 +686,7 @@ export function CreateItemModal({
 
               {/* Description - shown for non-TASK, non-BUG, non-FEATURE, non-EPIC */}
               {!['TASK', 'BUG', 'FEATURE', 'EPIC'].includes(watchedType) && (
+                <>
                 <FormField
                   control={form.control}
                   name="description"
@@ -683,6 +708,71 @@ export function CreateItemModal({
                     </FormItem>
                   )}
                 />
+                {watchedType === 'STORY' && (
+                  <FormField
+                    control={form.control}
+                    name="autoCreateTemplateTasks"
+                    render={({ field }) => (
+                      <FormItem className="rounded-md border p-4 bg-background shadow-sm space-y-3">
+                        <div className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="font-semibold text-orange-900 cursor-pointer">
+                              Auto-create Template Tasks
+                            </FormLabel>
+                            <p className="text-xs text-muted-foreground">
+                              Automatically create tasks from the selected template for this change request.
+                            </p>
+                          </div>
+                        </div>
+                        {field.value && (
+                          <div className="pl-7 space-y-2">
+                            <Label className="text-sm font-medium">Select Template</Label>
+                            <Select
+                              value={selectedTemplateId?.toString() || ""}
+                              onValueChange={(v) => setSelectedTemplateId(parseInt(v))}
+                            >
+                              <SelectTrigger className="h-9 text-sm">
+                                <SelectValue placeholder="Choose a template..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableTemplates.map((tpl) => (
+                                  <SelectItem key={tpl.id} value={tpl.id.toString()}>
+                                    {tpl.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {selectedTemplateId && (
+                              <div className="space-y-1 mt-2">
+                                <p className="text-xs text-muted-foreground font-medium">Tasks that will be created:</p>
+                                <ul className="text-xs text-muted-foreground space-y-0.5 list-disc list-inside">
+                                  {availableTemplateTasks
+                                    .filter(t => t.templateId === selectedTemplateId && t.isActive)
+                                    .map(t => (
+                                      <li key={t.id}>{t.title}</li>
+                                    ))}
+                                </ul>
+                                {availableTemplateTasks.filter(t => t.templateId === selectedTemplateId && t.isActive).length === 0 && (
+                                  <p className="text-xs text-muted-foreground italic">No active tasks in this template.</p>
+                                )}
+                              </div>
+                            )}
+                            {availableTemplates.length === 0 && (
+                              <p className="text-xs text-muted-foreground italic">No templates available. Create templates in Template Settings.</p>
+                            )}
+                          </div>
+                        )}
+                      </FormItem>
+                    )}
+                  />
+                )}
+                </>
               )}
 
               {/* FEATURE specific block */}
