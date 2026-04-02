@@ -129,6 +129,8 @@ const workItemFormSchema = z.object({
   path: ["estimate"],
 }).refine((data) => {
   // Parent is required for FEATURE, STORY, TASK, BUG (not EPIC)
+  // Skip for FEATURE when autoCreateTemplateTasks is on (EPIC will be auto-created)
+  if (data.type === 'FEATURE' && data.autoCreateTemplateTasks) return true;
   if (['FEATURE', 'STORY', 'TASK', 'BUG'].includes(data.type)) {
     return data.parentId && data.parentId > 0;
   }
