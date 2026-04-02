@@ -37,6 +37,7 @@ interface TemplateTaskOption {
   id: number;
   templateId: number;
   title: string;
+  itemOrder: number;
   isActive: boolean;
 }
 function getTemplatesFromStorage(): TemplateOption[] {
