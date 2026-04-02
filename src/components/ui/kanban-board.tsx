@@ -361,16 +361,18 @@ export function KanbanBoard({
     }
   };
   
-  const getItemTypeBadgeStyles = (type: string) => {
-    switch(type) {
-      case 'STORY':
-        return "bg-blue-100 text-blue-800";
-      case 'TASK':
-        return "bg-green-100 text-green-800";
-      case 'BUG':
+  const getItemTypeBadgeStyles = (type: string, status?: string) => {
+    // Badge color reflects the column/status color
+    switch(status) {
+      case 'TODO':
         return "bg-red-100 text-red-800";
+      case 'IN_PROGRESS':
+        return "bg-yellow-100 text-yellow-800";
+      case 'DONE':
+        return "bg-green-100 text-green-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        if (type === 'BUG') return "bg-red-100 text-red-800";
+        return "bg-green-100 text-green-800";
     }
   };
   
