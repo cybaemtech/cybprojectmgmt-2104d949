@@ -960,8 +960,7 @@ export default function Timeline() {
               users={users}
             />
           )}
-        </main>
-      </div>
+        </div>
     </div>
   );
 }

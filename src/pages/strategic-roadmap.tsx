@@ -781,14 +781,8 @@ export default function StrategicRoadmapPage() {
   );
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar user={user as any} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header user={user as any} />
-        <main className="flex-1 overflow-auto">
-          {content}
-        </main>
-      </div>
+    <div>
+      {content}
     </div>
   );
 }

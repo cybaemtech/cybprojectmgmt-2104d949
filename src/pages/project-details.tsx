@@ -1332,30 +1332,7 @@ export default function ProjectDetails() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar
-        user={currentUser}
-        teams={teams}
-        projects={projects}
-        onCreateTeam={() => openModal("createTeam")}
-        onCreateProject={() => openModal("createProject")}
-      />
-
-      {/* Mobile menu toggle */}
-      <div className="md:hidden fixed bottom-4 right-4 z-10">
-        <Button
-          className="rounded-full shadow-lg p-3 h-12 w-12"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          <Layers className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-
-        <main className="flex-1 overflow-auto">
+    <div>
           {/* Project navigation */}
           <div className="bg-white border-b border-neutral-200">
             <div className="flex items-center px-6 py-3">

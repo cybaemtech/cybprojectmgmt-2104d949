@@ -555,9 +555,6 @@ export default function ProjectBugReports() {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        </main>
       </div>
     </div>
   );
