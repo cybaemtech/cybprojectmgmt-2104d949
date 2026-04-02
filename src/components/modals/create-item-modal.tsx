@@ -262,6 +262,21 @@ export function CreateItemModal({
     }
   }, [currentUser, isOpen, form]);
 
+  // Auto-populate EPIC (Client Details) fields from the selected project's client info
+  const selectedProject = projects.find(p => p.id === selectedProjectId);
+  const hasProjectClientData = !!(selectedProject?.clientCompanyName || selectedProject?.clientIndustry || selectedProject?.clientWebsite || selectedProject?.clientContactName || selectedProject?.clientContactEmail || selectedProject?.clientContactPhone);
+
+  useEffect(() => {
+    if (isOpen && watchedType === 'EPIC' && selectedProject) {
+      if (selectedProject.clientCompanyName) form.setValue("title", selectedProject.clientCompanyName);
+      if (selectedProject.clientIndustry) form.setValue("tags", selectedProject.clientIndustry);
+      if (selectedProject.clientWebsite) form.setValue("githubUrl", selectedProject.clientWebsite);
+      if (selectedProject.clientContactName) form.setValue("currentBehavior", selectedProject.clientContactName);
+      if (selectedProject.clientContactEmail) form.setValue("expectedBehavior", selectedProject.clientContactEmail);
+      if (selectedProject.clientContactPhone) form.setValue("referenceUrl", selectedProject.clientContactPhone);
+    }
+  }, [isOpen, watchedType, selectedProject?.id]);
+
   const onSubmit = async (data: WorkItemFormValues) => {
     try {
       const submitData: any = {
