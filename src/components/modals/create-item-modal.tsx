@@ -436,7 +436,7 @@ export function CreateItemModal({
                         <FormItem>
                           <FormLabel>Company Website <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
-                            <Input {...field} type="url" placeholder="https://www.example.com" value={field.value || ""} />
+                            <Input {...field} type="url" placeholder="https://www.example.com" value={field.value || ""} disabled={!!selectedProject?.clientWebsite} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
