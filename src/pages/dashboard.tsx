@@ -239,11 +239,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex h-screen bg-neutral-50">
-      <Sidebar user={currentUser} teams={teams} projects={projects} />
-
-      <div className="flex-1 overflow-auto">
-        <main className="p-6">
+    <div className="p-6">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
             <p className="text-gray-600">Overview of your project portfolio and work progress</p>
