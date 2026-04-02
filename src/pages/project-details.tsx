@@ -6,6 +6,7 @@ import { Project, User, Team, WorkItem } from "@/types/schema";
 import { Button } from "@/components/ui/button";
 import { CreateItemModal } from "@/components/modals/create-item-modal";
 import { EditItemModal } from "@/components/modals/edit-item-modal";
+import { ViewItemModal } from "@/components/modals/view-item-modal";
 import { DeleteItemModal } from "@/components/modals/delete-item-modal";
 import { ArchiveProjectModal } from "@/components/modals/archive-project-modal";
 import { ProjectMembersModal } from "@/components/modals/project-members-modal";
