@@ -181,11 +181,14 @@ export const workItemStore = {
   save: (item: Partial<WorkItem> & { title: string; projectId: number; type: string }): WorkItem => {
     const items = workItemStore.all();
     const maxId = items.reduce((m, i) => Math.max(m, i.id), 0);
+    const newId = item.id ?? maxId + 1;
     const now = new Date().toISOString();
     const authUser = JSON.parse(localStorage.getItem("auth-user") || "null") || DEMO_USER;
     const project = projectStore.get(item.projectId);
+    // Auto-generate externalId if not provided
+    const autoExternalId = item.externalId || `${project?.key || 'WI'}-${newId}`;
     const newItem: WorkItem = {
-      id: item.id ?? maxId + 1,
+      id: newId,
       projectId: item.projectId,
       title: item.title,
       type: item.type as any,
@@ -194,7 +197,7 @@ export const workItemStore = {
       assigneeId: item.assigneeId ?? null,
       parentId: item.parentId ?? null,
       description: item.description ?? null,
-      externalId: item.externalId || "",
+      externalId: autoExternalId,
       tags: item.tags ?? null,
       reporterId: item.reporterId ?? null,
       createdByName: authUser.fullName,
@@ -228,6 +231,7 @@ export const workItemStore = {
     if (idx >= 0) items.splice(idx, 1, newItem);
     else items.unshift(newItem);
     save(WORK_ITEMS_KEY, items);
+    console.log('[workItemStore] Saved item:', newItem.id, newItem.externalId, newItem.type, newItem.title);
     return newItem;
   },
   update: (id: number, updates: Partial<WorkItem>): WorkItem | undefined => {
