@@ -117,7 +117,7 @@ export function KanbanBoard({
     { 
       id: 'TODO', 
       title: 'To Do',
-      color: 'bg-rose-700',
+      color: 'bg-red-500',
       items: filteredItems.filter(item => item.status === 'TODO')
     },
     { 
