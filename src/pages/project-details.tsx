@@ -1472,6 +1472,92 @@ export default function ProjectDetails() {
                     </div>
                   </div>
 
+                  {/* Client Information - Confidential (Admin Only) */}
+                  {currentUser?.role === 'ADMIN' && project && (
+                    <div className="bg-white border border-amber-200 rounded-md shadow-sm p-4 mt-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <h3 className="text-lg font-medium">Client Information</h3>
+                        <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-xs">
+                          <ShieldAlert className="h-3 w-3 mr-1" />
+                          Confidential
+                        </Badge>
+                      </div>
+
+                      {/* Core Client Information */}
+                      <div className="mb-4">
+                        <h4 className="text-sm font-semibold text-primary mb-3">Core Client Information</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div>
+                            <h4 className="text-sm font-medium mb-1 text-neutral-500">Company Name</h4>
+                            <p className="text-sm">{project.clientCompanyName || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium mb-1 text-neutral-500">Industry / Sector</h4>
+                            <p className="text-sm">{project.clientIndustry || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium mb-1 text-neutral-500">Company Website</h4>
+                            <p className="text-sm">
+                              {project.clientWebsite ? (
+                                <a href={project.clientWebsite} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{project.clientWebsite}</a>
+                              ) : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Contact Information */}
+                      <div className="mb-4">
+                        <h4 className="text-sm font-semibold text-accent-foreground mb-3">Contact Information</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div>
+                            <h4 className="text-sm font-medium mb-1 text-neutral-500">Primary Contact</h4>
+                            <p className="text-sm">{project.clientContactName || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium mb-1 text-neutral-500">Email</h4>
+                            <p className="text-sm">
+                              {project.clientContactEmail ? (
+                                <a href={`mailto:${project.clientContactEmail}`} className="text-primary hover:underline">{project.clientContactEmail}</a>
+                              ) : 'N/A'}
+                            </p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium mb-1 text-neutral-500">Phone</h4>
+                            <p className="text-sm">{project.clientContactPhone || 'N/A'}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Relationship Management */}
+                      <div>
+                        <h4 className="text-sm font-semibold text-secondary-foreground mb-3">Relationship Management</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div>
+                            <h4 className="text-sm font-medium mb-1 text-neutral-500">Account Manager</h4>
+                            <p className="text-sm">
+                              {project.clientAccountManager
+                                ? allUsers?.find(u => u.id === project.clientAccountManager)?.fullName || 'Unknown'
+                                : 'Unassigned'}
+                            </p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium mb-1 text-neutral-500">Client Status</h4>
+                            <p className="text-sm">
+                              {project.clientStatus
+                                ? { LEAD: 'Lead', ONBOARDING: 'Onboarding', ACTIVE: 'Active', CHURNED: 'Inactive / Churned' }[project.clientStatus] || project.clientStatus
+                                : 'N/A'}
+                            </p>
+                          </div>
+                          <div className="md:col-span-2 lg:col-span-1">
+                            <h4 className="text-sm font-medium mb-1 text-neutral-500">Notes</h4>
+                            <p className="text-sm whitespace-pre-wrap">{project.clientNotes || 'No notes'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+
                   {/* Items with Deadlines section - moved after Project Information */}
                   <div className="bg-white border rounded-md shadow-sm mb-6 mt-6">
                     <div className="p-4 border-b">
