@@ -24,14 +24,16 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Users, Plus } from "lucide-react";
 
 // Define the form schema
+function generateProjectKey(name: string): string {
+  const prefix = name.replace(/[^A-Za-z]/g, '').substring(0, 3).toUpperCase() || 'PRJ';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let suffix = '';
+  for (let i = 0; i < 4; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
+  return `${prefix}${suffix}`;
+}
+
 const projectFormSchema = z.object({
   name: z.string().min(3, { message: "Project name must be at least 3 characters" }).trim(),
-  key: z.string()
-        .min(2, { message: "Project key must be at least 2 characters" })
-        .max(10, { message: "Project key must be at most 10 characters" })
-        .refine(val => /^[A-Z0-9]+$/.test(val), { 
-          message: "Project key must contain only uppercase letters and numbers (A-Z, 0-9)" 
-        }),
   description: z.string().optional(),
   teamId: z.string().optional(),
   status: z.enum(["PLANNING", "ACTIVE", "COMPLETED"]).default("ACTIVE"),
@@ -44,6 +46,7 @@ const projectFormSchema = z.object({
     return !isNaN(parsedDate.getTime());
   }, { message: "Please enter a valid date" }),
   // Client Details fields
+  clientCompanyName: z.string().min(1, { message: "Company name is required" }).trim(),
   clientIndustry: z.string().min(1, { message: "Industry is required" }).trim(),
   clientWebsite: z.string().min(1, { message: "Company website is required" }).trim(),
   clientContactName: z.string().min(1, { message: "Contact name is required" }).trim(),
@@ -86,7 +89,6 @@ export function CreateProject({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
       name: "",
-      key: "",
       description: "",
       teamId: teams.length > 0 ? teams[0].id.toString() : "none",
       status: "ACTIVE",
@@ -94,6 +96,7 @@ export function CreateProject({
       githubUrl: "",
       startDate: "",
       targetDate: "",
+      clientCompanyName: "",
       clientIndustry: "",
       clientWebsite: "",
       clientContactName: "",
@@ -107,9 +110,10 @@ export function CreateProject({
   
   const onSubmit = async (data: ProjectFormValues) => {
     try {
+      const autoKey = generateProjectKey(data.name);
       const projectData = {
         name: data.name,
-        key: data.key.toUpperCase(),
+        key: autoKey,
         description: data.description || "",
         teamId: data.teamId && data.teamId !== "none" ? parseInt(data.teamId) : null,
         status: data.status,
@@ -118,6 +122,7 @@ export function CreateProject({
         githubUrl: data.githubUrl || null,
         startDate: data.startDate || null,
         targetDate: data.targetDate || null,
+        clientCompanyName: data.clientCompanyName || null,
         clientIndustry: data.clientIndustry || null,
         clientWebsite: data.clientWebsite || null,
         clientContactName: data.clientContactName || null,
@@ -128,10 +133,10 @@ export function CreateProject({
         clientNotes: data.clientNotes || null,
       };
 
+      // Auto-generated key; ensure uniqueness by retrying
       const existing = projectStore.all();
-      if (existing.some(p => p.key === projectData.key)) {
-        form.setError('key', { message: 'Project key already exists' });
-        return;
+      while (existing.some(p => p.key === projectData.key)) {
+        projectData.key = generateProjectKey(data.name);
       }
 
       projectStore.save(projectData as any);
@@ -171,33 +176,6 @@ export function CreateProject({
                   <FormControl>
                     <Input {...field} placeholder="Enter project name" />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="key"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Project Key</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      placeholder="e.g. PROJ, CRM, HR" 
-                      maxLength={10} 
-                      style={{ textTransform: 'uppercase' }}
-                      onChange={(e) => {
-                        const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                        field.onChange(value);
-                      }}
-                      value={field.value || ''}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Short uppercase key used for work item IDs (e.g., PROJ-123)
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -358,6 +336,19 @@ export function CreateProject({
                 {/* Core Client Information */}
                 <div className="space-y-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
                   <h3 className="font-semibold text-sm text-primary">Core Client Information</h3>
+                  <FormField
+                    control={form.control}
+                    name="clientCompanyName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Company Name <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Enter company name" value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={form.control}
                     name="clientIndustry"

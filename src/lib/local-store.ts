@@ -70,6 +70,7 @@ export const projectStore = {
       createdByEmail: authUser.email,
       createdAt: project.createdAt || now,
       updatedAt: now,
+      clientCompanyName: project.clientCompanyName || null,
       clientIndustry: project.clientIndustry || null,
       clientWebsite: project.clientWebsite || null,
       clientContactName: project.clientContactName || null,
