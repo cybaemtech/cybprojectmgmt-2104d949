@@ -71,6 +71,7 @@ export interface Project {
   createdAt: Date | string;
   updatedAt: Date | string;
   // Client Details fields
+  clientCompanyName: string | null;
   clientIndustry: string | null;
   clientWebsite: string | null;
   clientContactName: string | null;

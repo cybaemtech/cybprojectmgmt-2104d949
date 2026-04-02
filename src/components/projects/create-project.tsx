@@ -133,10 +133,10 @@ export function CreateProject({
         clientNotes: data.clientNotes || null,
       };
 
+      // Auto-generated key; ensure uniqueness by retrying
       const existing = projectStore.all();
-      if (existing.some(p => p.key === projectData.key)) {
-        form.setError('key', { message: 'Project key already exists' });
-        return;
+      while (existing.some(p => p.key === projectData.key)) {
+        projectData.key = generateProjectKey(data.name);
       }
 
       projectStore.save(projectData as any);
