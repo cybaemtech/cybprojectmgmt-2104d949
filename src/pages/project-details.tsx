@@ -653,8 +653,25 @@ export default function ProjectDetails() {
     // Don't proceed if project ID is invalid
     if (!projectId) return;
 
-    // Confirm with user before deleting
-    if (project?.name && !window.confirm(`Are you sure you want to delete ${project.name}? This action cannot be undone.`)) {
+    // Confirm with user before deleting - warn about all inner elements
+    const workItems = workItemStore.byProject(projectId);
+    const epics = workItems.filter(w => w.type === 'EPIC').length;
+    const features = workItems.filter(w => w.type === 'FEATURE').length;
+    const stories = workItems.filter(w => w.type === 'STORY').length;
+    const tasks = workItems.filter(w => w.type === 'TASK').length;
+    const bugs = workItems.filter(w => w.type === 'BUG').length;
+    
+    const itemSummary = [
+      epics > 0 ? `${epics} Epic(s)` : '',
+      features > 0 ? `${features} Feature(s)` : '',
+      stories > 0 ? `${stories} Story/Stories` : '',
+      tasks > 0 ? `${tasks} Task(s)` : '',
+      bugs > 0 ? `${bugs} Bug(s)` : '',
+    ].filter(Boolean).join(', ');
+
+    const confirmMsg = `⚠️ Are you sure you want to delete "${project?.name}"?\n\nThis will permanently delete ALL inner elements:\n${itemSummary || 'No work items found.'}\n\nThis action cannot be undone.`;
+    
+    if (!window.confirm(confirmMsg)) {
       return;
     }
 

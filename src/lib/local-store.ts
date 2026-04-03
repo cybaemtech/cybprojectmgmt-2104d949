@@ -88,6 +88,8 @@ export const projectStore = {
   },
   delete: (id: number) => {
     save(PROJECTS_KEY, projectStore.all().filter(p => p.id !== id));
+    // Cascade delete all work items belonging to this project
+    save(WORK_ITEMS_KEY, workItemStore.all().filter(w => w.projectId !== id));
   },
 };
 
