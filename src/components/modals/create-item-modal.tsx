@@ -702,6 +702,31 @@ export function CreateItemModal({
               {/* Description - shown for non-TASK, non-BUG, non-FEATURE, non-EPIC */}
               {!['TASK', 'BUG', 'FEATURE', 'EPIC'].includes(watchedType) && (
                 <>
+                {/* Parent FEATURE selector for STORY */}
+                {watchedType === 'STORY' && (() => {
+                  const parentFeatures = workItems.filter(w => w.type === 'FEATURE' && w.projectId === selectedProjectId);
+                  return parentFeatures.length > 0 ? (
+                    <FormField
+                      control={form.control}
+                      name="parentId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Client Requirement (Parent)</FormLabel>
+                          <FormControl>
+                            <Combobox
+                              options={parentFeatures.map(f => ({ value: f.id.toString(), label: f.title }))}
+                              value={field.value?.toString() || ""}
+                              onValueChange={v => field.onChange(v ? parseInt(v) : null)}
+                              placeholder="Auto-select first available..."
+                            />
+                          </FormControl>
+                          <p className="text-xs text-muted-foreground">Leave empty to auto-attach to the first Client Requirement</p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : null;
+                })()}
                 <FormField
                   control={form.control}
                   name="description"
