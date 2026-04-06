@@ -131,6 +131,8 @@ const workItemFormSchema = z.object({
   // Parent is required for FEATURE, STORY, TASK, BUG (not EPIC)
   // Skip for FEATURE when autoCreateTemplateTasks is on (EPIC will be auto-created)
   if (data.type === 'FEATURE' && data.autoCreateTemplateTasks) return true;
+  // Skip for STORY when autoCreateTemplateTasks is on (will auto-attach to a FEATURE)
+  if (data.type === 'STORY' && data.autoCreateTemplateTasks) return true;
   if (['FEATURE', 'STORY', 'TASK', 'BUG'].includes(data.type)) {
     return data.parentId && data.parentId > 0;
   }
@@ -420,6 +422,15 @@ export function CreateItemModal({
         // Auto-assign the current user as assignee on the story
         const creatorId = currentUser?.id || currentLocalUser?.id || null;
         submitData.assigneeId = creatorId;
+
+        // Auto-attach to a parent FEATURE if none selected
+        if (!submitData.parentId) {
+          const projectFeatures = workItems.filter(w => w.type === 'FEATURE' && w.projectId === submitData.projectId);
+          if (projectFeatures.length > 0) {
+            submitData.parentId = projectFeatures[0].id;
+          }
+        }
+
         const story = workItemStore.save(submitData);
 
         const templateTasks = availableTemplateTasks
