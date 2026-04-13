@@ -1,25 +1,36 @@
 
 
-## Plan: Consolidate Demo Strategy
+## Plan: Add Documentation Tab to Project Details
 
-Based on your preference to simplify, here's what I'd implement:
+### What it does
+Adds a new "Documentation" tab between "Board" and "Settings" in the project details view. This tab aggregates all documents (PDFs) attached to Client Requirement (FEATURE) and Change Request (STORY) work items, showing file name, the parent work item, who attached it, and when — providing a centralized audit view of all project documents.
 
-### Approach: Remove Admin Seed/Reset, Rely on Explore Demo
+### Technical approach
 
-1. **Remove seed/reset from Admin Settings** — strip the "Seed Test Data" and "Reset All Data" cards from `admin-settings.tsx` (or remove the page entirely if no other admin features exist)
+**1. Update project view state type and tab navigation**
+- File: `src/pages/project-details.tsx`
+- Add `'documentation'` to the `projectView` state union type
+- Add a new tab link between "Board" and "Settings" in the nav bar
 
-2. **Remove seed-data logic** — clean up `resetDatabase()` and `seedDatabase()` from `seed-data.ts` if no longer needed
+**2. Build the Documentation tab content**
+- File: `src/pages/project-details.tsx` (inline, before the Settings tab block)
+- Filter `workItems` for items that have `pdfUploadBlob` or `pdfUploadPath` set
+- Render a table with columns:
+  - **Document Name** — from `pdfUploadPath` (cleaned filename)
+  - **Work Item** — title + externalId of the parent work item, with type badge (Client Requirement / Change Request)
+  - **Uploaded By** — `createdByName` or `createdByEmail` from the work item
+  - **Date Attached** — `createdAt` or `updatedAt` of the work item
+  - **Action** — Download/View button to open the PDF
+- Include an empty state when no documents exist
+- Add a search/filter bar to filter documents by name or work item title
+- Show total document count as a badge on the tab or in the header
 
-3. **Keep Explore Demo as-is** — the existing demo mode already provides a full preview experience using static data without touching the database
+**3. Include screenshot attachments too**
+- Also check for `screenshotBlob`/`screenshotPath` on BUG items so the documentation tab truly captures all attachments across the project
 
-4. **Optional: Enhance demo data** — if the current `demo-data.ts` doesn't cover all features (roadmaps, bug reports, etc.), expand it to be more comprehensive
+### Files to modify
+- `src/pages/project-details.tsx` — add tab, state type, and documentation view content
 
-### Files affected
-- `src/pages/admin-settings.tsx` — remove seed/reset UI (or remove page)
-- `src/lib/seed-data.ts` — remove or simplify
-- `src/components/layout/sidebar.tsx` — remove Admin Settings link if page is removed
-- `src/App.tsx` — remove route if page is removed
-
-### Alternative: Keep Both
-If you want to keep admin seed/reset for internal QA, I'll just leave it as-is and make no changes.
+### No database changes needed
+Documents are already stored as blobs on work items. This is purely a read-only aggregation view.
 
