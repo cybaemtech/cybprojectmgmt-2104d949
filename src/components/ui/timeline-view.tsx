@@ -286,10 +286,10 @@ export function TimelineView({
                                 <div className="text-sm font-medium">{feature.title}</div>
                                 <div className="text-xs text-neutral-500">{feature.externalId}</div>
                                 {feature.startDate && (
-                                  <div className="text-xs mt-1">Start: {feature.startDate}</div>
+                                  <div className="text-xs mt-1">Start: {String(feature.startDate)}</div>
                                 )}
                                 {feature.endDate && (
-                                  <div className="text-xs">End: {feature.endDate}</div>
+                                  <div className="text-xs">End: {String(feature.endDate)}</div>
                                 )}
                                 {feature.description && (
                                   <div className="text-xs mt-1 max-w-xs">{feature.description}</div>
