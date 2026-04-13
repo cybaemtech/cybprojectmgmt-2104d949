@@ -801,65 +801,30 @@ export default function Timeline() {
   const [ganttViewMode, setGanttViewMode] = useState<GanttViewMode>('quarter');
   const [activeTab, setActiveTab] = useState<TimelineTab>('gantt');
   
-  const { data: currentUser } = useQuery<User>({
-    queryKey: ['/auth/user'],
-    retry: false,
-    staleTime: 5 * 60 * 1000,
-  });
+  const currentUser = getLocalUser();
+  const teams = teamStore.all();
+  const projects = projectStore.all();
+  const users = userStore.all();
   
-  const { data: teams = [] } = useQuery<Team[]>({
-    queryKey: ['/teams'],
-  });
-  
-  const { data: projects = [] } = useQuery<Project[]>({
-    queryKey: ['/projects'],
-  });
-
-  const { data: users = [] } = useQuery<User[]>({
-    queryKey: ['/users'],
-    queryFn: () => apiGet('/users'),
-  });
-
-  // Fetch team members for all teams
-  const [teamMemberCounts, setTeamMemberCounts] = useState<Record<number, number>>({});
-  
-  useEffect(() => {
-    if (!teams.length) return;
-    const fetchTeamMembers = async () => {
-      const counts: Record<number, number> = {};
-      await Promise.all(teams.map(async (team) => {
-        try {
-          const members = await apiGet(`/teams/${team.id}/members`);
-          counts[team.id] = Array.isArray(members) ? members.length : 0;
-        } catch {
-          counts[team.id] = 0;
-        }
-      }));
-      setTeamMemberCounts(counts);
-    };
-    fetchTeamMembers();
+  // Build team member counts from local store
+  const teamMemberCounts = useMemo(() => {
+    const counts: Record<number, number> = {};
+    teams.forEach(team => {
+      counts[team.id] = teamMemberStore.byTeam(team.id).length;
+    });
+    return counts;
   }, [teams]);
 
-  const { data: allWorkItems = [] } = useQuery<WorkItem[]>({
-    queryKey: ['/work-items'],
-    queryFn: async () => {
-      try {
-        const items = await apiGet('/work-items');
-        return items.map((item: WorkItem) => {
-          const project = projects.find(p => p.id === item.projectId);
-          return {
-            ...item,
-            projectKey: project?.key || '',
-            projectName: project?.name || 'Unknown Project'
-          };
-        });
-      } catch (error) {
-        console.error('Error fetching work items:', error);
-        return [];
-      }
-    },
-    enabled: true,
-  });
+  const allWorkItems: WorkItem[] = useMemo(() => {
+    return workItemStore.all().map(item => {
+      const project = projects.find(p => p.id === item.projectId);
+      return {
+        ...item,
+        projectKey: project?.key || '',
+        projectName: project?.name || 'Unknown Project'
+      };
+    });
+  }, [projects]);
 
   // Filter work items to show only those assigned to current user (unless admin/scrum master)
   const filteredWorkItems = useMemo(() => {
