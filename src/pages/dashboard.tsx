@@ -14,6 +14,8 @@ import { format, parseISO, isValid, isBefore, isAfter, addDays, differenceInDays
 import { useAuth } from "@/hooks/useAuth";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import { projectStore, teamStore, workItemStore, getLocalUser } from "@/lib/local-store";
+import { seedDatabase } from "@/lib/seed-data";
+import { useToast } from "@/hooks/use-toast";
 
 interface DashboardStats {
   totalProjects: number;
