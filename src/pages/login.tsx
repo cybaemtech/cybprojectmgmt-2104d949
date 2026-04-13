@@ -35,7 +35,8 @@ export default function LoginPage() {
     const result = await login(data.email, data.password);
     if (result.success) {
       toast({ title: "Login successful", description: "Welcome back!" });
-      navigate("/dashboard");
+      // Small delay to let onAuthStateChange update the user before navigating
+      setTimeout(() => navigate("/dashboard"), 300);
     } else {
       toast({ variant: "destructive", title: "Login failed", description: result.error });
     }
