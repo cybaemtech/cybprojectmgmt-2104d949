@@ -41,6 +41,46 @@ function migrateDate(d: string): string {
   return d;
 }
 
+const SAMPLE_TEMPLATES: Template[] = [
+  {
+    id: 1,
+    name: 'Software Product Launch',
+    description: 'End-to-end roadmap for launching a new software product',
+    streams: ['Engineering', 'Design', 'Marketing', 'QA'],
+    projects: [
+      { id: 1, name: 'Core Architecture', startDate: '2026-01-01', endDate: '2026-03-31', stream: 'Engineering', actionPoints: ['Set up CI/CD pipeline', 'Define microservices architecture', 'Database schema design'] },
+      { id: 2, name: 'UI/UX Design', startDate: '2026-02-01', endDate: '2026-04-15', stream: 'Design', actionPoints: ['User research & personas', 'Wireframes & prototypes', 'Design system creation'] },
+      { id: 3, name: 'MVP Development', startDate: '2026-04-01', endDate: '2026-07-31', stream: 'Engineering', actionPoints: ['Feature development sprints', 'API integration', 'Performance optimization'] },
+      { id: 4, name: 'Testing & QA', startDate: '2026-06-01', endDate: '2026-08-31', stream: 'QA', actionPoints: ['Test plan creation', 'Automated testing', 'UAT & bug fixing'] },
+      { id: 5, name: 'Go-to-Market Campaign', startDate: '2026-07-01', endDate: '2026-09-30', stream: 'Marketing', actionPoints: ['Content strategy', 'Launch event planning', 'Social media campaign'] },
+    ],
+  },
+  {
+    id: 2,
+    name: 'Digital Transformation',
+    description: 'Enterprise digital transformation initiative roadmap',
+    streams: ['Infrastructure', 'Applications', 'Data & Analytics', 'Change Management'],
+    projects: [
+      { id: 1, name: 'Cloud Migration', startDate: '2026-01-01', endDate: '2026-06-30', stream: 'Infrastructure', actionPoints: ['Cloud provider selection', 'Migration planning', 'Phased migration execution'] },
+      { id: 2, name: 'Legacy System Modernization', startDate: '2026-03-01', endDate: '2026-09-30', stream: 'Applications', actionPoints: ['System audit', 'API-first redesign', 'Incremental rollout'] },
+      { id: 3, name: 'Data Platform Setup', startDate: '2026-02-01', endDate: '2026-07-31', stream: 'Data & Analytics', actionPoints: ['Data warehouse design', 'ETL pipeline development', 'BI dashboard creation'] },
+      { id: 4, name: 'Training & Adoption', startDate: '2026-05-01', endDate: '2026-12-31', stream: 'Change Management', actionPoints: ['Training program design', 'Champion network setup', 'Feedback & iteration'] },
+    ],
+  },
+  {
+    id: 3,
+    name: 'Agile Team Scaling',
+    description: 'Roadmap for scaling agile practices across the organization',
+    streams: ['Process', 'People', 'Tools'],
+    projects: [
+      { id: 1, name: 'Agile Framework Selection', startDate: '2026-01-01', endDate: '2026-02-28', stream: 'Process', actionPoints: ['Evaluate SAFe vs LeSS', 'Pilot team selection', 'Framework customization'] },
+      { id: 2, name: 'Team Formation', startDate: '2026-02-01', endDate: '2026-04-30', stream: 'People', actionPoints: ['Cross-functional team design', 'Scrum Master hiring', 'Role definition'] },
+      { id: 3, name: 'Tooling Setup', startDate: '2026-03-01', endDate: '2026-05-31', stream: 'Tools', actionPoints: ['Jira/Azure DevOps configuration', 'CI/CD integration', 'Metrics dashboards'] },
+      { id: 4, name: 'Organization-wide Rollout', startDate: '2026-05-01', endDate: '2026-10-31', stream: 'Process', actionPoints: ['Phased department rollout', 'Retrospectives at scale', 'Continuous improvement'] },
+    ],
+  },
+];
+
 function mapDbToTemplate(row: any): Template {
   const tasks = row.tasks || {};
   return {
