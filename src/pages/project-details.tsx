@@ -288,7 +288,7 @@ export default function ProjectDetails() {
 
   // Auto-filter all views to show only current user's assigned items
   useEffect(() => {
-    if (projectView !== 'board' && projectView !== 'backlog') {
+    if (projectView !== 'board' && projectView !== 'backlog' && projectView !== 'documentation') {
       setFilterType([]);
       setFilterStatus([]);
       setFilterPriority([]);
