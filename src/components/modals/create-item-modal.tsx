@@ -26,26 +26,22 @@ import { apiRequest } from "@/lib/queryClient";
 import { workItemStore, getLocalUser } from "@/lib/local-store";
 import { apiGet } from "@/lib/api-config";
 
-// Template types & storage helpers (mirrored from template-settings)
+// Template types (mirrored from template-settings, now DB-backed)
+import { supabaseCustom as supabaseTemplateClient } from "@/lib/supabase-custom";
+
 interface TemplateOption {
   id: number;
   name: string;
-  ownerId: number;
+  createdBy: string;
   isLocked?: boolean;
+  tasks: TemplateTaskOption[];
 }
 interface TemplateTaskOption {
   id: number;
-  templateId: number;
   title: string;
   itemOrder: number;
   isActive: boolean;
   estimatedHours?: number;
-}
-function getTemplatesFromStorage(): TemplateOption[] {
-  try { return JSON.parse(localStorage.getItem("user-templates") || "[]"); } catch { return []; }
-}
-function getTemplateTasksFromStorage(): TemplateTaskOption[] {
-  try { return JSON.parse(localStorage.getItem("user-template-tasks") || "[]"); } catch { return []; }
 }
 import { useToast } from "@/hooks/use-toast";
 
