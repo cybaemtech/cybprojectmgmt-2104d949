@@ -30,19 +30,16 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "" },
   });
 
-  const onSubmit = (data: LoginFormValues) => {
+  const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
-    // Small delay for UX feel
-    setTimeout(() => {
-      const result = login(data.email, data.password);
-      if (result.success) {
-        toast({ title: "Login successful", description: "Welcome back!" });
-        navigate("/dashboard");
-      } else {
-        toast({ variant: "destructive", title: "Login failed", description: result.error });
-      }
-      setIsLoading(false);
-    }, 400);
+    const result = await login(data.email, data.password);
+    if (result.success) {
+      toast({ title: "Login successful", description: "Welcome back!" });
+      navigate("/dashboard");
+    } else {
+      toast({ variant: "destructive", title: "Login failed", description: result.error });
+    }
+    setIsLoading(false);
   };
 
   return (
