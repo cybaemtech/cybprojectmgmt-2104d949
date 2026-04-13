@@ -274,3 +274,41 @@ export async function seedDatabase(): Promise<{ teams: number; projects: number;
 
   return { teams: teamsInserted, projects: projectsInserted, workItems: totalWorkItems };
 }
+
+/**
+ * Reset (delete) all data from the database: work items, comments, attachments,
+ * activity logs, work item history, project members, team members, projects, teams.
+ */
+export async function resetDatabase(): Promise<void> {
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error("Not authenticated");
+
+  console.log("[reset] Starting database reset...");
+
+  // Delete in dependency order
+  const tables = [
+    "work_item_history",
+    "comments",
+    "attachments",
+    "activity_logs",
+    "work_items",
+    "project_members",
+    "projects",
+    "team_members",
+    "teams",
+  ];
+
+  for (const table of tables) {
+    const { error } = await supabase.from(table).delete().gte("id", 0);
+    if (error) {
+      console.error(`[reset] Failed to delete from ${table}:`, error);
+    } else {
+      console.log(`[reset] Cleared ${table}`);
+    }
+  }
+
+  // Refresh the local store
+  await refreshStore();
+
+  console.log("[reset] Database reset complete");
+}

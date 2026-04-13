@@ -37,6 +37,7 @@ const menuItems = [
   { href: "/reports", icon: BarChart, label: "Reports", isActive: (loc: string) => loc === "/reports" },
   { href: "/project-bug-reports", icon: Bug, label: "Project Bug Reviews", isActive: (loc: string) => loc === "/project-bug-reports" },
   { href: "/templates", icon: Settings, label: "Template Settings", isActive: (loc: string) => loc === "/templates" },
+  { href: "/admin-settings", icon: Settings, label: "Admin Settings", isActive: (loc: string) => loc === "/admin-settings" },
 ];
 
 // Initialize sidebar state from localStorage
@@ -129,6 +130,11 @@ export function Sidebar({
               // Only show Daily Standup and Template Settings for ADMIN and SCRUM_MASTER
               if (["Daily Standup", "Template Settings"].includes(item.label) && user) {
                 if (user.role !== "ADMIN" && user.role !== "SCRUM_MASTER") {
+                  return null;
+                }
+              }
+              if (item.label === "Admin Settings" && user) {
+                if (user.role !== "ADMIN") {
                   return null;
                 }
               }
