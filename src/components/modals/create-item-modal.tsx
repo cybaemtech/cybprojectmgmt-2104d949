@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
+import { supabaseCustom as supabase } from "@/lib/supabase-custom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -23,29 +24,23 @@ import {
 } from "@/components/ui/form";
 import { Project, User, WorkItem } from "@/types/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { workItemStore, getLocalUser } from "@/lib/local-store";
+import { workItemStore } from "@/lib/local-store";
 import { apiGet } from "@/lib/api-config";
 
-// Template types & storage helpers (mirrored from template-settings)
-interface TemplateOption {
+// Template types
+interface TemplateTask {
   id: number;
-  name: string;
-  ownerId: number;
-  isLocked?: boolean;
-}
-interface TemplateTaskOption {
-  id: number;
-  templateId: number;
   title: string;
   itemOrder: number;
   isActive: boolean;
   estimatedHours?: number;
 }
-function getTemplatesFromStorage(): TemplateOption[] {
-  try { return JSON.parse(localStorage.getItem("user-templates") || "[]"); } catch { return []; }
-}
-function getTemplateTasksFromStorage(): TemplateTaskOption[] {
-  try { return JSON.parse(localStorage.getItem("user-template-tasks") || "[]"); } catch { return []; }
+
+interface DBTemplate {
+  id: number;
+  name: string;
+  tasks: TemplateTask[];
+  is_locked: boolean;
 }
 import { useToast } from "@/hooks/use-toast";
 
@@ -201,10 +196,31 @@ export function CreateItemModal({
   const [selectedAttachmentFile, setSelectedAttachmentFile] = useState<File | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
 
-  // Load available templates for the current user
-  const currentLocalUser = getLocalUser();
-  const availableTemplates = getTemplatesFromStorage().filter(t => t.ownerId === currentLocalUser?.id);
-  const availableTemplateTasks = getTemplateTasksFromStorage();
+  // Load templates from external Supabase DB
+  const { data: dbTemplates = [] } = useQuery<DBTemplate[]>({
+    queryKey: ['work-item-templates-for-modal'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('work_item_templates')
+        .select('id, name, tasks, is_locked')
+        .order('name');
+      if (error) { console.error('Failed to load templates:', error); return []; }
+      return (data || []).map((row: any) => ({
+        ...row,
+        tasks: Array.isArray(row.tasks) ? row.tasks : [],
+      }));
+    },
+    enabled: isOpen,
+  });
+
+  const availableTemplates = dbTemplates;
+
+  // Flatten tasks with templateId for downstream use
+  const availableTemplateTasks = useMemo(() => {
+    return dbTemplates.flatMap(t =>
+      t.tasks.map(task => ({ ...task, templateId: t.id }))
+    );
+  }, [dbTemplates]);
 
   // Default to "Requirement Gathering" template when modal opens
   useEffect(() => {
@@ -372,7 +388,7 @@ export function CreateItemModal({
       }
 
       // ── FEATURE automation chain ──────────────────────────────────────
-      const creatorId = currentUser?.id || currentLocalUser?.id || null;
+      const creatorId = currentUser?.id || null;
 
       if (data.type === 'FEATURE' && data.autoCreateTemplateTasks && selectedTemplateId) {
         const projectName = selectedProject?.name || "Project";
@@ -443,7 +459,7 @@ export function CreateItemModal({
         });
       } else if (data.type === 'STORY' && data.autoCreateTemplateTasks && selectedTemplateId) {
         // STORY (Change Request) automation: create STORY then auto-create TASKs from template
-        const creatorId = currentUser?.id || currentLocalUser?.id || null;
+        const creatorId = currentUser?.id || null;
         submitData.assigneeId = creatorId;
 
         // Auto-attach to a parent FEATURE if none selected
