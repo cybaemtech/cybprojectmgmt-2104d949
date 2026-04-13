@@ -1659,23 +1659,6 @@ export default function ProjectDetails() {
                     />
                   </div>
 
-                  {/* Timeline View */}
-                  <div className="bg-white border rounded-md shadow-sm">
-                    <div className="p-4 border-b bg-gray-50">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-medium">Epics & Features Timeline</h3>
-                        <div className="flex items-center space-x-4">
-
-
-                        </div>
-                      </div>
-                    </div>
-                    <TimelineView
-                      timeUnit={timeUnit}
-                      workItems={workItems}
-                      onTimeUnitChange={(unit) => setTimeUnit(unit)}
-                    />
-                  </div>
                 </div>
 
 
