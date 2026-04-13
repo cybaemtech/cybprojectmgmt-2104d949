@@ -56,6 +56,8 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { isDemoMode } = useDemoMode();
   const { user: authUser } = useAuth();
+  const { toast } = useToast();
+  const [seeding, setSeeding] = useState(false);
 
   const currentUser = authUser || getLocalUser();
 
