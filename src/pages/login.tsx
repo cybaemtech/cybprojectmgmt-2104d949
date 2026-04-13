@@ -7,7 +7,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Shield, Lock, AtSign, Play } from "lucide-react";
+import { Shield, Lock, AtSign, Play, Eye, EyeOff } from "lucide-react";
 import { login } from "@/hooks/useAuth";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import cybaemLogo from "@/assets/cybaem-logo-full.png";
