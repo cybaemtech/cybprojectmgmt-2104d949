@@ -567,6 +567,44 @@ export const workItemStore = {
     }
   },
 
+  /** Async save that awaits the Supabase insert and returns the item with the real DB ID */
+  saveAsync: async (item: Partial<WorkItem> & { title: string; projectId: number; type: string }): Promise<WorkItem> => {
+    const authUser = getLocalUser();
+    const now = new Date().toISOString();
+    const project = projectStore.get(item.projectId);
+    const row = workItemToRow(item);
+    row.created_by_name = row.created_by_name ?? authUser.fullName;
+    row.created_by_email = row.created_by_email ?? authUser.email;
+
+    if (item.id) {
+      // Update
+      row.updated_at = now;
+      const { data, error } = await supabase.from("work_items").update(row).eq("id", item.id).select("*, projects(key, name)").single();
+      if (error) { console.error("[workItemStore.saveAsync] update error:", error); throw error; }
+      const mapped = mapWorkItem(data);
+      const idx = _workItems.findIndex((w) => w.id === item.id);
+      if (idx >= 0) _workItems[idx] = mapped;
+      notifyChange();
+      return mapped;
+    } else {
+      // Insert
+      if (!row.external_id) delete row.external_id;
+      const { data, error } = await supabase.from("work_items").insert(row).select("*, projects(key, name)").single();
+      if (error) { console.error("[workItemStore.saveAsync] insert error:", error); throw error; }
+      // Auto-set external_id
+      const extId = data.external_id || `${data.projects?.key || "WI"}-${data.id}`;
+      if (!data.external_id) {
+        await supabase.from("work_items").update({ external_id: extId }).eq("id", data.id);
+        data.external_id = extId;
+      }
+      const mapped = mapWorkItem(data);
+      _workItems.unshift(mapped);
+      notifyChange();
+      console.log("[workItemStore.saveAsync] Saved item:", mapped.id, mapped.externalId, mapped.type, mapped.title);
+      return mapped;
+    }
+  },
+
   update: (id: number, updates: Partial<WorkItem>): WorkItem | undefined => {
     const idx = _workItems.findIndex((w) => w.id === id);
     if (idx < 0) return undefined;
