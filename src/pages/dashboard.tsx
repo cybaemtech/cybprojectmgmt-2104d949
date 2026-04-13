@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, AlertCircle, BarChart3, Calendar, Clock, Target, TrendingUp, Users, CheckCircle, AlertTriangle, Bug, Zap, Database } from "lucide-react";
+import { Loader2, AlertCircle, BarChart3, Calendar, Clock, Target, TrendingUp, Users, CheckCircle, AlertTriangle, Bug, Zap } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
