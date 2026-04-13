@@ -6,7 +6,7 @@
  * On app boot the cache is populated from Supabase.
  */
 import { Project, Team, WorkItem, User, TeamMember } from "@/types/schema";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseCustom as supabase } from "@/lib/supabase-custom";
 
 // ── In-memory caches ────────────────────────────────────────────────
 let _projects: Project[] = [];

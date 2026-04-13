@@ -3,7 +3,7 @@
  * Mirrors the local-store.ts API but reads/writes from Supabase.
  * All functions are async — consumer files must await them.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseCustom as supabase } from "@/lib/supabase-custom";
 import type { Project, Team, WorkItem, User, TeamMember } from "@/types/schema";
 
 // ── Helper: map snake_case DB row → camelCase app type ──────────────
