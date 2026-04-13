@@ -713,28 +713,6 @@ export default function Projects() {
                     </tbody>
                   </table>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredProjects.map((project: Project) => {
-                    const creator = users.find((user: User) => user.id === project.createdBy);
-                    const team = teams.find((team: Team) => team.id === project.teamId);
-                    const teamMemberIds = project.teamId ? teamMembersOf(project.teamId) : [];
-                    const memberCount = teamMemberIds.length;
-                    const projectItems = allWorkItems.filter(item => item.projectId === project.id);
-                    const stats = calculateProjectStats(projectItems);
-                    return (
-                      <ProjectCard
-                        key={project.id}
-                        project={project}
-                        creator={creator}
-                        team={team}
-                        stats={stats}
-                        memberCount={memberCount}
-                        teamMemberIds={teamMemberIds}
-                      />
-                    );
-                  })}
-                </div>
               )
             )}
           </div>
