@@ -7,6 +7,7 @@
  */
 import { Project, Team, WorkItem, User, TeamMember } from "@/types/schema";
 import { supabaseCustom as supabase } from "@/lib/supabase-custom";
+import { DEMO_USER, DEMO_USERS, DEMO_TEAMS, DEMO_TEAM_MEMBERS, DEMO_PROJECTS, DEMO_WORK_ITEMS } from "@/lib/demo-data";
 
 // ── In-memory caches ────────────────────────────────────────────────
 let _projects: Project[] = [];
@@ -209,6 +210,20 @@ let _bootPromise: Promise<void> | null = null;
 export function initStore(): Promise<void> {
   if (_bootPromise) return _bootPromise;
   _bootPromise = (async () => {
+    // Check if we're in demo mode – load static demo data instead of hitting Supabase
+    const isDemoMode = sessionStorage.getItem("demo-mode") === "true";
+    if (isDemoMode) {
+      _projects = [...DEMO_PROJECTS];
+      _teams = [...DEMO_TEAMS];
+      _users = [...DEMO_USERS];
+      _teamMembers = [...DEMO_TEAM_MEMBERS];
+      _workItems = [...DEMO_WORK_ITEMS];
+      _initialised = true;
+      console.log(`[store] Loaded DEMO data: ${_projects.length} projects, ${_teams.length} teams, ${_users.length} users, ${_workItems.length} work items`);
+      notifyChange();
+      return;
+    }
+
     try {
       const [projectsRes, teamsRes, usersRes, teamMembersRes, workItemsRes] = await Promise.all([
         supabase.from("projects").select("*").order("created_at", { ascending: false }),
@@ -670,6 +685,10 @@ export const categoryStore = {
 
 // ── Auth user helper ────────────────────────────────────────────────
 export function getLocalUser(): User {
+  // In demo mode, return the demo user
+  const isDemoMode = sessionStorage.getItem("demo-mode") === "true";
+  if (isDemoMode) return DEMO_USER;
+
   try {
     const stored = localStorage.getItem("supabase-user-cache");
     if (stored) return JSON.parse(stored);
