@@ -685,6 +685,10 @@ export const categoryStore = {
 
 // ── Auth user helper ────────────────────────────────────────────────
 export function getLocalUser(): User {
+  // In demo mode, return the demo user
+  const isDemoMode = sessionStorage.getItem("demo-mode") === "true";
+  if (isDemoMode) return DEMO_USER;
+
   try {
     const stored = localStorage.getItem("supabase-user-cache");
     if (stored) return JSON.parse(stored);
