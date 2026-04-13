@@ -39,6 +39,7 @@ interface TemplateTaskOption {
   title: string;
   itemOrder: number;
   isActive: boolean;
+  estimatedHours?: number;
 }
 function getTemplatesFromStorage(): TemplateOption[] {
   try { return JSON.parse(localStorage.getItem("user-templates") || "[]"); } catch { return []; }
@@ -265,6 +266,23 @@ export function CreateItemModal({
   const watchedStatus = form.watch("status");
   const watchedStartDate = form.watch("startDate");
   const watchedEndDate = form.watch("endDate");
+  const watchedAutoCreate = form.watch("autoCreateTemplateTasks");
+
+  // Compute the sum of template task hours for auto-create mode
+  const selectedTemplateTotalHours = selectedTemplateId
+    ? availableTemplateTasks
+        .filter(t => t.templateId === selectedTemplateId && t.isActive)
+        .reduce((sum, t) => sum + (t.estimatedHours || 0), 0)
+    : 0;
+
+  // Auto-set estimate from template hours when auto-create is on
+  useEffect(() => {
+    if (watchedAutoCreate && selectedTemplateId && (watchedType === 'FEATURE' || watchedType === 'STORY')) {
+      if (selectedTemplateTotalHours > 0) {
+        form.setValue("estimate", selectedTemplateTotalHours.toString());
+      }
+    }
+  }, [watchedAutoCreate, selectedTemplateId, selectedTemplateTotalHours, watchedType, form]);
 
   // Calculate working days (Mon-Fri) between two dates
   const calculateWorkingHours = useCallback((start: string | null | undefined, end: string | null | undefined): string => {
@@ -282,13 +300,13 @@ export function CreateItemModal({
     return (workingDays * 9).toString();
   }, []);
 
-  // Auto-calculate estimated hours for FEATURE and STORY when dates change
+  // Auto-calculate estimated hours for FEATURE and STORY when dates change (only when NOT auto-creating)
   useEffect(() => {
-    if ((watchedType === 'FEATURE' || watchedType === 'STORY') && watchedStartDate && watchedEndDate) {
+    if ((watchedType === 'FEATURE' || watchedType === 'STORY') && !watchedAutoCreate && watchedStartDate && watchedEndDate) {
       const hours = calculateWorkingHours(watchedStartDate, watchedEndDate);
       if (hours) form.setValue("estimate", hours);
     }
-  }, [watchedStartDate, watchedEndDate, watchedType, calculateWorkingHours, form]);
+  }, [watchedStartDate, watchedEndDate, watchedType, watchedAutoCreate, calculateWorkingHours, form]);
 
   useEffect(() => {
     if (isOpen) {
