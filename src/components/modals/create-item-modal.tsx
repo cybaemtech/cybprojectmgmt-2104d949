@@ -425,7 +425,7 @@ export function CreateItemModal({
           });
         }
 
-        const taskCount = templateTasks.length;
+        const featureTaskCount = templateTasks.length;
         toast({
           title: "Automation Complete",
           description: `Created: Epic → Client Requirement → Story "Initial Requirement Gathering" → ${taskCount} task${taskCount !== 1 ? 's' : ''} from template.`,
