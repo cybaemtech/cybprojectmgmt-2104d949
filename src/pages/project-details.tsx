@@ -192,7 +192,8 @@ export default function ProjectDetails() {
 
 
   // New project view tab state
-  const [projectView, setProjectView] = useState<'overview' | 'board' | 'backlog' | 'settings'>('overview');
+  const [projectView, setProjectView] = useState<'overview' | 'board' | 'backlog' | 'documentation' | 'settings'>('overview');
+  const [docSearchTerm, setDocSearchTerm] = useState('');
 
   // Client info visibility toggle (persisted per project in localStorage)
   const [clientInfoVisible, setClientInfoVisible] = useState<boolean>(() => {
@@ -287,7 +288,7 @@ export default function ProjectDetails() {
 
   // Auto-filter all views to show only current user's assigned items
   useEffect(() => {
-    if (projectView !== 'board' && projectView !== 'backlog') {
+    if (projectView !== 'board' && projectView !== 'backlog' && projectView !== 'documentation') {
       setFilterType([]);
       setFilterStatus([]);
       setFilterPriority([]);
@@ -1446,6 +1447,24 @@ export default function ProjectDetails() {
                 </a>
                 <a
                   href="#"
+                  onClick={(e) => { e.preventDefault(); setProjectView('documentation'); }}
+                  className={`border-b-2 ${projectView === 'documentation'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-neutral-600 hover:text-neutral-900'
+                    } font-medium py-3 flex items-center gap-1.5`}
+                >
+                  Documentation
+                  {(() => {
+                    const docCount = workItems?.filter(item =>
+                      item.pdfUploadBlob || item.pdfUploadPath || item.screenshotBlob || item.screenshotPath
+                    ).length || 0;
+                    return docCount > 0 ? (
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0">{docCount}</Badge>
+                    ) : null;
+                  })()}
+                </a>
+                <a
+                  href="#"
                   onClick={(e) => { e.preventDefault(); setProjectView('settings'); }}
                   className={`border-b-2 ${projectView === 'settings'
                     ? 'border-primary text-primary'
@@ -1466,7 +1485,7 @@ export default function ProjectDetails() {
                 
               </div>
               {/* Only show Create Item button on specific tabs */}
-              {projectView !== 'overview' && projectView !== 'settings' && (
+              {projectView !== 'overview' && projectView !== 'settings' && projectView !== 'documentation' && (
                 <div className="flex space-x-3">
                   <Button variant="outline" onClick={handleWorkItemsUpdate}>
                     <RefreshCw className="mr-2 h-4 w-4" />
@@ -2684,6 +2703,224 @@ export default function ProjectDetails() {
                 </div>
               </div>
             )}
+
+            {/* Documentation Tab Content */}
+            {projectView === 'documentation' && (() => {
+              // Aggregate all documents from work items
+              const documents = (workItems || []).flatMap(item => {
+                const docs: Array<{
+                  id: string;
+                  name: string;
+                  type: 'PDF' | 'Screenshot';
+                  workItemTitle: string;
+                  workItemExternalId: string;
+                  workItemType: string;
+                  uploadedBy: string;
+                  dateAttached: string;
+                  blob: string | null;
+                  path: string | null;
+                }> = [];
+
+                if (item.pdfUploadBlob || item.pdfUploadPath) {
+                  const fileName = item.pdfUploadPath
+                    ? item.pdfUploadPath.split('/').pop() || 'Document.pdf'
+                    : 'Uploaded Document.pdf';
+                  docs.push({
+                    id: `pdf-${item.id}`,
+                    name: fileName,
+                    type: 'PDF',
+                    workItemTitle: item.title,
+                    workItemExternalId: item.externalId || `#${item.id}`,
+                    workItemType: item.type,
+                    uploadedBy: item.createdByName || item.createdByEmail || 'Unknown',
+                    dateAttached: item.updatedAt as string || item.createdAt as string,
+                    blob: item.pdfUploadBlob || null,
+                    path: item.pdfUploadPath || null,
+                  });
+                }
+
+                if (item.screenshotBlob || item.screenshotPath) {
+                  const fileName = item.screenshotPath
+                    ? item.screenshotPath.split('/').pop() || 'Screenshot.png'
+                    : 'Screenshot.png';
+                  docs.push({
+                    id: `screenshot-${item.id}`,
+                    name: fileName,
+                    type: 'Screenshot',
+                    workItemTitle: item.title,
+                    workItemExternalId: item.externalId || `#${item.id}`,
+                    workItemType: item.type,
+                    uploadedBy: item.createdByName || item.createdByEmail || 'Unknown',
+                    dateAttached: item.updatedAt as string || item.createdAt as string,
+                    blob: item.screenshotBlob || item.screenshot || null,
+                    path: item.screenshotPath || null,
+                  });
+                }
+
+                return docs;
+              });
+
+              const filteredDocs = docSearchTerm
+                ? documents.filter(doc =>
+                    doc.name.toLowerCase().includes(docSearchTerm.toLowerCase()) ||
+                    doc.workItemTitle.toLowerCase().includes(docSearchTerm.toLowerCase()) ||
+                    doc.workItemExternalId.toLowerCase().includes(docSearchTerm.toLowerCase())
+                  )
+                : documents;
+
+              const typeLabel = (type: string) => {
+                switch (type) {
+                  case 'FEATURE': return 'Client Requirement';
+                  case 'STORY': return 'Change Request';
+                  case 'BUG': return 'Bug Report';
+                  case 'TASK': return 'Task';
+                  case 'EPIC': return 'Epic';
+                  default: return type;
+                }
+              };
+
+              const typeBadgeColor = (type: string) => {
+                switch (type) {
+                  case 'FEATURE': return 'bg-blue-100 text-blue-800';
+                  case 'STORY': return 'bg-amber-100 text-amber-800';
+                  case 'BUG': return 'bg-red-100 text-red-800';
+                  case 'TASK': return 'bg-green-100 text-green-800';
+                  case 'EPIC': return 'bg-purple-100 text-purple-800';
+                  default: return 'bg-muted text-muted-foreground';
+                }
+              };
+
+              const handleViewDocument = (doc: typeof documents[0]) => {
+                if (doc.blob) {
+                  // Open blob data in new tab
+                  if (doc.blob.startsWith('data:')) {
+                    const newTab = window.open();
+                    if (newTab) {
+                      if (doc.type === 'PDF') {
+                        newTab.document.write(`<iframe src="${doc.blob}" width="100%" height="100%" style="border:none;position:absolute;top:0;left:0;right:0;bottom:0;"></iframe>`);
+                      } else {
+                        newTab.document.write(`<img src="${doc.blob}" style="max-width:100%;height:auto;" />`);
+                      }
+                    }
+                  } else {
+                    window.open(doc.blob, '_blank');
+                  }
+                } else if (doc.path) {
+                  window.open(doc.path, '_blank');
+                }
+              };
+
+              return (
+                <div className="bg-white border rounded-md shadow-sm">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h3 className="text-lg font-medium">Project Documentation</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          All documents attached to work items in this project — for audit and reference.
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-sm">
+                        {documents.length} document{documents.length !== 1 ? 's' : ''}
+                      </Badge>
+                    </div>
+
+                    {/* Search */}
+                    <div className="mb-4">
+                      <Input
+                        placeholder="Search by document name, work item title or ID..."
+                        value={docSearchTerm}
+                        onChange={(e) => setDocSearchTerm(e.target.value)}
+                        className="max-w-md"
+                      />
+                    </div>
+
+                    {filteredDocs.length === 0 ? (
+                      <div className="text-center py-16 border rounded-md bg-muted/20">
+                        <Layers className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+                        <h4 className="text-lg font-medium text-muted-foreground mb-2">
+                          {docSearchTerm ? 'No documents match your search' : 'No Documents Yet'}
+                        </h4>
+                        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                          {docSearchTerm
+                            ? 'Try adjusting your search terms.'
+                            : 'Documents attached to Client Requirements, Change Requests, and Bug Reports will appear here automatically.'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="border rounded-md overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-muted/50 border-b">
+                              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Document</th>
+                              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Work Item</th>
+                              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Type</th>
+                              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Uploaded By</th>
+                              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Date Attached</th>
+                              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredDocs.map((doc) => (
+                              <tr key={doc.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-8 h-8 rounded flex items-center justify-center text-xs font-bold ${
+                                      doc.type === 'PDF'
+                                        ? 'bg-red-100 text-red-700'
+                                        : 'bg-blue-100 text-blue-700'
+                                    }`}>
+                                      {doc.type === 'PDF' ? 'PDF' : 'IMG'}
+                                    </div>
+                                    <span className="font-medium truncate max-w-[200px]" title={doc.name}>
+                                      {doc.name}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex flex-col">
+                                    <span className="text-xs text-muted-foreground">{doc.workItemExternalId}</span>
+                                    <span className="truncate max-w-[200px]" title={doc.workItemTitle}>
+                                      {doc.workItemTitle}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${typeBadgeColor(doc.workItemType)}`}>
+                                    {typeLabel(doc.workItemType)}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-muted-foreground">
+                                  {doc.uploadedBy}
+                                </td>
+                                <td className="px-4 py-3 text-muted-foreground">
+                                  {new Date(doc.dateAttached).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                  })}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleViewDocument(doc)}
+                                    disabled={!doc.blob && !doc.path}
+                                    className="text-primary hover:text-primary/80"
+                                  >
+                                    View
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Settings Tab Content */}
             {projectView === 'settings' && (
