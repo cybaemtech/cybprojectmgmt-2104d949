@@ -388,7 +388,7 @@ export function CreateItemModal({
       }
 
       // ── FEATURE automation chain ──────────────────────────────────────
-      const creatorId = currentUser?.id || currentLocalUser?.id || null;
+      const creatorId = currentUser?.id || null;
 
       if (data.type === 'FEATURE' && data.autoCreateTemplateTasks && selectedTemplateId) {
         const projectName = selectedProject?.name || "Project";
