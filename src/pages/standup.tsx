@@ -42,6 +42,7 @@ export default function DailyStandup() {
     window.addEventListener("store-change", refresh);
     return () => window.removeEventListener("store-change", refresh);
   }, []);
+  const isAdminOrScrum = currentUser?.role === "ADMIN" || currentUser?.role === "SCRUM_MASTER";
 
   const totals = React.useMemo(() => {
     const totalItems = allWorkItems.length;
