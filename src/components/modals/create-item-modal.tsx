@@ -39,6 +39,7 @@ interface TemplateTaskOption {
   title: string;
   itemOrder: number;
   isActive: boolean;
+  estimatedHours?: number;
 }
 function getTemplatesFromStorage(): TemplateOption[] {
   try { return JSON.parse(localStorage.getItem("user-templates") || "[]"); } catch { return []; }
@@ -265,6 +266,23 @@ export function CreateItemModal({
   const watchedStatus = form.watch("status");
   const watchedStartDate = form.watch("startDate");
   const watchedEndDate = form.watch("endDate");
+  const watchedAutoCreate = form.watch("autoCreateTemplateTasks");
+
+  // Compute the sum of template task hours for auto-create mode
+  const selectedTemplateTotalHours = selectedTemplateId
+    ? availableTemplateTasks
+        .filter(t => t.templateId === selectedTemplateId && t.isActive)
+        .reduce((sum, t) => sum + (t.estimatedHours || 0), 0)
+    : 0;
+
+  // Auto-set estimate from template hours when auto-create is on
+  useEffect(() => {
+    if (watchedAutoCreate && selectedTemplateId && (watchedType === 'FEATURE' || watchedType === 'STORY')) {
+      if (selectedTemplateTotalHours > 0) {
+        form.setValue("estimate", selectedTemplateTotalHours.toString());
+      }
+    }
+  }, [watchedAutoCreate, selectedTemplateId, selectedTemplateTotalHours, watchedType, form]);
 
   // Calculate working days (Mon-Fri) between two dates
   const calculateWorkingHours = useCallback((start: string | null | undefined, end: string | null | undefined): string => {
@@ -282,13 +300,13 @@ export function CreateItemModal({
     return (workingDays * 9).toString();
   }, []);
 
-  // Auto-calculate estimated hours for FEATURE and STORY when dates change
+  // Auto-calculate estimated hours for FEATURE and STORY when dates change (only when NOT auto-creating)
   useEffect(() => {
-    if ((watchedType === 'FEATURE' || watchedType === 'STORY') && watchedStartDate && watchedEndDate) {
+    if ((watchedType === 'FEATURE' || watchedType === 'STORY') && !watchedAutoCreate && watchedStartDate && watchedEndDate) {
       const hours = calculateWorkingHours(watchedStartDate, watchedEndDate);
       if (hours) form.setValue("estimate", hours);
     }
-  }, [watchedStartDate, watchedEndDate, watchedType, calculateWorkingHours, form]);
+  }, [watchedStartDate, watchedEndDate, watchedType, watchedAutoCreate, calculateWorkingHours, form]);
 
   useEffect(() => {
     if (isOpen) {
@@ -405,13 +423,6 @@ export function CreateItemModal({
           .filter(t => t.templateId === selectedTemplateId && t.isActive)
           .sort((a, b) => (a.itemOrder || 0) - (b.itemOrder || 0));
 
-        // Split estimated hours evenly across tasks
-        const totalEstimate = parseFloat(data.estimate || '0');
-        const taskCount = templateTasks.length;
-        const perTaskEstimate = taskCount > 0 && totalEstimate > 0
-          ? Math.round((totalEstimate / taskCount) * 10) / 10
-          : 9;
-
         for (const tTask of templateTasks) {
           await workItemStore.saveAsync({
             title: tTask.title,
@@ -421,7 +432,7 @@ export function CreateItemModal({
             priority: 'MEDIUM',
             parentId: story.id,
             assigneeId: creatorId,
-            estimate: perTaskEstimate.toString(),
+            estimate: tTask.estimatedHours ? tTask.estimatedHours.toString() : undefined,
           });
         }
 
@@ -449,13 +460,6 @@ export function CreateItemModal({
           .filter(t => t.templateId === selectedTemplateId && t.isActive)
           .sort((a, b) => (a.itemOrder || 0) - (b.itemOrder || 0));
 
-        // Split estimated hours evenly across tasks
-        const totalEstimate = parseFloat(data.estimate || '0');
-        const taskCount = templateTasks.length;
-        const perTaskEstimate = taskCount > 0 && totalEstimate > 0
-          ? Math.round((totalEstimate / taskCount) * 10) / 10
-          : 0;
-
         for (const tTask of templateTasks) {
           await workItemStore.saveAsync({
             title: tTask.title,
@@ -465,7 +469,7 @@ export function CreateItemModal({
             parentId: story.id,
             projectId: submitData.projectId,
             assigneeId: creatorId,
-            estimate: perTaskEstimate > 0 ? perTaskEstimate.toString() : undefined,
+            estimate: tTask.estimatedHours ? tTask.estimatedHours.toString() : undefined,
           });
         }
 
@@ -838,7 +842,7 @@ export function CreateItemModal({
                                   {availableTemplateTasks
                                     .filter(t => t.templateId === selectedTemplateId && t.isActive)
                                     .map(t => (
-                                      <li key={t.id}>{t.title}</li>
+                                      <li key={t.id}>{t.title} {t.estimatedHours ? <span className="text-muted-foreground/70">({t.estimatedHours}h)</span> : null}</li>
                                     ))}
                                 </ul>
                                 {availableTemplateTasks.filter(t => t.templateId === selectedTemplateId && t.isActive).length === 0 && (
@@ -952,7 +956,7 @@ export function CreateItemModal({
                                   {availableTemplateTasks
                                     .filter(t => t.templateId === selectedTemplateId && t.isActive)
                                     .map(t => (
-                                      <li key={t.id}>{t.title}</li>
+                                      <li key={t.id}>{t.title} {t.estimatedHours ? <span className="text-muted-foreground/70">({t.estimatedHours}h)</span> : null}</li>
                                     ))}
                                 </ul>
                                 {availableTemplateTasks.filter(t => t.templateId === selectedTemplateId && t.isActive).length === 0 && (
@@ -1192,23 +1196,36 @@ export function CreateItemModal({
                   )}
 
 
-                  {/* For FEATURE & STORY: Dates first, then Estimate (auto-calculated) */}
+                  {/* For FEATURE & STORY: Dates (hidden when auto-create on), then Estimate */}
                   {(watchedType === 'FEATURE' || watchedType === 'STORY') && (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="startDate" render={({ field }) => (
-                          <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
-                        )} />
-                        <FormField control={form.control} name="endDate" render={({ field }) => (
-                          <FormItem><FormLabel>Scheduled End Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
-                        )} />
-                      </div>
+                      {!watchedAutoCreate && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField control={form.control} name="startDate" render={({ field }) => (
+                            <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                          )} />
+                          <FormField control={form.control} name="endDate" render={({ field }) => (
+                            <FormItem><FormLabel>Scheduled End Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                          )} />
+                        </div>
+                      )}
                       <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="estimate" render={({ field }) => (
                           <FormItem>
                             <FormLabel>Estimated Hours <span className="text-destructive">*</span></FormLabel>
-                            <FormControl><Input {...field} placeholder="Auto-calculated from dates" readOnly className="bg-muted" /></FormControl>
-                            <p className="text-xs text-muted-foreground">Auto-calculated: Working days (Mon–Fri) × 9 hrs</p>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder={watchedAutoCreate ? "Sum of template task hours" : "Auto-calculated from dates"}
+                                readOnly
+                                className="bg-muted"
+                              />
+                            </FormControl>
+                            <p className="text-xs text-muted-foreground">
+                              {watchedAutoCreate
+                                ? `Auto-summed from template task hours (${selectedTemplateTotalHours}h)`
+                                : "Auto-calculated: Working days (Mon–Fri) × 9 hrs"}
+                            </p>
                             <FormMessage />
                           </FormItem>
                         )} />

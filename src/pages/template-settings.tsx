@@ -39,6 +39,7 @@ interface TemplateTask {
   title: string;
   itemOrder: number;
   isActive: boolean;
+  estimatedHours?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -86,16 +87,20 @@ function loadSamples(userId: number) {
   const maxTaskId = existingTasks.reduce((m, t) => Math.max(m, t.id), 0);
   let taskId = maxTaskId;
 
+  const reqGatheringHours = [4, 8, 6, 8, 4, 2];
+  const devChecklistHours = [2, 8, 16, 16, 8, 4, 2];
+  const qaTestingHours = [4, 8, 8, 6, 4, 4, 2];
+
   const sampleTasks: TemplateTask[] = [
     // Template 1 - Requirement Gathering
     ...(["Client Requirement Call", "Prepare Requirement Document", "Feasibility Analysis", "Design Review / Wireframes", "Estimation & Timeline", "Client Sign-Off"]
-      .map((title, i) => ({ id: ++taskId, templateId: sampleTemplates[0].id, title, itemOrder: i + 1, isActive: true, createdAt: now, updatedAt: now }))),
+      .map((title, i) => ({ id: ++taskId, templateId: sampleTemplates[0].id, title, itemOrder: i + 1, isActive: true, estimatedHours: reqGatheringHours[i], createdAt: now, updatedAt: now }))),
     // Template 2 - Developer Checklist
     ...(["Setup Development Branch", "Database Schema Changes", "Backend API Implementation", "Frontend UI Development", "Unit Tests", "Code Review", "Deploy to Staging"]
-      .map((title, i) => ({ id: ++taskId, templateId: sampleTemplates[1].id, title, itemOrder: i + 1, isActive: true, createdAt: now, updatedAt: now }))),
+      .map((title, i) => ({ id: ++taskId, templateId: sampleTemplates[1].id, title, itemOrder: i + 1, isActive: true, estimatedHours: devChecklistHours[i], createdAt: now, updatedAt: now }))),
     // Template 3 - QA & Testing
     ...(["Create Test Plan", "Write Test Cases", "Functional Testing", "Regression Testing", "Performance Testing", "Bug Reporting", "Sign-Off"]
-      .map((title, i) => ({ id: ++taskId, templateId: sampleTemplates[2].id, title, itemOrder: i + 1, isActive: true, createdAt: now, updatedAt: now }))),
+      .map((title, i) => ({ id: ++taskId, templateId: sampleTemplates[2].id, title, itemOrder: i + 1, isActive: true, estimatedHours: qaTestingHours[i], createdAt: now, updatedAt: now }))),
   ];
 
   saveTemplates([...getTemplates(), ...sampleTemplates]);
@@ -299,6 +304,21 @@ export default function TemplateSettings() {
             <p className={`text-sm font-medium truncate ${!task.isActive ? 'line-through text-muted-foreground' : ''}`}>{task.title}</p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Input
+                type="number"
+                min="0"
+                step="0.5"
+                value={task.estimatedHours ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value ? parseFloat(e.target.value) : undefined;
+                  updateTask(task.id, { estimatedHours: val });
+                }}
+                placeholder="0"
+                className="h-7 w-16 text-xs text-center px-1"
+              />
+              <span className="text-xs text-muted-foreground">hrs</span>
+            </div>
             <Switch checked={task.isActive} onCheckedChange={() => handleToggleActive(task)} />
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditTaskTitle(task.title); setEditTaskDialog(task); }}>
               <Pencil className="h-3.5 w-3.5" />
@@ -325,6 +345,7 @@ export default function TemplateSettings() {
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
               <Badge variant="secondary">{tplTasks.filter(t => t.isActive).length} active</Badge>
+              <Badge variant="outline" className="ml-1">{tplTasks.filter(t => t.isActive).reduce((sum, t) => sum + (t.estimatedHours || 0), 0)}h total</Badge>
             </div>
           </div>
            <div className="flex items-center justify-between mt-1">
