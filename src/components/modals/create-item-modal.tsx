@@ -197,10 +197,36 @@ export function CreateItemModal({
   const [selectedAttachmentFile, setSelectedAttachmentFile] = useState<File | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
 
-  // Load available templates for the current user
-  const currentLocalUser = getLocalUser();
-  const availableTemplates = getTemplatesFromStorage().filter(t => t.ownerId === currentLocalUser?.id);
-  const availableTemplateTasks = getTemplateTasksFromStorage();
+  // Load available templates from DB for the current user
+  const [availableTemplates, setAvailableTemplates] = useState<TemplateOption[]>([]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    (async () => {
+      const { data: userData } = await supabaseTemplateClient.auth.getUser();
+      const uid = userData?.user?.id;
+      if (!uid) return;
+      const { data } = await supabaseTemplateClient
+        .from("work_item_templates")
+        .select("*")
+        .eq("created_by", uid);
+      if (data) {
+        const mapped = data.map((row: any) => ({
+          id: row.id,
+          name: row.name,
+          createdBy: row.created_by,
+          isLocked: row.is_locked ?? false,
+          tasks: Array.isArray(row.tasks) ? row.tasks : [],
+        }));
+        setAvailableTemplates(mapped);
+      }
+    })();
+  }, [isOpen]);
+
+  // Flatten tasks for backward-compat usage
+  const availableTemplateTasks = availableTemplates.flatMap(tpl =>
+    (tpl.tasks || []).map(t => ({ ...t, templateId: tpl.id }))
+  );
 
   // Default to "Requirement Gathering" template when modal opens
   useEffect(() => {
