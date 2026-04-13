@@ -554,7 +554,7 @@ export const workItemStore = {
           // Auto-set external_id
           const extId = data.external_id || `${data.projects?.key || "WI"}-${data.id}`;
           if (!data.external_id) {
-            supabase.from("work_items").update({ external_id: extId }).eq("id", data.id);
+            supabase.from("work_items").update({ external_id: extId } as any).eq("id", data.id);
             data.external_id = extId;
           }
           const idx = _workItems.findIndex((w) => w.id === tempId);
@@ -594,7 +594,7 @@ export const workItemStore = {
       // Auto-set external_id
       const extId = data.external_id || `${data.projects?.key || "WI"}-${data.id}`;
       if (!data.external_id) {
-        await supabase.from("work_items").update({ external_id: extId }).eq("id", data.id);
+        await supabase.from("work_items").update({ external_id: extId } as any).eq("id", data.id);
         data.external_id = extId;
       }
       const mapped = mapWorkItem(data);
