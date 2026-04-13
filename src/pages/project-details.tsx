@@ -2795,9 +2795,19 @@ export default function ProjectDetails() {
               };
 
               const handleViewDocument = (doc: typeof documents[0]) => {
+                const triggerDownload = (url: string, fileName: string) => {
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = fileName;
+                  link.style.display = 'none';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                };
+
                 if (doc.blob) {
-                  // Open blob data in new tab
                   if (doc.blob.startsWith('data:')) {
+                    // Try opening in new tab first, fall back to download
                     const newTab = window.open();
                     if (newTab) {
                       if (doc.type === 'PDF') {
@@ -2805,12 +2815,21 @@ export default function ProjectDetails() {
                       } else {
                         newTab.document.write(`<img src="${doc.blob}" style="max-width:100%;height:auto;" />`);
                       }
+                    } else {
+                      // Popup blocked — trigger download
+                      triggerDownload(doc.blob, doc.name);
                     }
                   } else {
-                    window.open(doc.blob, '_blank');
+                    const newTab = window.open(doc.blob, '_blank');
+                    if (!newTab) {
+                      triggerDownload(doc.blob, doc.name);
+                    }
                   }
                 } else if (doc.path) {
-                  window.open(doc.path, '_blank');
+                  const newTab = window.open(doc.path, '_blank');
+                  if (!newTab) {
+                    triggerDownload(doc.path, doc.name);
+                  }
                 }
               };
 
