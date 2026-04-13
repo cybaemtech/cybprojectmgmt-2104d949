@@ -439,7 +439,7 @@ export default function DailyStandup() {
                           </tr>
                         )) : (
                           <tr>
-                            <td colSpan={6} className="px-2 py-2 text-center text-xs text-neutral-500 italic">No items found for this project.</td>
+                            <td colSpan={7} className="px-2 py-2 text-center text-xs text-neutral-500 italic">No items found for this project.</td>
                           </tr>
                         )}
                       </tbody>
