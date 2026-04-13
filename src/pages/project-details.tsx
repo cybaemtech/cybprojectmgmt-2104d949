@@ -2200,7 +2200,7 @@ export default function ProjectDetails() {
                                         </div>
                                       </div>
 
-                                      {/* Quick action buttons for EPIC items - Add Feature */}
+                                      {/* Quick action buttons for EPIC items - Add Feature + Delete */}
                                       {item.type === 'EPIC' && currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'SCRUM_MASTER') && (
                                         <div className="flex gap-1 ml-auto">
                                           <button
@@ -2213,10 +2213,22 @@ export default function ProjectDetails() {
                                           >
                                             +F
                                           </button>
+                                          {currentUser.role === 'ADMIN' && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                openModal("deleteItem", { workItem: item });
+                                              }}
+                                              className="w-6 h-6 text-xs bg-red-50 text-red-600 hover:bg-red-100 rounded border border-red-200 transition-colors flex items-center justify-center"
+                                              title="Delete Epic and all children"
+                                            >
+                                              <Trash2 className="h-3 w-3" />
+                                            </button>
+                                          )}
                                         </div>
                                       )}
 
-                                      {/* Quick action buttons for FEATURE items - Add Story */}
+                                      {/* Quick action buttons for FEATURE items - Add Story + Delete */}
                                       {item.type === 'FEATURE' && currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'SCRUM_MASTER') && (
                                         <div className="flex gap-1 ml-auto">
                                           <button
@@ -2229,6 +2241,18 @@ export default function ProjectDetails() {
                                           >
                                             +S
                                           </button>
+                                          {currentUser.role === 'ADMIN' && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                openModal("deleteItem", { workItem: item });
+                                              }}
+                                              className="w-6 h-6 text-xs bg-red-50 text-red-600 hover:bg-red-100 rounded border border-red-200 transition-colors flex items-center justify-center"
+                                              title="Delete Feature and all children"
+                                            >
+                                              <Trash2 className="h-3 w-3" />
+                                            </button>
+                                          )}
                                         </div>
                                       )}
 

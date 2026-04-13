@@ -588,6 +588,33 @@ export const workItemStore = {
       if (error) console.error("[workItemStore.delete] error:", error);
     });
   },
+
+  /** Cascade delete: removes item and all descendants recursively */
+  deleteCascade: (id: number): number => {
+    // Collect all descendant IDs recursively
+    const idsToDelete = new Set<number>();
+    const collectChildren = (parentId: number) => {
+      idsToDelete.add(parentId);
+      _workItems
+        .filter((w) => w.parentId === parentId)
+        .forEach((child) => collectChildren(child.id));
+    };
+    collectChildren(id);
+
+    const count = idsToDelete.size;
+    _workItems = _workItems.filter((w) => !idsToDelete.has(w.id));
+    notifyChange();
+
+    // Delete from Supabase – children first (bottom-up) to respect FK constraints
+    const idArray = Array.from(idsToDelete);
+    // Supabase delete with .in() handles it; DB cascade or multiple deletes
+    supabase.from("work_items").delete().in("id", idArray).then(({ error }) => {
+      if (error) console.error("[workItemStore.deleteCascade] error:", error);
+    });
+
+    console.log(`[workItemStore.deleteCascade] Deleted ${count} items (root: ${id})`);
+    return count;
+  },
 };
 
 // ── Project Categories ──────────────────────────────────────────────
