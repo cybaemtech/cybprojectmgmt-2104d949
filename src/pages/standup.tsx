@@ -391,6 +391,7 @@ export default function DailyStandup() {
                           <th className="px-2 py-1 text-[9px] font-bold text-neutral-500 uppercase tracking-widest text-right w-20">Type</th>
                           <th className="px-2 py-1 text-[9px] font-bold text-neutral-500 uppercase tracking-widest text-right w-24">Priority</th>
                           <th className="px-2 py-1 text-[9px] font-bold text-neutral-500 uppercase tracking-widest text-right w-20">Est Hr</th>
+                          <th className="px-2 py-1 text-[9px] font-bold text-neutral-500 uppercase tracking-widest text-right w-20">Act Hr</th>
                           <th className="px-2 py-1 text-[9px] font-bold text-neutral-500 uppercase tracking-widest text-right w-24">Status</th>
                         </tr>
                       </thead>
