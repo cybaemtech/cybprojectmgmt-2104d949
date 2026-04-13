@@ -10,7 +10,7 @@ import { AuthenticatedLayout } from "@/components/layout/authenticated-layout";
 import { initStore } from "@/lib/local-store";
 
 import LoginPage from "@/pages/login";
-import Register from "@/pages/register";
+
 import Dashboard from "@/pages/dashboard";
 import Projects from "@/pages/projects";
 import ProjectDetails from "@/pages/project-details";
@@ -44,7 +44,7 @@ function AppRoutes() {
     if (isLoading) return;
 
     if (isUnauthenticated) {
-      if (!location.pathname.startsWith("/login") && !location.pathname.startsWith("/register")) {
+      if (!location.pathname.startsWith("/login")) {
         navigate("/login");
       }
     } else if (isAuthenticated && location.pathname === "/") {
@@ -66,7 +66,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<Register />} />
+      
       
       {/* Authenticated routes with shared layout */}
       <Route element={effectivelyAuthenticated ? <AuthenticatedLayout /> : <LoginPage />}>
