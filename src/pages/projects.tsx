@@ -168,8 +168,8 @@ export default function Projects() {
             {/* Project Information Section */}
            
 
-            {/* Status Filter Tabs + View Toggle */}
-            <div className="flex justify-between items-center mb-6">
+            {/* Status Filter Tabs */}
+            <div className="flex justify-between items-center mb-4">
               <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
               <Button
                 variant="ghost"
@@ -200,8 +200,49 @@ export default function Projects() {
                 </Button>
               )}
               </div>
-              
             </div>
+
+            {/* Filters Row */}
+            {statusFilter !== "dailyStandup" && (
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-neutral-500" />
+                  <span className="text-sm font-medium text-neutral-600">Filters:</span>
+                </div>
+                <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as any)}>
+                  <SelectTrigger className="w-[150px] h-8 text-sm">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Categories</SelectItem>
+                    <SelectItem value="CLIENT">Client</SelectItem>
+                    <SelectItem value="IN_HOUSE">In-House</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={projectStatusFilter} onValueChange={(v) => setProjectStatusFilter(v as any)}>
+                  <SelectTrigger className="w-[150px] h-8 text-sm">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Statuses</SelectItem>
+                    <SelectItem value="PLANNING">Planning</SelectItem>
+                    <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="COMPLETED">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+                {(categoryFilter !== "ALL" || projectStatusFilter !== "ALL") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setCategoryFilter("ALL"); setProjectStatusFilter("ALL"); }}
+                    className="text-xs h-8"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Clear
+                  </Button>
+                )}
+              </div>
+            )}
 
             {/* Daily Standup View */}
             {statusFilter === "dailyStandup" ? (
