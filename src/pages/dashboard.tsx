@@ -345,29 +345,80 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 {projectProgress.length > 0 ? (
-                  <div className="space-y-4">
-                    {projectProgress.map(progress => (
-                      <div key={progress.project.id} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-medium">{progress.project.name}</h4>
-                            <p className="text-sm text-gray-600">{progress.project.key}</p>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-sm font-medium">{progress.completionRate}%</span>
-                            <p className="text-xs text-gray-600">
-                              {progress.completedItems}/{progress.totalItems} items
-                            </p>
-                          </div>
-                        </div>
-                        <Progress value={progress.completionRate} className="h-2" />
-                        {progress.overdueItems > 0 && (
-                          <p className="text-xs text-red-600">
-                            {progress.overdueItems} overdue items
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                  <div className="space-y-6">
+                    {/* Client Projects */}
+                    {(() => {
+                      const clientProjects = projectProgress.filter(p => p.project.category === 'CLIENT');
+                      const inHouseProjects = projectProgress.filter(p => p.project.category !== 'CLIENT');
+                      return (
+                        <>
+                          {clientProjects.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Client</span>
+                                <div className="flex-1 h-px bg-neutral-200" />
+                              </div>
+                              <div className="space-y-4">
+                                {clientProjects.map(progress => (
+                                  <div key={progress.project.id} className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <h4 className="font-medium">{progress.project.name}</h4>
+                                        <p className="text-sm text-gray-600">{progress.project.key}</p>
+                                      </div>
+                                      <div className="text-right">
+                                        <span className="text-sm font-medium">{progress.completionRate}%</span>
+                                        <p className="text-xs text-gray-600">
+                                          {progress.completedItems}/{progress.totalItems} items
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <Progress value={progress.completionRate} className="h-2" />
+                                    {progress.overdueItems > 0 && (
+                                      <p className="text-xs text-red-600">
+                                        {progress.overdueItems} overdue items
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {inHouseProjects.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">In-House</span>
+                                <div className="flex-1 h-px bg-neutral-200" />
+                              </div>
+                              <div className="space-y-4">
+                                {inHouseProjects.map(progress => (
+                                  <div key={progress.project.id} className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <h4 className="font-medium">{progress.project.name}</h4>
+                                        <p className="text-sm text-gray-600">{progress.project.key}</p>
+                                      </div>
+                                      <div className="text-right">
+                                        <span className="text-sm font-medium">{progress.completionRate}%</span>
+                                        <p className="text-xs text-gray-600">
+                                          {progress.completedItems}/{progress.totalItems} items
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <Progress value={progress.completionRate} className="h-2" />
+                                    {progress.overdueItems > 0 && (
+                                      <p className="text-xs text-red-600">
+                                        {progress.overdueItems} overdue items
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 ) : (
                   <div className="text-center py-8">
