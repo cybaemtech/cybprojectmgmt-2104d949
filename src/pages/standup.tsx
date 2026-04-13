@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ export default function DailyStandup() {
   const [standupTypeFilter, setStandupTypeFilter] = useState<string[]>([]);
   const [standupAssigneeFilter, setStandupAssigneeFilter] = useState<string[]>([]);
   const [standupProjectFilter, setStandupProjectFilter] = useState<string[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>(() => {
     const now = new Date();
     return {
@@ -74,6 +75,7 @@ export default function DailyStandup() {
     standupTypeFilter.length > 0 ||
     standupAssigneeFilter.length > 0 ||
     standupProjectFilter.length > 0 ||
+    categoryFilter.length > 0 ||
     dateRange.from !== undefined ||
     dateRange.to !== undefined;
 
@@ -82,6 +84,7 @@ export default function DailyStandup() {
       project.key.toLowerCase().includes(searchQuery.toLowerCase());
     const isActive = project.status !== "ARCHIVED";
     if (!isActive || !matchesSearch) return false;
+    if (categoryFilter.length > 0 && !categoryFilter.includes(project.category || "IN_HOUSE")) return false;
     return true;
   });
 
@@ -91,6 +94,7 @@ export default function DailyStandup() {
     setStandupTypeFilter([]);
     setStandupAssigneeFilter([]);
     setStandupProjectFilter([]);
+    setCategoryFilter([]);
     setDateRange({ from: undefined, to: undefined });
   };
 
