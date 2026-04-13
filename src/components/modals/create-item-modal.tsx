@@ -459,6 +459,16 @@ export function CreateItemModal({
           title: "Automation Complete",
           description: `Created: Change Request "${data.title}" → ${taskCount} task${taskCount !== 1 ? 's' : ''} from template.`,
         });
+      } else if (data.type === 'BUG') {
+        // BUG: auto-attach to first available STORY if no parent selected
+        if (!submitData.parentId) {
+          const projectStories = workItems.filter(w => w.type === 'STORY' && w.projectId === submitData.projectId);
+          if (projectStories.length > 0) {
+            submitData.parentId = projectStories[0].id;
+          }
+        }
+        workItemStore.save(submitData);
+        toast({ title: "Bug created", description: `Bug "${data.title}" created successfully.` });
       } else {
         // Normal single item creation
         workItemStore.save(submitData);
