@@ -428,7 +428,7 @@ export function CreateItemModal({
         const featureTaskCount = templateTasks.length;
         toast({
           title: "Automation Complete",
-          description: `Created: Epic → Client Requirement → Story "Initial Requirement Gathering" → ${taskCount} task${taskCount !== 1 ? 's' : ''} from template.`,
+          description: `Created: Epic → Client Requirement → Story "Initial Requirement Gathering" → ${featureTaskCount} task${featureTaskCount !== 1 ? 's' : ''} from template.`,
         });
       } else if (data.type === 'STORY' && data.autoCreateTemplateTasks && selectedTemplateId) {
         // STORY (Change Request) automation: create STORY then auto-create TASKs from template
