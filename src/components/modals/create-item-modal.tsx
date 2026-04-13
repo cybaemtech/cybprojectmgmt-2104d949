@@ -27,26 +27,20 @@ import { apiRequest } from "@/lib/queryClient";
 import { workItemStore, getLocalUser } from "@/lib/local-store";
 import { apiGet } from "@/lib/api-config";
 
-// Template types & storage helpers (mirrored from template-settings)
-interface TemplateOption {
+// Template types
+interface TemplateTask {
   id: number;
-  name: string;
-  ownerId: number;
-  isLocked?: boolean;
-}
-interface TemplateTaskOption {
-  id: number;
-  templateId: number;
   title: string;
   itemOrder: number;
   isActive: boolean;
   estimatedHours?: number;
 }
-function getTemplatesFromStorage(): TemplateOption[] {
-  try { return JSON.parse(localStorage.getItem("user-templates") || "[]"); } catch { return []; }
-}
-function getTemplateTasksFromStorage(): TemplateTaskOption[] {
-  try { return JSON.parse(localStorage.getItem("user-template-tasks") || "[]"); } catch { return []; }
+
+interface DBTemplate {
+  id: number;
+  name: string;
+  tasks: TemplateTask[];
+  is_locked: boolean;
 }
 import { useToast } from "@/hooks/use-toast";
 
