@@ -20,9 +20,12 @@ export default function DailyStandup() {
   const [standupTypeFilter, setStandupTypeFilter] = useState<string[]>([]);
   const [standupAssigneeFilter, setStandupAssigneeFilter] = useState<string[]>([]);
   const [standupProjectFilter, setStandupProjectFilter] = useState<string[]>([]);
-  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
-    from: undefined,
-    to: undefined,
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>(() => {
+    const now = new Date();
+    return {
+      from: new Date(now.getFullYear(), now.getMonth(), 1),
+      to: new Date(now.getFullYear(), now.getMonth() + 1, 0),
+    };
   });
 
   const { openModal } = useModal();
