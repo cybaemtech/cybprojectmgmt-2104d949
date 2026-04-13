@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useModal } from "@/hooks/use-modal";
 import { useToast } from "@/hooks/use-toast";
-import { Layers, PlusCircle, Search, Folder, Archive, ListTodo, Filter, X, CheckCircle, AlertTriangle, Clock, Users, Settings } from "lucide-react";
+import { Layers, PlusCircle, Search, Folder, Archive, ListTodo, Filter, X, CheckCircle, AlertTriangle, Clock, Users, Settings, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { calculateProjectStats } from "@/lib/data-utils";
 import { User, Team, Project, WorkItem } from "@/types/schema";
 import { projectStore, teamStore, workItemStore, getLocalUser } from "@/lib/local-store";
@@ -23,7 +23,9 @@ export default function Projects() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"active" | "archived" | "dailyStandup">("active");
-  // viewMode removed - table only
+  const [categoryFilter, setCategoryFilter] = useState<"ALL" | "CLIENT" | "IN_HOUSE">("ALL");
+  const [projectStatusFilter, setProjectStatusFilter] = useState<"ALL" | "PLANNING" | "ACTIVE" | "COMPLETED">("ALL");
+  const [targetDateSort, setTargetDateSort] = useState<"none" | "asc" | "desc">("none");
 
   // Daily Standup Filters - Changed to arrays for multi-select
   const [standupStatusFilter, setStandupStatusFilter] = useState<string[]>([]);
