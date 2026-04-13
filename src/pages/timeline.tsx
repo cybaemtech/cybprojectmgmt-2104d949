@@ -19,35 +19,7 @@ import {
 type GanttViewMode = 'month' | 'quarter' | 'year';
 type CalendarViewMode = 'month' | 'week';
 type TimelineTab = 'gantt' | 'calendar';
-
-interface WorkItem {
-  id: number;
-  externalId: string;
-  title: string;
-  description: string | null;
-  type: 'EPIC' | 'FEATURE' | 'STORY' | 'TASK' | 'BUG';
-  status: string;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | null;
-  projectId: number;
-  parentId: number | null;
-  assigneeId: number | null;
-  reporterId: number | null;
-  estimate: number | string | null;
-  startDate: string | null;
-  endDate: string | null;
-  createdAt: string;
-  updatedAt: string;
-  completedAt: string | null;
-  projectKey?: string;
-  projectName?: string;
-}
-  createdAt: string;
-  updatedAt: string;
-  completedAt: string | null;
-  projectKey?: string;
-  projectName?: string;
-}
-
+type WorkItem = SchemaWorkItem & { projectKey?: string; projectName?: string };
 interface ProjectTimelineRow {
   id: number;
   key: string;
@@ -156,8 +128,8 @@ const CalendarView = ({
     return workItemsWithDates.filter(item => {
       if (!item.startDate && !item.endDate) return false;
       
-      const startDate = item.startDate ? parseISO(item.startDate) : null;
-      const endDate = item.endDate ? parseISO(item.endDate) : null;
+      const startDate = item.startDate ? parseISO(String(item.startDate)) : null;
+      const endDate = item.endDate ? parseISO(String(item.endDate)) : null;
       
       if (startDate && endDate) {
         return date >= startDate && date <= endDate;
