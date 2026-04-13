@@ -24,6 +24,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { enableDemoMode } = useDemoMode();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
