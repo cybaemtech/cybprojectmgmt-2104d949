@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Shield, Lock, AtSign, Play } from "lucide-react";
 import { login } from "@/hooks/useAuth";
 import { useDemoMode } from "@/hooks/useDemoMode";
+import { refreshStore } from "@/lib/local-store";
 import cybaemLogo from "@/assets/cybaem-logo-full.png";
 
 const loginSchema = z.object({
@@ -153,7 +154,7 @@ export default function LoginPage() {
           <Button
             variant="outline"
             className="w-full h-11 gap-2"
-            onClick={() => { enableDemoMode(); navigate("/dashboard"); }}
+            onClick={async () => { enableDemoMode(); await refreshStore(); navigate("/dashboard"); }}
           >
             <Play className="h-4 w-4" />
             Explore Demo
