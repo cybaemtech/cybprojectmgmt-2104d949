@@ -133,7 +133,9 @@ const workItemFormSchema = z.object({
   if (data.type === 'FEATURE' && data.autoCreateTemplateTasks) return true;
   // Skip for STORY when autoCreateTemplateTasks is on (will auto-attach to a FEATURE)
   if (data.type === 'STORY' && data.autoCreateTemplateTasks) return true;
-  if (['FEATURE', 'STORY', 'TASK', 'BUG'].includes(data.type)) {
+  // Skip for BUG – will auto-attach to first available STORY if no parent selected
+  if (data.type === 'BUG') return true;
+  if (['FEATURE', 'STORY', 'TASK'].includes(data.type)) {
     return data.parentId && data.parentId > 0;
   }
   return true;
@@ -457,6 +459,16 @@ export function CreateItemModal({
           title: "Automation Complete",
           description: `Created: Change Request "${data.title}" → ${taskCount} task${taskCount !== 1 ? 's' : ''} from template.`,
         });
+      } else if (data.type === 'BUG') {
+        // BUG: auto-attach to first available STORY if no parent selected
+        if (!submitData.parentId) {
+          const projectStories = workItems.filter(w => w.type === 'STORY' && w.projectId === submitData.projectId);
+          if (projectStories.length > 0) {
+            submitData.parentId = projectStories[0].id;
+          }
+        }
+        workItemStore.save(submitData);
+        toast({ title: "Bug created", description: `Bug "${data.title}" created successfully.` });
       } else {
         // Normal single item creation
         workItemStore.save(submitData);
@@ -938,6 +950,30 @@ export function CreateItemModal({
               {/* BUG specific block */}
               {watchedType === 'BUG' && (
                 <div className="space-y-4 bg-blue-50 p-4 rounded border border-blue-200">
+                  {/* Parent Change Request selector */}
+                  {(() => {
+                    const parentStories = workItems.filter(w => w.type === 'STORY' && w.projectId === selectedProjectId);
+                    return parentStories.length > 0 ? (
+                      <FormField
+                        control={form.control}
+                        name="parentId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm">Change Request (Parent)</FormLabel>
+                            <FormControl>
+                              <Combobox
+                                options={parentStories.map(s => ({ value: s.id.toString(), label: s.title }))}
+                                value={field.value?.toString() || ""}
+                                onValueChange={v => field.onChange(v ? parseInt(v) : null)}
+                                placeholder="Auto-select first available..."
+                              />
+                            </FormControl>
+                            <p className="text-xs text-muted-foreground">Leave empty to auto-attach to the first Change Request</p>
+                          </FormItem>
+                        )}
+                      />
+                    ) : null;
+                  })()}
                   <div className="grid grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
