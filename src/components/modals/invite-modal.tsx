@@ -316,10 +316,30 @@ export function InviteModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="MEMBER">Team Member</SelectItem>
-                      <SelectItem value="LEAD">Team Lead</SelectItem>
-                      <SelectItem value="MANAGER">Project Manager</SelectItem>
-                      <SelectItem value="ADMIN">Administrator</SelectItem>
+                      <SelectItem value="MEMBER">
+                        <div className="flex flex-col">
+                          <span>Team Member</span>
+                          <span className="text-xs text-muted-foreground font-normal">Can view and create Stories, Tasks & Bugs</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="LEAD">
+                        <div className="flex flex-col">
+                          <span>Team Lead</span>
+                          <span className="text-xs text-muted-foreground font-normal">Full access to project features & team oversight</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="MANAGER">
+                        <div className="flex flex-col">
+                          <span>Project Manager</span>
+                          <span className="text-xs text-muted-foreground font-normal">Manages projects, timelines & team assignments</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="ADMIN">
+                        <div className="flex flex-col">
+                          <span>Administrator</span>
+                          <span className="text-xs text-muted-foreground font-normal">Full system access including settings & user management</span>
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
