@@ -497,7 +497,7 @@ export const workItemStore = {
         _workItems[idx] = { ..._workItems[idx], ...item, updatedAt: now } as WorkItem;
       }
       notifyChange();
-      supabase.from("work_items").update({ ...row, updated_at: now }).eq("id", item.id).then(({ error }) => {
+      supabase.from("work_items").update({ ...row, updated_at: now } as any).eq("id", item.id).then(({ error }) => {
         if (error) console.error("[workItemStore.save] update error:", error);
       });
       return idx >= 0 ? _workItems[idx] : (item as WorkItem);
