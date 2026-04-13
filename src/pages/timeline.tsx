@@ -19,29 +19,7 @@ import {
 type GanttViewMode = 'month' | 'quarter' | 'year';
 type CalendarViewMode = 'month' | 'week';
 type TimelineTab = 'gantt' | 'calendar';
-
-interface WorkItem {
-  id: number;
-  externalId: string;
-  title: string;
-  description: string | null;
-  type: 'EPIC' | 'FEATURE' | 'STORY' | 'TASK' | 'BUG';
-  status: string;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | null;
-  projectId: number;
-  parentId: number | null;
-  assigneeId: number | null;
-  reporterId: number | null;
-  estimate: number | string | null;
-  startDate: string | Date | null;
-  endDate: string | Date | null;
-  createdAt: string | Date;
-  updatedAt: string | Date;
-  completedAt: string | null;
-  projectKey?: string;
-  projectName?: string;
-}
-
+type WorkItem = SchemaWorkItem & { projectKey?: string; projectName?: string };
 interface ProjectTimelineRow {
   id: number;
   key: string;
