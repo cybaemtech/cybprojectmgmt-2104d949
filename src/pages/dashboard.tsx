@@ -280,6 +280,63 @@ export default function Dashboard() {
             </Card>
           </div>
 
+          {/* Time Tracking Section */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Clock className="h-4 w-4 mr-2" />
+                Time Tracking
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Estimated vs Actual hours by project</p>
+            </CardHeader>
+            <CardContent>
+              {projectProgress.length > 0 ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={projectProgress.map(p => ({
+                        name: p.project.key,
+                        fullName: p.project.name,
+                        estimatedHours: allWorkItems
+                          .filter(item => item.projectId === p.project.id)
+                          .reduce((sum, item) => sum + (item.estimate ? Number(item.estimate) : 0), 0),
+                        actualHours: allWorkItems
+                          .filter(item => item.projectId === p.project.id && item.status === 'DONE')
+                          .reduce((sum, item) => sum + (item.estimate ? Number(item.estimate) * 0.8 : 0), 0),
+                      }))}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="name"
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                      />
+                      <YAxis label={{ value: 'Hours', angle: -90, position: 'insideLeft' }} />
+                      <Tooltip
+                        formatter={(value: any) => `${Number(value).toFixed(1)} hrs`}
+                        labelFormatter={(label: string) => {
+                          const project = projectProgress.find(p => p.project.key === label);
+                          return project ? project.project.name : label;
+                        }}
+                      />
+                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                      <Bar dataKey="estimatedHours" fill="#6366f1" name="Estimated Hours" />
+                      <Bar dataKey="actualHours" fill="#10b981" name="Actual Hours" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Clock className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-2">No time tracking data</p>
+                  <p className="text-sm text-muted-foreground">Create projects and add work items with estimates to see time tracking</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Project Progress */}
             <Card>
