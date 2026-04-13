@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, X, CheckCircle, Edit2, ChevronDown, ChevronRight, LayoutTemplate, Trash2, Copy, ArrowLeft, GripVertical } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabaseCustom as supabase } from '@/lib/supabase-custom';
 
 const colorPalette = [
   '#10b981','#3b82f6','#8b5cf6','#f59e0b','#ec4899',
