@@ -463,11 +463,15 @@ export function CreateItemModal({
         toast({ title: "Item created", description: "Created successfully." });
       }
 
-      onSuccess();
-      onClose();
       form.reset();
       setSelectedAttachmentFile(null);
       setSelectedTemplateId(null);
+      onClose();
+      // Use microtask to ensure the modal is fully closed before refreshing UI
+      await Promise.resolve();
+      onSuccess();
+      // Schedule a second refresh to catch any async DB responses
+      setTimeout(() => onSuccess(), 300);
     } catch (e) {
       toast({ title: "Error", description: "Could not create item.", variant: "destructive" });
     }
