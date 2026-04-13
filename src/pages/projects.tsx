@@ -23,7 +23,7 @@ export default function Projects() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"active" | "archived" | "dailyStandup">("active");
-  const [viewMode, setViewMode] = useState<"card" | "table">("table");
+  // viewMode removed - table only
 
   // Daily Standup Filters - Changed to arrays for multi-select
   const [standupStatusFilter, setStandupStatusFilter] = useState<string[]>([]);
@@ -189,22 +189,7 @@ export default function Projects() {
                 </Button>
               )}
               </div>
-              <div className="flex space-x-2">
-                <Button
-                  variant={viewMode === "table" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("table")}
-                >
-                  Table
-                </Button>
-                <Button
-                  variant={viewMode === "card" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("card")}
-                >
-                  Cards
-                </Button>
-              </div>
+              
             </div>
 
             {/* Daily Standup View */}
@@ -631,7 +616,7 @@ export default function Projects() {
                       : "No projects found"}
                   </h3>
                 </div>
-              ) : viewMode === "table" ? (
+              ) : (
                 <div className="bg-white rounded-lg shadow overflow-hidden">
                   <table className="w-full">
                     <thead className="bg-gray-50 border-b border-gray-200">
