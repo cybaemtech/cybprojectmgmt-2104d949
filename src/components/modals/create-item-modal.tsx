@@ -420,6 +420,7 @@ export function CreateItemModal({
 
         // 2. Create the FEATURE (Client Requirement) under the EPIC
         submitData.parentId = epicId;
+        submitData.assigneeId = creatorId;
         const feature = await workItemStore.saveAsync(submitData);
 
         // 3. Auto-create STORY "Initial Requirement Gathering" under the FEATURE
