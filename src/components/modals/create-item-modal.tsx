@@ -460,12 +460,21 @@ export function CreateItemModal({
           description: `Created: Change Request "${data.title}" → ${taskCount} task${taskCount !== 1 ? 's' : ''} from template.`,
         });
       } else if (data.type === 'BUG') {
-        // BUG: auto-attach to first available STORY if no parent selected
+        // BUG: must always be under a STORY (Change Request)
         if (!submitData.parentId) {
           const projectStories = workItems.filter(w => w.type === 'STORY' && w.projectId === submitData.projectId);
           if (projectStories.length > 0) {
             submitData.parentId = projectStories[0].id;
+          } else {
+            toast({ title: "Error", description: "No Change Request found. Please create a Change Request first before reporting a bug.", variant: "destructive" });
+            return;
           }
+        }
+        // Verify parent is a STORY, not an EPIC or FEATURE
+        const parentItem = workItems.find(w => w.id === submitData.parentId);
+        if (parentItem && parentItem.type !== 'STORY') {
+          toast({ title: "Error", description: "Bugs must be created under a Change Request (Story), not under " + getTypeDisplayName(parentItem.type) + ".", variant: "destructive" });
+          return;
         }
         workItemStore.save(submitData);
         toast({ title: "Bug created", description: `Bug "${data.title}" created successfully.` });
