@@ -159,13 +159,10 @@ export default function LoginPage() {
             Explore Demo
           </Button>
 
-          {/* Credentials hint */}
-          <div className="rounded-lg border border-border bg-muted/30 p-4 text-xs text-muted-foreground space-y-1">
-            <p className="font-medium text-foreground text-sm mb-2">Test credentials:</p>
-            <p><span className="font-mono">admin@cybaemtech.com</span> / <span className="font-mono">admin123</span></p>
-            <p><span className="font-mono">demo@cybaemtech.com</span> / <span className="font-mono">demo123</span></p>
-            <p><span className="font-mono">user@cybaemtech.com</span> / <span className="font-mono">user123</span></p>
-          </div>
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <a href="/register" className="text-primary hover:underline font-medium">Register</a>
+          </p>
 
           <p className="text-center text-xs text-muted-foreground pt-4">
             © {new Date().getFullYear()} Cybaem Tech. All rights reserved.
