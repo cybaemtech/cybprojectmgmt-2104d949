@@ -310,7 +310,7 @@ export const projectStore = {
       _projects.unshift(newProject);
       notifyChange();
       // Async insert
-      supabase.from("projects").insert(row).select().single().then(({ data, error }) => {
+      supabase.from("projects").insert(row as any).select().single().then(({ data, error }) => {
         if (error) { console.error("[projectStore.save] insert error:", error); return; }
         if (data) {
           const idx = _projects.findIndex((p) => p.id === tempId);
@@ -371,7 +371,7 @@ export const teamStore = {
       };
       _teams.unshift(newTeam);
       notifyChange();
-      supabase.from("teams").insert(row).select().single().then(({ data, error }) => {
+      supabase.from("teams").insert(row as any).select().single().then(({ data, error }) => {
         if (error) { console.error("[teamStore.save] insert error:", error); return; }
         if (data) {
           const idx = _teams.findIndex((t) => t.id === tempId);
@@ -413,7 +413,7 @@ export const userStore = {
     if (updates.avatarUrl !== undefined) row.avatar_url = updates.avatarUrl;
     if (updates.role !== undefined) row.role = updates.role;
     if (updates.isActive !== undefined) row.is_active = updates.isActive;
-    supabase.from("profiles").update(row).eq("id", String(id)).then(({ error }) => {
+    supabase.from("profiles").update(row as any).eq("id", String(id)).then(({ error }) => {
       if (error) console.error("[userStore.update] error:", error);
     });
   },
@@ -443,7 +443,7 @@ export const teamMemberStore = {
     };
     _teamMembers.push(newMember);
     notifyChange();
-    supabase.from("team_members").insert({ team_id: teamId, user_id: String(userId), role }).select().single().then(({ data, error }) => {
+    supabase.from("team_members").insert({ team_id: teamId, user_id: String(userId), role } as any).select().single().then(({ data, error }) => {
       if (error) { console.error("[teamMemberStore.add] error:", error); return; }
       if (data) {
         const idx = _teamMembers.findIndex((m) => m.id === tempId);
@@ -468,7 +468,7 @@ export const teamMemberStore = {
       _teamMembers[idx] = { ..._teamMembers[idx], role: role as any, updatedAt: new Date().toISOString() };
       notifyChange();
     }
-    supabase.from("team_members").update({ role, updated_at: new Date().toISOString() }).eq("team_id", teamId).eq("user_id", String(userId)).then(({ error }) => {
+    supabase.from("team_members").update({ role, updated_at: new Date().toISOString() } as any).eq("team_id", teamId).eq("user_id", String(userId)).then(({ error }) => {
       if (error) console.error("[teamMemberStore.updateRole] error:", error);
     });
   },
@@ -548,7 +548,7 @@ export const workItemStore = {
       notifyChange();
       // Don't set external_id in the insert row - let it be auto-assigned
       if (!row.external_id) delete row.external_id;
-      supabase.from("work_items").insert(row).select("*, projects(key, name)").single().then(({ data, error }) => {
+      supabase.from("work_items").insert(row as any).select("*, projects(key, name)").single().then(({ data, error }: any) => {
         if (error) { console.error("[workItemStore.save] insert error:", error); return; }
         if (data) {
           // Auto-set external_id
@@ -579,7 +579,7 @@ export const workItemStore = {
     if (item.id) {
       // Update
       row.updated_at = now;
-      const { data, error } = await supabase.from("work_items").update(row).eq("id", item.id).select("*, projects(key, name)").single();
+      const { data, error } = await supabase.from("work_items").update(row as any).eq("id", item.id).select("*, projects(key, name)").single();
       if (error) { console.error("[workItemStore.saveAsync] update error:", error); throw error; }
       const mapped = mapWorkItem(data);
       const idx = _workItems.findIndex((w) => w.id === item.id);
@@ -589,7 +589,7 @@ export const workItemStore = {
     } else {
       // Insert
       if (!row.external_id) delete row.external_id;
-      const { data, error } = await supabase.from("work_items").insert(row).select("*, projects(key, name)").single();
+      const { data, error }: any = await supabase.from("work_items").insert(row as any).select("*, projects(key, name)").single();
       if (error) { console.error("[workItemStore.saveAsync] insert error:", error); throw error; }
       // Auto-set external_id
       const extId = data.external_id || `${data.projects?.key || "WI"}-${data.id}`;
@@ -613,7 +613,7 @@ export const workItemStore = {
     notifyChange();
     const row = workItemToRow(updates);
     row.updated_at = now;
-    supabase.from("work_items").update(row).eq("id", id).then(({ error }) => {
+    supabase.from("work_items").update(row as any).eq("id", id).then(({ error }) => {
       if (error) console.error("[workItemStore.update] error:", error);
     });
     return _workItems[idx];
