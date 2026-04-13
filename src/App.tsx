@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { DemoModeProvider, useDemoMode } from "@/hooks/useDemoMode";
 import { useEffect } from "react";
 import { AuthenticatedLayout } from "@/components/layout/authenticated-layout";
+import { initStore } from "@/lib/local-store";
 
 import LoginPage from "@/pages/login";
 import Register from "@/pages/register";
@@ -31,6 +32,11 @@ function AppRoutes() {
   const { isDemoMode } = useDemoMode();
 
   const effectivelyAuthenticated = isAuthenticated || isDemoMode;
+
+  useEffect(() => {
+    // Initialize the Supabase-backed store
+    initStore();
+  }, []);
 
   useEffect(() => {
     if (isDemoMode) return;
