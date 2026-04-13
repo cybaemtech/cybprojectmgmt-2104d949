@@ -274,7 +274,7 @@ export const projectStore = {
       }
       notifyChange();
       // Async write to Supabase
-      supabase.from("projects").update({ ...row, updated_at: now }).eq("id", project.id).then(({ error }) => {
+      supabase.from("projects").update({ ...row, updated_at: now } as any).eq("id", project.id).then(({ error }) => {
         if (error) console.error("[projectStore.save] update error:", error);
       });
       return idx >= 0 ? _projects[idx] : (project as Project);
@@ -354,7 +354,7 @@ export const teamStore = {
       const idx = _teams.findIndex((t) => t.id === team.id);
       if (idx >= 0) _teams[idx] = { ..._teams[idx], ...team, updatedAt: now };
       notifyChange();
-      supabase.from("teams").update({ ...row, updated_at: now }).eq("id", team.id).then(({ error }) => {
+      supabase.from("teams").update({ ...row, updated_at: now } as any).eq("id", team.id).then(({ error }) => {
         if (error) console.error("[teamStore.save] update error:", error);
       });
       return idx >= 0 ? _teams[idx] : (team as Team);
