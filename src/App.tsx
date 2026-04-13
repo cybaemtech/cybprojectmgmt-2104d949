@@ -23,7 +23,7 @@ import ProjectBugReports from "@/pages/project-bug-reports";
 import DailyStandup from "@/pages/standup";
 import StrategicRoadmap from "@/pages/strategic-roadmap";
 import TemplateSettings from "@/pages/template-settings";
-import AdminSettings from "@/pages/admin-settings";
+
 import NotFound from "@/pages/NotFound";
 
 function AppRoutes() {
@@ -83,7 +83,7 @@ function AppRoutes() {
         <Route path="/standup" element={<DailyStandup />} />
         <Route path="/roadmap" element={<StrategicRoadmap />} />
         <Route path="/templates" element={<TemplateSettings />} />
-        <Route path="/admin-settings" element={<AdminSettings />} />
+        
       </Route>
       
       <Route path="*" element={effectivelyAuthenticated ? <NotFound /> : <LoginPage />} />
