@@ -959,7 +959,7 @@ export function CreateItemModal({
               {/* BUG specific block */}
               {watchedType === 'BUG' && (
                 <div className="space-y-4 bg-blue-50 p-4 rounded border border-blue-200">
-                  {/* Parent Change Request selector */}
+                  {/* Parent Change Request selector - mandatory for bugs */}
                   {(() => {
                     const parentStories = workItems.filter(w => w.type === 'STORY' && w.projectId === selectedProjectId);
                     return parentStories.length > 0 ? (
@@ -968,20 +968,24 @@ export function CreateItemModal({
                         name="parentId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm">Change Request (Parent)</FormLabel>
+                            <FormLabel className="text-sm">Change Request (Parent) <span className="text-destructive">*</span></FormLabel>
                             <FormControl>
                               <Combobox
                                 options={parentStories.map(s => ({ value: s.id.toString(), label: s.title }))}
                                 value={field.value?.toString() || ""}
                                 onValueChange={v => field.onChange(v ? parseInt(v) : null)}
-                                placeholder="Auto-select first available..."
+                                placeholder="Select a Change Request..."
                               />
                             </FormControl>
-                            <p className="text-xs text-muted-foreground">Leave empty to auto-attach to the first Change Request</p>
+                            <p className="text-xs text-muted-foreground">Bug will be created under this Change Request</p>
                           </FormItem>
                         )}
                       />
-                    ) : null;
+                    ) : (
+                      <p className="text-sm text-destructive font-medium p-2 bg-destructive/10 rounded">
+                        No Change Requests found. Please create a Change Request first before reporting a bug.
+                      </p>
+                    );
                   })()}
                   <div className="grid grid-cols-3 gap-4">
                     <FormField
