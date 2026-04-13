@@ -405,6 +405,13 @@ export function CreateItemModal({
           .filter(t => t.templateId === selectedTemplateId && t.isActive)
           .sort((a, b) => (a.itemOrder || 0) - (b.itemOrder || 0));
 
+        // Split estimated hours evenly across tasks
+        const totalEstimate = parseFloat(data.estimate || '0');
+        const taskCount = templateTasks.length;
+        const perTaskEstimate = taskCount > 0 && totalEstimate > 0
+          ? Math.round((totalEstimate / taskCount) * 10) / 10
+          : 9;
+
         for (const tTask of templateTasks) {
           await workItemStore.saveAsync({
             title: tTask.title,
@@ -414,7 +421,7 @@ export function CreateItemModal({
             priority: 'MEDIUM',
             parentId: story.id,
             assigneeId: creatorId,
-            estimate: "9",
+            estimate: perTaskEstimate.toString(),
           });
         }
 
@@ -442,6 +449,13 @@ export function CreateItemModal({
           .filter(t => t.templateId === selectedTemplateId && t.isActive)
           .sort((a, b) => (a.itemOrder || 0) - (b.itemOrder || 0));
 
+        // Split estimated hours evenly across tasks
+        const totalEstimate = parseFloat(data.estimate || '0');
+        const taskCount = templateTasks.length;
+        const perTaskEstimate = taskCount > 0 && totalEstimate > 0
+          ? Math.round((totalEstimate / taskCount) * 10) / 10
+          : 0;
+
         for (const tTask of templateTasks) {
           await workItemStore.saveAsync({
             title: tTask.title,
@@ -451,6 +465,7 @@ export function CreateItemModal({
             parentId: story.id,
             projectId: submitData.projectId,
             assigneeId: creatorId,
+            estimate: perTaskEstimate > 0 ? perTaskEstimate.toString() : undefined,
           });
         }
 
