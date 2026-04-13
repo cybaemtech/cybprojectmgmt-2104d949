@@ -295,16 +295,18 @@ export default function TemplateSettings() {
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-all ${task.isActive ? 'bg-background border-border' : 'bg-muted border-dashed border-border opacity-60'} ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/20' : ''}`}
+          className={`flex flex-col gap-1 px-3 py-2.5 rounded-lg border transition-all ${task.isActive ? 'bg-background border-border' : 'bg-muted border-dashed border-border opacity-60'} ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/20' : ''}`}
         >
-          <span {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing">
-            <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          </span>
-          <div className="flex-1 min-w-0">
-            <p className={`text-sm font-medium truncate ${!task.isActive ? 'line-through text-muted-foreground' : ''}`}>{task.title}</p>
-          </div>
+          {/* Row 1: drag handle + full task name */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
+            <span {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing flex-shrink-0">
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </span>
+            <p className={`text-sm font-medium flex-1 ${!task.isActive ? 'line-through text-muted-foreground' : ''}`}>{task.title}</p>
+          </div>
+          {/* Row 2: hours + controls */}
+          <div className="flex items-center justify-end gap-2 pl-6">
+            <div className="flex items-center gap-1 mr-auto">
               <Input
                 type="number"
                 min="0"
@@ -315,7 +317,7 @@ export default function TemplateSettings() {
                   updateTask(task.id, { estimatedHours: val });
                 }}
                 placeholder="0"
-                className="h-7 w-16 text-xs text-center px-1"
+                className="h-7 w-14 text-xs text-center px-1"
               />
               <span className="text-xs text-muted-foreground">hrs</span>
             </div>
