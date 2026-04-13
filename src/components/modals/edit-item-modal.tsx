@@ -384,9 +384,10 @@ export function EditItemModal({
         }
       }
 
-      await apiRequest("PATCH", `/work-items/${workItem.id}`, submitData);
+      // Use workItemStore to update via Supabase directly
+      submitData.id = workItem.id;
+      workItemStore.save(submitData);
       toast({ title: "Item updated", description: "The item has been updated successfully." });
-      queryClient.invalidateQueries({ queryKey: [`/work-items/${workItem.id}`] });
       onSuccess();
       onClose();
     } catch (error: any) {
