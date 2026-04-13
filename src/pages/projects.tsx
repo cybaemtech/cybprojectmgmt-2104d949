@@ -692,12 +692,32 @@ export default function Projects() {
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              <div className="flex gap-3 text-sm">
-                                <span className="text-purple-600">{epics} Epics</span>
-                                <span className="text-blue-600">{features} Features</span>
-                                <span className="text-green-600">{stories} Stories</span>
-                                <span className="text-orange-600">{tasks} Tasks</span>
-                              </div>
+                              {(() => {
+                                const total = epics + features + stories + tasks + bugs;
+                                if (total === 0) return <span className="text-sm text-gray-400">—</span>;
+                                const pct = (n: number) => `${(n / total) * 100}%`;
+                                return (
+                                  <div className="w-44 space-y-1">
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex h-2.5 w-full rounded-full overflow-hidden bg-gray-100">
+                                        {epics > 0 && <div className="bg-purple-500 h-full" style={{ width: pct(epics) }} />}
+                                        {features > 0 && <div className="bg-blue-500 h-full" style={{ width: pct(features) }} />}
+                                        {stories > 0 && <div className="bg-green-500 h-full" style={{ width: pct(stories) }} />}
+                                        {tasks > 0 && <div className="bg-orange-500 h-full" style={{ width: pct(tasks) }} />}
+                                        {bugs > 0 && <div className="bg-red-500 h-full" style={{ width: pct(bugs) }} />}
+                                      </div>
+                                      <span className="text-xs text-gray-500 whitespace-nowrap">{total}</span>
+                                    </div>
+                                    <div className="flex gap-2.5 text-[10px] text-gray-500">
+                                      {epics > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-purple-500" />{epics}E</span>}
+                                      {features > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500" />{features}F</span>}
+                                      {stories > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" />{stories}S</span>}
+                                      {tasks > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" />{tasks}T</span>}
+                                      {bugs > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" />{bugs}B</span>}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-700">
                               {project.targetDate ? new Date(project.targetDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
