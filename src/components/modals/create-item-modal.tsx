@@ -842,7 +842,7 @@ export function CreateItemModal({
                                   {availableTemplateTasks
                                     .filter(t => t.templateId === selectedTemplateId && t.isActive)
                                     .map(t => (
-                                      <li key={t.id}>{t.title}</li>
+                                      <li key={t.id}>{t.title} {t.estimatedHours ? <span className="text-muted-foreground/70">({t.estimatedHours}h)</span> : null}</li>
                                     ))}
                                 </ul>
                                 {availableTemplateTasks.filter(t => t.templateId === selectedTemplateId && t.isActive).length === 0 && (
@@ -956,7 +956,7 @@ export function CreateItemModal({
                                   {availableTemplateTasks
                                     .filter(t => t.templateId === selectedTemplateId && t.isActive)
                                     .map(t => (
-                                      <li key={t.id}>{t.title}</li>
+                                      <li key={t.id}>{t.title} {t.estimatedHours ? <span className="text-muted-foreground/70">({t.estimatedHours}h)</span> : null}</li>
                                     ))}
                                 </ul>
                                 {availableTemplateTasks.filter(t => t.templateId === selectedTemplateId && t.isActive).length === 0 && (
