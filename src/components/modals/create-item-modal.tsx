@@ -196,10 +196,31 @@ export function CreateItemModal({
   const [selectedAttachmentFile, setSelectedAttachmentFile] = useState<File | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
 
-  // Load available templates for the current user
-  const currentLocalUser = getLocalUser();
-  const availableTemplates = getTemplatesFromStorage().filter(t => t.ownerId === currentLocalUser?.id);
-  const availableTemplateTasks = getTemplateTasksFromStorage();
+  // Load templates from external Supabase DB
+  const { data: dbTemplates = [] } = useQuery<DBTemplate[]>({
+    queryKey: ['work-item-templates-for-modal'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('work_item_templates')
+        .select('id, name, tasks, is_locked')
+        .order('name');
+      if (error) { console.error('Failed to load templates:', error); return []; }
+      return (data || []).map((row: any) => ({
+        ...row,
+        tasks: Array.isArray(row.tasks) ? row.tasks : [],
+      }));
+    },
+    enabled: isOpen,
+  });
+
+  const availableTemplates = dbTemplates;
+
+  // Flatten tasks with templateId for downstream use
+  const availableTemplateTasks = useMemo(() => {
+    return dbTemplates.flatMap(t =>
+      t.tasks.map(task => ({ ...task, templateId: t.id }))
+    );
+  }, [dbTemplates]);
 
   // Default to "Requirement Gathering" template when modal opens
   useEffect(() => {
