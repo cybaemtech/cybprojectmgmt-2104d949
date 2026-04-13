@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Shield, Lock, AtSign, Play, Eye, EyeOff } from "lucide-react";
+import { Shield, Lock, AtSign, Play } from "lucide-react";
 import { login } from "@/hooks/useAuth";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import cybaemLogo from "@/assets/cybaem-logo-full.png";
@@ -24,7 +24,6 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { enableDemoMode } = useDemoMode();
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -119,10 +118,7 @@ export default function LoginPage() {
                     <FormControl>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} className="pl-10 pr-10 h-11 bg-background border-input" />
-                        <button type="button" tabIndex={-1} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
+                        <Input type="password" placeholder="••••••••" {...field} className="pl-10 h-11 bg-background border-input" />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -163,10 +159,13 @@ export default function LoginPage() {
             Explore Demo
           </Button>
 
-          <p className="text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <a href="/register" className="text-primary hover:underline font-medium">Register</a>
-          </p>
+          {/* Credentials hint */}
+          <div className="rounded-lg border border-border bg-muted/30 p-4 text-xs text-muted-foreground space-y-1">
+            <p className="font-medium text-foreground text-sm mb-2">Test credentials:</p>
+            <p><span className="font-mono">admin@cybaemtech.com</span> / <span className="font-mono">admin123</span></p>
+            <p><span className="font-mono">demo@cybaemtech.com</span> / <span className="font-mono">demo123</span></p>
+            <p><span className="font-mono">user@cybaemtech.com</span> / <span className="font-mono">user123</span></p>
+          </div>
 
           <p className="text-center text-xs text-muted-foreground pt-4">
             © {new Date().getFullYear()} Cybaem Tech. All rights reserved.
