@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, X, CheckCircle, Edit2, ChevronDown, ChevronRight, LayoutTemplate, Trash2, Copy, ArrowLeft, GripVertical } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabaseCustom as supabase } from '@/lib/supabase-custom';
 
 const colorPalette = [
   '#10b981','#3b82f6','#8b5cf6','#f59e0b','#ec4899',
@@ -39,8 +40,6 @@ function migrateDate(d: string): string {
   if (d && d.length === 7) return d + '-01';
   return d;
 }
-
-const ROADMAP_TEMPLATES_KEY = 'local-roadmap-templates';
 
 const SAMPLE_TEMPLATES: Template[] = [
   {
@@ -82,48 +81,65 @@ const SAMPLE_TEMPLATES: Template[] = [
   },
 ];
 
-function getTemplates(): Template[] {
-  try {
-    const stored = localStorage.getItem(ROADMAP_TEMPLATES_KEY);
-    if (stored) return JSON.parse(stored);
-    return [];
-  } catch {
-    return [];
+function mapDbToTemplate(row: any): Template {
+  const tasks = row.tasks || {};
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description || '',
+    streams: tasks.streams || [],
+    projects: (tasks.projects || []).map((p: any) => ({
+      ...p,
+      startDate: migrateDate(p.startDate),
+      endDate: migrateDate(p.endDate),
+    })),
+  };
+}
+
+function templateToRow(t: Partial<Template> & { name: string }, userId?: string) {
+  return {
+    name: t.name,
+    description: t.description || '',
+    tasks: { streams: t.streams || [], projects: t.projects || [] },
+    created_by: userId || null,
+  };
+}
+
+async function getTemplates(): Promise<Template[]> {
+  const { data, error } = await supabase.from('templates').select('*').order('created_at', { ascending: false });
+  if (error) { console.error('[roadmap] fetch templates error:', error); return []; }
+  return (data || []).map(mapDbToTemplate);
+}
+
+async function saveNewTemplate(t: { name: string; description: string; streams: string[]; projects: RoadmapProject[] }, userId?: string): Promise<Template | null> {
+  const row = templateToRow(t as any, userId);
+  const { data, error } = await supabase.from('templates').insert(row).select().single();
+  if (error) { console.error('[roadmap] insert template error:', error); return null; }
+  return mapDbToTemplate(data);
+}
+
+async function updateTemplateInDb(t: Template): Promise<void> {
+  const { error } = await supabase.from('templates').update({
+    name: t.name,
+    description: t.description,
+    tasks: { streams: t.streams, projects: t.projects },
+    updated_at: new Date().toISOString(),
+  }).eq('id', t.id);
+  if (error) console.error('[roadmap] update template error:', error);
+}
+
+async function deleteTemplateFromDb(id: number): Promise<void> {
+  const { error } = await supabase.from('templates').delete().eq('id', id);
+  if (error) console.error('[roadmap] delete template error:', error);
+}
+
+async function loadSampleTemplatesInDb(userId?: string): Promise<Template[]> {
+  const inserted: Template[] = [];
+  for (const sample of SAMPLE_TEMPLATES) {
+    const result = await saveNewTemplate({ ...sample }, userId);
+    if (result) inserted.push(result);
   }
-}
-
-function saveTemplates(templates: Template[]) {
-  localStorage.setItem(ROADMAP_TEMPLATES_KEY, JSON.stringify(templates));
-}
-
-function createTemplate(t: { name: string; description: string; streams: string[]; projects: RoadmapProject[] }): Template {
-  const templates = getTemplates();
-  const maxId = templates.reduce((m, tpl) => Math.max(m, tpl.id), 0);
-  const newTemplate: Template = { ...t, id: maxId + 1 };
-  templates.push(newTemplate);
-  saveTemplates(templates);
-  return newTemplate;
-}
-
-function updateTemplate(t: Template): Template {
-  const templates = getTemplates();
-  const idx = templates.findIndex(tpl => tpl.id === t.id);
-  if (idx >= 0) templates[idx] = t;
-  saveTemplates(templates);
-  return t;
-}
-
-function deleteTemplate(id: number) {
-  saveTemplates(getTemplates().filter(t => t.id !== id));
-}
-
-function loadSampleTemplates(): Template[] {
-  const existing = getTemplates();
-  const maxId = existing.reduce((m, t) => Math.max(m, t.id), 0);
-  const samples = SAMPLE_TEMPLATES.map((t, i) => ({ ...t, id: maxId + i + 1 }));
-  const merged = [...existing, ...samples];
-  saveTemplates(merged);
-  return merged;
+  return inserted;
 }
 
 const TemplateGallery = ({ templates, onSelect, onCreate, onDelete, onDuplicate, onLoadSamples }: {
@@ -699,40 +715,44 @@ export default function StrategicRoadmapPage() {
   }, [user]);
 
   useEffect(() => {
-    setTemplates(getTemplates());
-    setLoading(false);
+    getTemplates().then(data => {
+      setTemplates(data);
+      setLoading(false);
+    });
   }, []);
 
   const activeTemplate = templates.find(t => t.id === activeId);
 
-  const handleCreate = ({ name, description, streams }: { name: string; description: string; streams: string[] }) => {
-    const created = createTemplate({ name, description, streams, projects: [] });
-    setTemplates(prev => [...prev, created]);
-    setActiveId(created.id);
+  const handleCreate = async ({ name, description, streams }: { name: string; description: string; streams: string[] }) => {
+    const created = await saveNewTemplate({ name, description, streams, projects: [] }, String(user?.id));
+    if (created) {
+      setTemplates(prev => [...prev, created]);
+      setActiveId(created.id);
+    }
     setShowNewModal(false);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (!confirm('Delete this template?')) return;
-    deleteTemplate(id);
+    await deleteTemplateFromDb(id);
     setTemplates(prev => prev.filter(t => t.id !== id));
   };
 
-  const handleLoadSamples = () => {
-    const merged = loadSampleTemplates();
-    setTemplates(merged);
+  const handleLoadSamples = async () => {
+    const inserted = await loadSampleTemplatesInDb(String(user?.id));
+    setTemplates(prev => [...prev, ...inserted]);
   };
 
-  const handleDuplicate = (id: number) => {
+  const handleDuplicate = async (id: number) => {
     const src = templates.find(t => t.id === id);
     if (!src) return;
-    const created = createTemplate({
+    const created = await saveNewTemplate({
       name: `${src.name} (Copy)`,
       description: src.description,
       streams: src.streams,
       projects: src.projects,
-    });
-    setTemplates(prev => [...prev, created]);
+    }, String(user?.id));
+    if (created) setTemplates(prev => [...prev, created]);
   };
 
   const updateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -740,7 +760,7 @@ export default function StrategicRoadmapPage() {
     setTemplates(prev => prev.map(t => t.id === updated.id ? updated : t));
     if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
     updateTimerRef.current = setTimeout(() => {
-      updateTemplate(updated);
+      updateTemplateInDb(updated);
     }, 500);
   }, []);
 
