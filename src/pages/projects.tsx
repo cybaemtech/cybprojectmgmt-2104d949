@@ -678,7 +678,17 @@ export default function Projects() {
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">STATUS</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">TEAM</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">WORK ITEMS</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">TARGET DATE</th>
+                        <th
+                          className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase cursor-pointer select-none hover:bg-gray-100 transition-colors"
+                          onClick={() => setTargetDateSort(prev => prev === "none" ? "asc" : prev === "asc" ? "desc" : "none")}
+                        >
+                          <div className="flex items-center gap-1">
+                            TARGET DATE
+                            {targetDateSort === "none" && <ArrowUpDown className="h-3 w-3 text-gray-400" />}
+                            {targetDateSort === "asc" && <ArrowUp className="h-3 w-3 text-blue-600" />}
+                            {targetDateSort === "desc" && <ArrowDown className="h-3 w-3 text-blue-600" />}
+                          </div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
