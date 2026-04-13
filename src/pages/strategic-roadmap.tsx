@@ -715,40 +715,44 @@ export default function StrategicRoadmapPage() {
   }, [user]);
 
   useEffect(() => {
-    setTemplates(getTemplates());
-    setLoading(false);
+    getTemplates().then(data => {
+      setTemplates(data);
+      setLoading(false);
+    });
   }, []);
 
   const activeTemplate = templates.find(t => t.id === activeId);
 
-  const handleCreate = ({ name, description, streams }: { name: string; description: string; streams: string[] }) => {
-    const created = createTemplate({ name, description, streams, projects: [] });
-    setTemplates(prev => [...prev, created]);
-    setActiveId(created.id);
+  const handleCreate = async ({ name, description, streams }: { name: string; description: string; streams: string[] }) => {
+    const created = await saveNewTemplate({ name, description, streams, projects: [] }, user?.id);
+    if (created) {
+      setTemplates(prev => [...prev, created]);
+      setActiveId(created.id);
+    }
     setShowNewModal(false);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (!confirm('Delete this template?')) return;
-    deleteTemplate(id);
+    await deleteTemplateFromDb(id);
     setTemplates(prev => prev.filter(t => t.id !== id));
   };
 
-  const handleLoadSamples = () => {
-    const merged = loadSampleTemplates();
-    setTemplates(merged);
+  const handleLoadSamples = async () => {
+    const inserted = await loadSampleTemplatesInDb(user?.id);
+    setTemplates(prev => [...prev, ...inserted]);
   };
 
-  const handleDuplicate = (id: number) => {
+  const handleDuplicate = async (id: number) => {
     const src = templates.find(t => t.id === id);
     if (!src) return;
-    const created = createTemplate({
+    const created = await saveNewTemplate({
       name: `${src.name} (Copy)`,
       description: src.description,
       streams: src.streams,
       projects: src.projects,
-    });
-    setTemplates(prev => [...prev, created]);
+    }, user?.id);
+    if (created) setTemplates(prev => [...prev, created]);
   };
 
   const updateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -756,7 +760,7 @@ export default function StrategicRoadmapPage() {
     setTemplates(prev => prev.map(t => t.id === updated.id ? updated : t));
     if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
     updateTimerRef.current = setTimeout(() => {
-      updateTemplate(updated);
+      updateTemplateInDb(updated);
     }, 500);
   }, []);
 
