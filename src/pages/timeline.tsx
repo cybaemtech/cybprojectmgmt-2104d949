@@ -41,12 +41,6 @@ interface WorkItem {
   projectKey?: string;
   projectName?: string;
 }
-  createdAt: string;
-  updatedAt: string;
-  completedAt: string | null;
-  projectKey?: string;
-  projectName?: string;
-}
 
 interface ProjectTimelineRow {
   id: number;
