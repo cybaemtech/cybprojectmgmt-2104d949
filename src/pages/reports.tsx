@@ -1,9 +1,8 @@
-import { useEffect, useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
+import { Combobox } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,13 +11,13 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from "recharts";
 import { 
-  Loader2, AlertCircle, TrendingUp, Target, 
+  AlertCircle, TrendingUp, Target, 
   Clock, BarChart3, PieChart as PieChartIcon, Activity, AlertTriangle
 } from "lucide-react";
-import { Project, WorkItem, User, Team } from "@/types/schema";
+import { Project, WorkItem } from "@/types/schema";
 import { format, parseISO, isValid, startOfWeek, endOfWeek, addWeeks, isBefore } from "date-fns";
 import { cn } from "@/lib/utils";
-import { apiGet } from "@/lib/api-config";
+import { projectStore, workItemStore, getLocalUser, userStore } from "@/lib/local-store";
 
 const priorityColors = {
   LOW: '#10b981',
@@ -31,88 +30,14 @@ export default function Reports() {
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [reportScope, setReportScope] = useState<'project' | 'workspace'>('workspace');
   
-  // Fetch current user - Get authenticated user or use first admin user
-  const { data: currentUser } = useQuery<User>({
-    queryKey: ['/auth/user'],
-    queryFn: async () => {
-      try {
-        // Try to get authenticated user first
-        return await apiGet('/auth/user');
-      } catch (error) {
-        // If not authenticated, get first admin user for demo
-        const users = await apiGet('/users');
-        return users.find((user: User) => user.role === 'ADMIN') || users[0];
-      }
-    },
+  const currentUser = getLocalUser();
+  const projects = projectStore.all();
+  const allWorkItems = workItemStore.all().map(item => {
+    const project = projects.find(p => p.id === item.projectId);
+    return { ...item, projectKey: project?.key || '', projectName: project?.name || '' };
   });
-  
-  // Fetch teams data
-  const { data: teams = [] } = useQuery<Team[]>({
-    queryKey: ['/teams'],
-    queryFn: () => apiGet('/teams'),
-  });
-  
-  // Fetch projects
-  const { 
-    data: projects = [], 
-    isLoading: isLoadingProjects 
-  } = useQuery<Project[]>({
-    queryKey: ['/projects'],
-    queryFn: () => apiGet('/projects'),
-  });
-  
-  // Get user's team IDs by fetching team members for each team (same as dashboard)
-  const [userTeamIds, setUserTeamIds] = useState<number[]>([]);
-  useEffect(() => {
-    if (!currentUser || !teams.length) return;
-    Promise.all(
-      teams.map(async (team) => {
-        try {
-          const members = await apiGet(`/teams/${team.id}/members`);
-          if (Array.isArray(members) && members.some((m: any) =>
-            m.userId === currentUser.id ||
-            (m.user && m.user.id === currentUser.id) ||
-            m.id === currentUser.id
-          )) {
-            return team.id;
-          }
-        } catch {}
-        return null;
-      })
-    ).then(ids => setUserTeamIds(ids.filter(Boolean) as number[]));
-  }, [currentUser, teams]);
-
-  // Determine if user is admin or scrum master
   const isAdminOrScrum = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'SCRUM_MASTER');
-
-  // Projects: all for admin/scrum, for others show all projects (no team_id filtering)
-  const filteredProjects = useMemo(() => {
-    if (isAdminOrScrum) return projects;
-    return projects; // No filtering, show all projects user can access
-  }, [projects, isAdminOrScrum]);
-
-  // Fetch all work items from filtered projects
-  const { data: allWorkItems = [], isLoading: isLoadingWorkItems } = useQuery<WorkItem[]>({
-    queryKey: ['/work-items/all', filteredProjects.map(p => p.id)],
-    queryFn: async () => {
-      if (!filteredProjects.length) return [];
-      const workItemPromises = filteredProjects.map(async (project: Project) => {
-        try {
-          const items = await apiGet(`/projects/${project.id}/work-items`);
-          return items.map((item: WorkItem) => ({
-            ...item,
-            projectKey: project.key,
-            projectName: project.name
-          }));
-        } catch {
-          return [];
-        }
-      });
-      const results = await Promise.all(workItemPromises);
-      return results.flat();
-    },
-    enabled: filteredProjects.length > 0,
-  });
+  const filteredProjects = projects;
 
   // Filter work items for user
   const filteredWorkItems = useMemo(() => {
@@ -283,14 +208,7 @@ export default function Reports() {
     };
   }, [filteredWorkItems, projects, reportScope]);
   
-  if (isLoadingProjects || isLoadingWorkItems) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <span className="ml-2">Loading reports...</span>
-      </div>
-    );
-  }
+  const isLoading = false;
 
   if (filteredProjects.length === 0) {
     return (
