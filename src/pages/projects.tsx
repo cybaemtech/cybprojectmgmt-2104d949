@@ -84,42 +84,51 @@ export default function Projects() {
     standupAssigneeFilter.length > 0 ||
     standupProjectFilter.length > 0;
 
-  const filteredProjects = projects.filter((project: Project) => {
-    // Apply search filter
-    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (project.key && project.key.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredProjects = useMemo(() => {
+    let result = projects.filter((project: Project) => {
+      const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (project.key && project.key.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    // For daily standup, filter based on team membership
-    if (statusFilter === "dailyStandup") {
-      const isActive = project.status !== 'ARCHIVED';
-      if (!isActive || !matchesSearch) return false;
-
-      // Admins and Scrum Masters can see all projects
-      if (isAdminOrScrum) {
-        return true;
+      if (statusFilter === "dailyStandup") {
+        const isActive = project.status !== 'ARCHIVED';
+        if (!isActive || !matchesSearch) return false;
+        if (isAdminOrScrum) return true;
+        const isTeamMember = currentUser && project.teamId && teamMembersOf(project.teamId).includes(currentUser.id);
+        return isTeamMember;
       }
-      // Only show if user is assigned as a member of the project's team
+
+      const matchesStatusFilter = statusFilter === "active"
+        ? project.status !== 'ARCHIVED'
+        : project.status === 'ARCHIVED';
+
+      if (!matchesStatusFilter || !matchesSearch) return false;
+
+      // Category filter
+      if (categoryFilter !== "ALL" && project.category !== categoryFilter) return false;
+
+      // Project status filter
+      if (projectStatusFilter !== "ALL" && project.status !== projectStatusFilter) return false;
+
+      if (isAdminOrScrum) return true;
       const isTeamMember = currentUser && project.teamId && teamMembersOf(project.teamId).includes(currentUser.id);
       return isTeamMember;
+    });
+
+    // Sort by target date
+    if (targetDateSort !== "none") {
+      result = [...result].sort((a, b) => {
+        const dateA = a.targetDate ? new Date(a.targetDate).getTime() : 0;
+        const dateB = b.targetDate ? new Date(b.targetDate).getTime() : 0;
+        if (!a.targetDate && !b.targetDate) return 0;
+        if (!a.targetDate) return 1;
+        if (!b.targetDate) return -1;
+        return targetDateSort === "asc" ? dateA - dateB : dateB - dateA;
+      });
     }
 
-    // Apply status filter for regular project views
-    const matchesStatusFilter = statusFilter === "active"
-      ? project.status !== 'ARCHIVED'
-      : project.status === 'ARCHIVED';
-
-    if (!matchesStatusFilter || !matchesSearch) return false;
-
-    // Admins and Scrum Masters can see all projects
-    if (isAdminOrScrum) {
-      return true;
-    }
-
-    // Only show if user is assigned as a member of the project's team
-    const isTeamMember = currentUser && project.teamId && teamMembersOf(project.teamId).includes(currentUser.id);
-    return isTeamMember;
-  });
+    return result;
+  }, [projects, searchQuery, statusFilter, categoryFilter, projectStatusFilter, targetDateSort, isAdminOrScrum, currentUser]);
 
   return (
     <>
