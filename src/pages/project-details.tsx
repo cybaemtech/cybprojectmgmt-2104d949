@@ -1467,6 +1467,10 @@ export default function ProjectDetails() {
               {/* Only show Create Item button on specific tabs */}
               {projectView !== 'overview' && projectView !== 'settings' && (
                 <div className="flex space-x-3">
+                  <Button variant="outline" onClick={handleWorkItemsUpdate}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    <span>Refresh</span>
+                  </Button>
                   <Button onClick={() => openModal("createItem")}>
                     <Plus className="mr-2 h-4 w-4" />
                     <span>Create Item</span>
