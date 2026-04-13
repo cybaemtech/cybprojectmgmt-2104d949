@@ -184,7 +184,7 @@ async function insertWorkItemTree(
       completed_at: item.status === "DONE" ? daysAgo(Math.floor(Math.random() * 10)) : null,
     };
 
-    const { data, error } = await supabase.from("work_items").insert(row).select("id").single();
+    const { data, error } = await supabase.from("work_items").insert(row as any).select("id").single();
     if (error) {
       console.error(`[seed] Failed to insert work item "${item.title}":`, error);
       continue;
@@ -253,7 +253,7 @@ export async function seedDatabase(): Promise<{ teams: number; projects: number;
     if (proj.client_contact_email) row.client_contact_email = proj.client_contact_email;
     if ((proj as any).client_status) row.client_status = (proj as any).client_status;
 
-    const { data, error } = await supabase.from("projects").insert(row).select("id").single();
+    const { data, error } = await supabase.from("projects").insert(row as any).select("id").single();
     if (error) {
       console.error(`[seed] Project "${proj.name}" failed:`, error);
       continue;
