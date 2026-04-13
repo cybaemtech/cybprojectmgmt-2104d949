@@ -295,38 +295,43 @@ export default function TemplateSettings() {
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className={`flex flex-col gap-1 px-3 py-2.5 rounded-lg border transition-all ${task.isActive ? 'bg-background border-border' : 'bg-muted border-dashed border-border opacity-60'} ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/20' : ''}`}
+          className={`grid grid-cols-[32px_1fr_90px_56px_72px] items-center border-b border-border/50 transition-colors ${task.isActive ? 'hover:bg-muted/30' : 'bg-muted/20 opacity-60'} ${snapshot.isDragging ? 'shadow-lg ring-1 ring-primary/20 bg-background' : ''}`}
         >
-          {/* Row 1: drag handle + full task name */}
-          <div className="flex items-center gap-2">
-            <span {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing flex-shrink-0">
-              <GripVertical className="h-4 w-4 text-muted-foreground" />
-            </span>
-            <p className={`text-sm font-medium flex-1 ${!task.isActive ? 'line-through text-muted-foreground' : ''}`}>{task.title}</p>
+          {/* Drag handle */}
+          <div {...provided.dragHandleProps} className="flex items-center justify-center h-full cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100 transition-opacity">
+            <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
-          {/* Row 2: hours + controls */}
-          <div className="flex items-center justify-end gap-2 pl-6">
-            <div className="flex items-center gap-1 mr-auto">
-              <Input
-                type="number"
-                min="0"
-                step="0.5"
-                value={task.estimatedHours ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value ? parseFloat(e.target.value) : undefined;
-                  updateTask(task.id, { estimatedHours: val });
-                }}
-                placeholder="0"
-                className="h-7 w-14 text-xs text-center px-1"
-              />
-              <span className="text-xs text-muted-foreground">hrs</span>
-            </div>
-            <Switch checked={task.isActive} onCheckedChange={() => handleToggleActive(task)} />
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditTaskTitle(task.title); setEditTaskDialog(task); }}>
-              <Pencil className="h-3.5 w-3.5" />
+          {/* Task name */}
+          <div className="py-3 pr-4">
+            <p className={`text-sm font-medium ${!task.isActive ? 'line-through text-muted-foreground' : ''}`}>{task.title}</p>
+          </div>
+          {/* Hours input */}
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min="0"
+              step="0.5"
+              value={task.estimatedHours ?? ""}
+              onChange={(e) => {
+                const val = e.target.value ? parseFloat(e.target.value) : undefined;
+                updateTask(task.id, { estimatedHours: val });
+              }}
+              placeholder="0"
+              className="h-7 w-14 text-xs text-center px-1 font-mono tabular-nums bg-muted/50 border-border/60"
+            />
+            <span className="text-[10px] text-muted-foreground uppercase tracking-tight">hr</span>
+          </div>
+          {/* Active toggle */}
+          <div className="flex justify-center">
+            <Switch checked={task.isActive} onCheckedChange={() => handleToggleActive(task)} className="scale-90" />
+          </div>
+          {/* Actions */}
+          <div className="flex justify-end gap-0.5 pr-2">
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditTaskTitle(task.title); setEditTaskDialog(task); }}>
+              <Pencil className="h-3 w-3" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteTaskDialog(task)}>
-              <Trash2 className="h-3.5 w-3.5" />
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteTaskDialog(task)}>
+              <Trash2 className="h-3 w-3" />
             </Button>
           </div>
         </div>
@@ -337,8 +342,10 @@ export default function TemplateSettings() {
   // ── Template Card ─────────────────────────────────────────────────────────
   const TemplateCard = ({ template }: { template: Template }) => {
     const tplTasks = tasks.filter(t => t.templateId === template.id).sort((a, b) => a.itemOrder - b.itemOrder);
+    const activeTasks = tplTasks.filter(t => t.isActive);
+    const totalHours = activeTasks.reduce((sum, t) => sum + (t.estimatedHours || 0), 0);
     return (
-      <Card className="h-full flex flex-col">
+      <Card className="h-full flex flex-col overflow-hidden">
         <CardHeader className={`rounded-t-lg pb-3 ${template.color}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0">
@@ -346,8 +353,8 @@ export default function TemplateSettings() {
               <CardTitle className="text-base truncate">{template.name}</CardTitle>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
-              <Badge variant="secondary">{tplTasks.filter(t => t.isActive).length} active</Badge>
-              <Badge variant="outline" className="ml-1">{tplTasks.filter(t => t.isActive).reduce((sum, t) => sum + (t.estimatedHours || 0), 0)}h total</Badge>
+              <Badge variant="secondary">{activeTasks.length} active</Badge>
+              <Badge variant="outline" className="ml-1 font-mono tabular-nums">{totalHours}h total</Badge>
             </div>
           </div>
            <div className="flex items-center justify-between mt-1">
@@ -376,28 +383,46 @@ export default function TemplateSettings() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-4 space-y-2 flex-1">
-          {tplTasks.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground text-sm">
+        <CardContent className="p-0 flex-1 flex flex-col">
+          {tplTasks.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground text-sm px-4">
               No tasks yet. <span className="text-xs">Click "Add Task" to start.</span>
             </div>
+          ) : (
+            <>
+              {/* Column headers */}
+              <div className="grid grid-cols-[32px_1fr_90px_56px_72px] items-center px-0 py-1.5 border-b border-border bg-muted/30">
+                <div />
+                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Task</div>
+                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Hours</div>
+                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-center">Active</div>
+                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right pr-2">Ops</div>
+              </div>
+              <DragDropContext onDragEnd={(result: DropResult) => {
+                if (!result.destination || result.source.index === result.destination.index) return;
+                reorderTasks(template.id, result.source.index, result.destination.index);
+              }}>
+                <Droppable droppableId={`template-${template.id}`}>
+                  {(provided) => (
+                    <div ref={provided.innerRef} {...provided.droppableProps}>
+                      {tplTasks.map((task, index) => <TaskRow key={task.id} task={task} index={index} />)}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
+            </>
           )}
-          <DragDropContext onDragEnd={(result: DropResult) => {
-            if (!result.destination || result.source.index === result.destination.index) return;
-            reorderTasks(template.id, result.source.index, result.destination.index);
-          }}>
-            <Droppable droppableId={`template-${template.id}`}>
-              {(provided) => (
-                <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2">
-                  {tplTasks.map((task, index) => <TaskRow key={task.id} task={task} index={index} />)}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
-          <Button variant="outline" size="sm" className="w-full mt-3 border-dashed" onClick={() => { setNewTaskTitle(""); setAddTaskDialog({ open: true, templateId: template.id }); }}>
-            <Plus className="h-4 w-4 mr-1" /> Add Task
-          </Button>
+          {/* Footer */}
+          <div className="mt-auto flex items-center justify-between px-3 py-2.5 border-t border-border bg-muted/10">
+            <Button variant="ghost" size="sm" className="text-xs text-primary font-semibold hover:text-primary" onClick={() => { setNewTaskTitle(""); setAddTaskDialog({ open: true, templateId: template.id }); }}>
+              <Plus className="h-3.5 w-3.5 mr-1" /> Add Task
+            </Button>
+            <div className="text-right">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider mr-1.5">Total</span>
+              <span className="text-sm font-semibold font-mono tabular-nums">{totalHours}h</span>
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
