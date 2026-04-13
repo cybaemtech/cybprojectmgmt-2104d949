@@ -391,6 +391,7 @@ export default function DailyStandup() {
                           <th className="px-2 py-1 text-[9px] font-bold text-neutral-500 uppercase tracking-widest text-right w-20">Type</th>
                           <th className="px-2 py-1 text-[9px] font-bold text-neutral-500 uppercase tracking-widest text-right w-24">Priority</th>
                           <th className="px-2 py-1 text-[9px] font-bold text-neutral-500 uppercase tracking-widest text-right w-20">Est Hr</th>
+                          <th className="px-2 py-1 text-[9px] font-bold text-neutral-500 uppercase tracking-widest text-right w-20">Act Hr</th>
                           <th className="px-2 py-1 text-[9px] font-bold text-neutral-500 uppercase tracking-widest text-right w-24">Status</th>
                         </tr>
                       </thead>
@@ -421,6 +422,9 @@ export default function DailyStandup() {
                             <td className="px-2 py-1 text-xs text-neutral-600 text-right">
                               {item.estimate ? Number(item.estimate).toFixed(1) : "-"}
                             </td>
+                            <td className={cn("px-2 py-1 text-xs text-right", item.actualHours ? "text-neutral-600" : "text-rose-400 font-medium")}>
+                              {item.actualHours ? Number(item.actualHours).toFixed(1) : "-"}
+                            </td>
                             <td className="px-2 py-1 text-right">
                               <span className={cn(
                                 "text-[9px] font-bold px-2 py-0.5 rounded border uppercase inline-block",
@@ -435,7 +439,7 @@ export default function DailyStandup() {
                           </tr>
                         )) : (
                           <tr>
-                            <td colSpan={6} className="px-2 py-2 text-center text-xs text-neutral-500 italic">No items found for this project.</td>
+                            <td colSpan={7} className="px-2 py-2 text-center text-xs text-neutral-500 italic">No items found for this project.</td>
                           </tr>
                         )}
                       </tbody>
