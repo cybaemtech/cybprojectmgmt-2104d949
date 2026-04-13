@@ -198,7 +198,12 @@ export default function TemplateSettings() {
   const updateTask = (id: number, updates: Partial<TemplateTask>) => {
     const all = getTasks();
     const idx = all.findIndex(t => t.id === id);
-    if (idx >= 0) { all[idx] = { ...all[idx], ...updates, updatedAt: new Date().toISOString() }; saveTasksToStorage(all); reload(); }
+    if (idx >= 0) {
+      all[idx] = { ...all[idx], ...updates, updatedAt: new Date().toISOString() };
+      saveTasksToStorage(all);
+      // Update local state directly to avoid input focus loss from full reload
+      setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t));
+    }
   };
 
   const deleteTask = (id: number) => {
