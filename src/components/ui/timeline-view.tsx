@@ -66,8 +66,8 @@ function buildPeriods(unit: TimeUnit): Period[] {
 }
 
 function getBarPosition(
-  startDate: string | null | undefined,
-  endDate: string | null | undefined,
+  startDate: string | Date | null | undefined,
+  endDate: string | Date | null | undefined,
   periods: Period[]
 ): { leftPercent: number; widthPercent: number } | null {
   if (!startDate && !endDate) return null;
@@ -99,7 +99,7 @@ function getTodayPosition(periods: Period[]): number | null {
   return ((now - rangeStart) / (rangeEnd - rangeStart)) * 100;
 }
 
-function formatDate(d: string | null | undefined): string {
+function formatDate(d: string | Date | null | undefined): string {
   if (!d) return "—";
   const date = new Date(d);
   return `${date.getDate()} ${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`;
