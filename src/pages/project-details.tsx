@@ -1447,6 +1447,24 @@ export default function ProjectDetails() {
                 </a>
                 <a
                   href="#"
+                  onClick={(e) => { e.preventDefault(); setProjectView('documentation'); }}
+                  className={`border-b-2 ${projectView === 'documentation'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-neutral-600 hover:text-neutral-900'
+                    } font-medium py-3 flex items-center gap-1.5`}
+                >
+                  Documentation
+                  {(() => {
+                    const docCount = workItems?.filter(item =>
+                      item.pdfUploadBlob || item.pdfUploadPath || item.screenshotBlob || item.screenshotPath
+                    ).length || 0;
+                    return docCount > 0 ? (
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0">{docCount}</Badge>
+                    ) : null;
+                  })()}
+                </a>
+                <a
+                  href="#"
                   onClick={(e) => { e.preventDefault(); setProjectView('settings'); }}
                   className={`border-b-2 ${projectView === 'settings'
                     ? 'border-primary text-primary'
@@ -1467,7 +1485,7 @@ export default function ProjectDetails() {
                 
               </div>
               {/* Only show Create Item button on specific tabs */}
-              {projectView !== 'overview' && projectView !== 'settings' && (
+              {projectView !== 'overview' && projectView !== 'settings' && projectView !== 'documentation' && (
                 <div className="flex space-x-3">
                   <Button variant="outline" onClick={handleWorkItemsUpdate}>
                     <RefreshCw className="mr-2 h-4 w-4" />
