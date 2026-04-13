@@ -352,6 +352,8 @@ export function CreateItemModal({
       }
 
       // ── FEATURE automation chain ──────────────────────────────────────
+      const creatorId = currentUser?.id || currentLocalUser?.id || null;
+
       if (data.type === 'FEATURE' && data.autoCreateTemplateTasks && selectedTemplateId) {
         const projectName = selectedProject?.name || "Project";
 
@@ -392,6 +394,7 @@ export function CreateItemModal({
           status: 'TODO',
           priority: 'MEDIUM',
           parentId: feature.id,
+          assigneeId: creatorId,
           description: `Requirement gathering tasks for "${data.title}"`,
         });
 
@@ -408,6 +411,7 @@ export function CreateItemModal({
             status: 'TODO',
             priority: 'MEDIUM',
             parentId: story.id,
+            assigneeId: creatorId,
             estimate: "9",
           });
         });
