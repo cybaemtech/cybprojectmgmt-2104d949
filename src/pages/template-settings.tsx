@@ -15,37 +15,29 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, GripVertical, LayoutTemplate, Info, Download, Copy, Lock } from "lucide-react";
+import { Plus, Pencil, Trash2, GripVertical, LayoutTemplate, Info, Download, Copy, Lock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getLocalUser } from "@/lib/local-store";
+import { supabaseCustom as supabase } from "@/lib/supabase-custom";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
-interface Template {
-  id: number;
-  name: string;
-  description: string;
-  color: string;
-  ownerId: number;
-  isLocked?: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-const LOCKED_TEMPLATE_NAME = "Requirement Gathering";
-
 interface TemplateTask {
   id: number;
-  templateId: number;
   title: string;
   itemOrder: number;
   isActive: boolean;
   estimatedHours?: number;
+}
+
+interface Template {
+  id: number;          // DB id
+  name: string;
+  description: string;
+  color: string;
+  isLocked: boolean;
+  tasks: TemplateTask[];
   createdAt: string;
   updatedAt: string;
 }
-
-const TEMPLATES_KEY = "user-templates";
-const TASKS_KEY = "user-template-tasks";
 
 const COLORS = [
   "bg-orange-50 text-orange-900",
@@ -58,169 +50,206 @@ const COLORS = [
   "bg-red-50 text-red-900",
 ];
 
-// ─── Storage helpers ────────────────────────────────────────────────────────
-function getTemplates(): Template[] {
-  try { return JSON.parse(localStorage.getItem(TEMPLATES_KEY) || "[]"); } catch { return []; }
+// ─── DB row → app model ─────────────────────────────────────────────────────
+function mapRow(row: any, index: number): Template {
+  const tasks: TemplateTask[] = Array.isArray(row.tasks) ? row.tasks : [];
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description ?? "",
+    color: COLORS[index % COLORS.length],
+    isLocked: row.is_locked ?? false,
+    tasks,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
-function saveTemplates(t: Template[]) { localStorage.setItem(TEMPLATES_KEY, JSON.stringify(t)); }
-function getTasks(): TemplateTask[] {
-  try { return JSON.parse(localStorage.getItem(TASKS_KEY) || "[]"); } catch { return []; }
-}
-function saveTasksToStorage(t: TemplateTask[]) { localStorage.setItem(TASKS_KEY, JSON.stringify(t)); }
 
 // ─── Sample data ────────────────────────────────────────────────────────────
-function loadSamples(userId: number) {
-  const now = new Date().toISOString();
-  // Remove existing for user
-  saveTemplates(getTemplates().filter(t => t.ownerId !== userId));
-  const existingTasks = getTasks();
-
-  const templates = getTemplates();
-  const maxTplId = [...templates, ...getTemplates()].reduce((m, t) => Math.max(m, t.id), 0);
-
-  const sampleTemplates: Template[] = [
-    { id: maxTplId + 1, name: "Requirement Gathering", description: "Tasks for initial requirement analysis and client sign-off.", color: COLORS[0], ownerId: userId, isLocked: true, createdAt: now, updatedAt: now },
-    { id: maxTplId + 2, name: "Developer Checklist", description: "Standard development workflow tasks.", color: COLORS[1], ownerId: userId, createdAt: now, updatedAt: now },
-    { id: maxTplId + 3, name: "QA & Testing", description: "Quality assurance and testing workflow.", color: COLORS[2], ownerId: userId, createdAt: now, updatedAt: now },
-  ];
-
-  const maxTaskId = existingTasks.reduce((m, t) => Math.max(m, t.id), 0);
-  let taskId = maxTaskId;
-
+function buildSamples(userId: string) {
   const reqGatheringHours = [4, 8, 6, 8, 4, 2];
   const devChecklistHours = [2, 8, 16, 16, 8, 4, 2];
   const qaTestingHours = [4, 8, 8, 6, 4, 4, 2];
 
-  const sampleTasks: TemplateTask[] = [
-    // Template 1 - Requirement Gathering
-    ...(["Client Requirement Call", "Prepare Requirement Document", "Feasibility Analysis", "Design Review / Wireframes", "Estimation & Timeline", "Client Sign-Off"]
-      .map((title, i) => ({ id: ++taskId, templateId: sampleTemplates[0].id, title, itemOrder: i + 1, isActive: true, estimatedHours: reqGatheringHours[i], createdAt: now, updatedAt: now }))),
-    // Template 2 - Developer Checklist
-    ...(["Setup Development Branch", "Database Schema Changes", "Backend API Implementation", "Frontend UI Development", "Unit Tests", "Code Review", "Deploy to Staging"]
-      .map((title, i) => ({ id: ++taskId, templateId: sampleTemplates[1].id, title, itemOrder: i + 1, isActive: true, estimatedHours: devChecklistHours[i], createdAt: now, updatedAt: now }))),
-    // Template 3 - QA & Testing
-    ...(["Create Test Plan", "Write Test Cases", "Functional Testing", "Regression Testing", "Performance Testing", "Bug Reporting", "Sign-Off"]
-      .map((title, i) => ({ id: ++taskId, templateId: sampleTemplates[2].id, title, itemOrder: i + 1, isActive: true, estimatedHours: qaTestingHours[i], createdAt: now, updatedAt: now }))),
+  return [
+    {
+      name: "Requirement Gathering",
+      description: "Tasks for initial requirement analysis and client sign-off.",
+      is_locked: true,
+      created_by: userId,
+      tasks: ["Client Requirement Call", "Prepare Requirement Document", "Feasibility Analysis", "Design Review / Wireframes", "Estimation & Timeline", "Client Sign-Off"]
+        .map((title, i) => ({ id: i + 1, title, itemOrder: i + 1, isActive: true, estimatedHours: reqGatheringHours[i] })),
+    },
+    {
+      name: "Developer Checklist",
+      description: "Standard development workflow tasks.",
+      is_locked: false,
+      created_by: userId,
+      tasks: ["Setup Development Branch", "Database Schema Changes", "Backend API Implementation", "Frontend UI Development", "Unit Tests", "Code Review", "Deploy to Staging"]
+        .map((title, i) => ({ id: i + 1, title, itemOrder: i + 1, isActive: true, estimatedHours: devChecklistHours[i] })),
+    },
+    {
+      name: "QA & Testing",
+      description: "Quality assurance and testing workflow.",
+      is_locked: false,
+      created_by: userId,
+      tasks: ["Create Test Plan", "Write Test Cases", "Functional Testing", "Regression Testing", "Performance Testing", "Bug Reporting", "Sign-Off"]
+        .map((title, i) => ({ id: i + 1, title, itemOrder: i + 1, isActive: true, estimatedHours: qaTestingHours[i] })),
+    },
   ];
-
-  saveTemplates([...getTemplates(), ...sampleTemplates]);
-  // Remove old tasks for these template IDs (shouldn't exist but safe)
-  const newTaskTemplateIds = sampleTemplates.map(t => t.id);
-  saveTasksToStorage([...existingTasks.filter(t => !newTaskTemplateIds.includes(t.templateId)), ...sampleTasks]);
-
-  return { templates: sampleTemplates, tasks: sampleTasks };
 }
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function TemplateSettings() {
   const { toast } = useToast();
-  const currentUser = getLocalUser();
   const [templates, setTemplates] = useState<Template[]>([]);
-  const [tasks, setTasks] = useState<TemplateTask[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const reload = useCallback(() => {
-    const userTemplates = getTemplates().filter(t => t.ownerId === currentUser.id);
-    if (userTemplates.length === 0) {
-      const { templates: st, tasks: stk } = loadSamples(currentUser.id);
-      setTemplates(st);
-      setTasks(stk);
-    } else {
-      setTemplates(userTemplates);
-      const templateIds = userTemplates.map(t => t.id);
-      setTasks(getTasks().filter(t => templateIds.includes(t.templateId)));
+  // Get current user id
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id ?? null);
+    });
+  }, []);
+
+  // ── Fetch from DB ─────────────────────────────────────────────────────────
+  const reload = useCallback(async () => {
+    if (!userId) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("work_item_templates")
+      .select("*")
+      .eq("created_by", userId)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("Failed to load templates:", error);
+      setLoading(false);
+      return;
     }
-  }, [currentUser.id]);
+
+    if (!data || data.length === 0) {
+      // Seed samples
+      const samples = buildSamples(userId);
+      const { data: inserted, error: insertErr } = await supabase
+        .from("work_item_templates")
+        .insert(samples)
+        .select("*");
+      if (insertErr) {
+        console.error("Failed to seed samples:", insertErr);
+        setLoading(false);
+        return;
+      }
+      setTemplates((inserted || []).map(mapRow));
+    } else {
+      setTemplates(data.map(mapRow));
+    }
+    setLoading(false);
+  }, [userId]);
 
   useEffect(() => { reload(); }, [reload]);
 
-  // ── Template CRUD ─────────────────────────────────────────────────────────
-  const createTemplate = (name: string, description: string) => {
-    const all = getTemplates();
-    const maxId = all.reduce((m, t) => Math.max(m, t.id), 0);
-    const now = new Date().toISOString();
-    const colorIdx = templates.length % COLORS.length;
-    const newTpl: Template = { id: maxId + 1, name, description, color: COLORS[colorIdx], ownerId: currentUser.id, createdAt: now, updatedAt: now };
-    saveTemplates([...all, newTpl]);
-    reload();
-    return newTpl;
+  // ── Helper: persist tasks for a template ──────────────────────────────────
+  const persistTasks = async (templateId: number, tasks: TemplateTask[]) => {
+    const { error } = await supabase
+      .from("work_item_templates")
+      .update({ tasks, updated_at: new Date().toISOString() })
+      .eq("id", templateId);
+    if (error) console.error("Failed to save tasks:", error);
   };
 
-  const updateTemplate = (id: number, updates: Partial<Template>) => {
-    const all = getTemplates();
-    const idx = all.findIndex(t => t.id === id);
-    if (idx < 0) return;
-    // Prevent renaming locked templates
-    if (all[idx].isLocked && updates.name && updates.name !== all[idx].name) {
-      toast({ title: "Locked", description: `"${all[idx].name}" is a mandatory template and cannot be renamed.`, variant: "destructive" });
+  // ── Template CRUD ─────────────────────────────────────────────────────────
+  const createTemplate = async (name: string, description: string) => {
+    if (!userId) return;
+    const { data, error } = await supabase
+      .from("work_item_templates")
+      .insert({ name, description, created_by: userId, tasks: [], is_locked: false })
+      .select("*")
+      .single();
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    setTemplates(prev => [...prev, mapRow(data, prev.length)]);
+  };
+
+  const updateTemplate = async (id: number, updates: { name?: string; description?: string }) => {
+    const tpl = templates.find(t => t.id === id);
+    if (tpl?.isLocked && updates.name && updates.name !== tpl.name) {
+      toast({ title: "Locked", description: `"${tpl.name}" is a mandatory template and cannot be renamed.`, variant: "destructive" });
       return;
     }
-    all[idx] = { ...all[idx], ...updates, updatedAt: new Date().toISOString() };
-    saveTemplates(all); reload();
+    const { error } = await supabase
+      .from("work_item_templates")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    setTemplates(prev => prev.map(t => t.id === id ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t));
   };
 
-  const deleteTemplate = (id: number) => {
-    const tpl = getTemplates().find(t => t.id === id);
+  const deleteTemplate = async (id: number) => {
+    const tpl = templates.find(t => t.id === id);
     if (tpl?.isLocked) {
       toast({ title: "Locked", description: `"${tpl.name}" is a mandatory template and cannot be deleted.`, variant: "destructive" });
       return;
     }
-    saveTemplates(getTemplates().filter(t => t.id !== id));
-    saveTasksToStorage(getTasks().filter(t => t.templateId !== id));
-    reload();
+    const { error } = await supabase.from("work_item_templates").delete().eq("id", id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    setTemplates(prev => prev.filter(t => t.id !== id));
   };
 
-  const duplicateTemplate = (tpl: Template) => {
-    const allTpls = getTemplates();
-    const allTasks = getTasks();
-    const maxTplId = allTpls.reduce((m, t) => Math.max(m, t.id), 0);
-    const maxTaskId = allTasks.reduce((m, t) => Math.max(m, t.id), 0);
-    const now = new Date().toISOString();
-    const newTpl: Template = { ...tpl, id: maxTplId + 1, name: `${tpl.name} (Copy)`, createdAt: now, updatedAt: now };
-    const tplTasks = allTasks.filter(t => t.templateId === tpl.id);
-    const newTasks = tplTasks.map((t, i) => ({ ...t, id: maxTaskId + i + 1, templateId: newTpl.id, createdAt: now, updatedAt: now }));
-    saveTemplates([...allTpls, newTpl]);
-    saveTasksToStorage([...allTasks, ...newTasks]);
-    reload();
+  const duplicateTemplate = async (tpl: Template) => {
+    if (!userId) return;
+    const newTasks = tpl.tasks.map(t => ({ ...t }));
+    const { data, error } = await supabase
+      .from("work_item_templates")
+      .insert({ name: `${tpl.name} (Copy)`, description: tpl.description, created_by: userId, tasks: newTasks, is_locked: false })
+      .select("*")
+      .single();
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    setTemplates(prev => [...prev, mapRow(data, prev.length)]);
     toast({ title: "Duplicated", description: `"${tpl.name}" has been duplicated.` });
   };
 
-  // ── Task CRUD ─────────────────────────────────────────────────────────────
+  // ── Task CRUD (in-memory + persist) ───────────────────────────────────────
   const addTask = (title: string, templateId: number) => {
-    const all = getTasks();
-    const maxId = all.reduce((m, t) => Math.max(m, t.id), 0);
-    const sameTpl = all.filter(t => t.templateId === templateId);
-    const maxOrder = sameTpl.reduce((m, t) => Math.max(m, t.itemOrder), 0);
-    const now = new Date().toISOString();
-    saveTasksToStorage([...all, { id: maxId + 1, templateId, title, itemOrder: maxOrder + 1, isActive: true, createdAt: now, updatedAt: now }]);
-    reload();
+    setTemplates(prev => prev.map(tpl => {
+      if (tpl.id !== templateId) return tpl;
+      const maxId = tpl.tasks.reduce((m, t) => Math.max(m, t.id), 0);
+      const maxOrder = tpl.tasks.reduce((m, t) => Math.max(m, t.itemOrder), 0);
+      const newTask: TemplateTask = { id: maxId + 1, title, itemOrder: maxOrder + 1, isActive: true };
+      const newTasks = [...tpl.tasks, newTask];
+      persistTasks(tpl.id, newTasks);
+      return { ...tpl, tasks: newTasks };
+    }));
   };
 
-  const updateTask = (id: number, updates: Partial<TemplateTask>) => {
-    const all = getTasks();
-    const idx = all.findIndex(t => t.id === id);
-    if (idx >= 0) {
-      all[idx] = { ...all[idx], ...updates, updatedAt: new Date().toISOString() };
-      saveTasksToStorage(all);
-      // Update local state directly to avoid input focus loss from full reload
-      setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t));
-    }
+  const updateTask = (templateId: number, taskId: number, updates: Partial<TemplateTask>) => {
+    setTemplates(prev => prev.map(tpl => {
+      if (tpl.id !== templateId) return tpl;
+      const newTasks = tpl.tasks.map(t => t.id === taskId ? { ...t, ...updates } : t);
+      persistTasks(tpl.id, newTasks);
+      return { ...tpl, tasks: newTasks };
+    }));
   };
 
-  const deleteTask = (id: number) => {
-    saveTasksToStorage(getTasks().filter(t => t.id !== id));
-    reload();
+  const deleteTask = (templateId: number, taskId: number) => {
+    setTemplates(prev => prev.map(tpl => {
+      if (tpl.id !== templateId) return tpl;
+      const newTasks = tpl.tasks.filter(t => t.id !== taskId);
+      persistTasks(tpl.id, newTasks);
+      return { ...tpl, tasks: newTasks };
+    }));
   };
 
   const reorderTasks = (templateId: number, startIndex: number, endIndex: number) => {
-    const all = getTasks();
-    const tplTasks = all.filter(t => t.templateId === templateId).sort((a, b) => a.itemOrder - b.itemOrder);
-    const otherTasks = all.filter(t => t.templateId !== templateId);
-    const [moved] = tplTasks.splice(startIndex, 1);
-    tplTasks.splice(endIndex, 0, moved);
-    const now = new Date().toISOString();
-    tplTasks.forEach((t, i) => { t.itemOrder = i + 1; t.updatedAt = now; });
-    saveTasksToStorage([...otherTasks, ...tplTasks]);
-    reload();
+    setTemplates(prev => prev.map(tpl => {
+      if (tpl.id !== templateId) return tpl;
+      const sorted = [...tpl.tasks].sort((a, b) => a.itemOrder - b.itemOrder);
+      const [moved] = sorted.splice(startIndex, 1);
+      sorted.splice(endIndex, 0, moved);
+      const newTasks = sorted.map((t, i) => ({ ...t, itemOrder: i + 1 }));
+      persistTasks(tpl.id, newTasks);
+      return { ...tpl, tasks: newTasks };
+    }));
   };
 
   // ── Dialog state ──────────────────────────────────────────────────────────
@@ -228,31 +257,31 @@ export default function TemplateSettings() {
   const [editTplDialog, setEditTplDialog] = useState<Template | null>(null);
   const [deleteTplDialog, setDeleteTplDialog] = useState<Template | null>(null);
   const [addTaskDialog, setAddTaskDialog] = useState<{ open: boolean; templateId: number }>({ open: false, templateId: 0 });
-  const [editTaskDialog, setEditTaskDialog] = useState<TemplateTask | null>(null);
-  const [deleteTaskDialog, setDeleteTaskDialog] = useState<TemplateTask | null>(null);
+  const [editTaskDialog, setEditTaskDialog] = useState<{ task: TemplateTask; templateId: number } | null>(null);
+  const [deleteTaskDialog, setDeleteTaskDialog] = useState<{ task: TemplateTask; templateId: number } | null>(null);
 
   const [tplName, setTplName] = useState("");
   const [tplDesc, setTplDesc] = useState("");
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [editTaskTitle, setEditTaskTitle] = useState("");
 
-  const handleCreateTemplate = () => {
+  const handleCreateTemplate = async () => {
     if (!tplName.trim()) return;
-    createTemplate(tplName.trim(), tplDesc.trim());
+    await createTemplate(tplName.trim(), tplDesc.trim());
     toast({ title: "Template Created", description: `"${tplName.trim()}" has been created.` });
     setTplName(""); setTplDesc(""); setCreateTplDialog(false);
   };
 
-  const handleEditTemplate = () => {
+  const handleEditTemplate = async () => {
     if (!editTplDialog || !tplName.trim()) return;
-    updateTemplate(editTplDialog.id, { name: tplName.trim(), description: tplDesc.trim() });
+    await updateTemplate(editTplDialog.id, { name: tplName.trim(), description: tplDesc.trim() });
     toast({ title: "Updated", description: "Template updated successfully." });
     setEditTplDialog(null); setTplName(""); setTplDesc("");
   };
 
-  const handleDeleteTemplate = () => {
+  const handleDeleteTemplate = async () => {
     if (!deleteTplDialog) return;
-    deleteTemplate(deleteTplDialog.id);
+    await deleteTemplate(deleteTplDialog.id);
     toast({ title: "Deleted", description: `"${deleteTplDialog.name}" and all its tasks removed.` });
     setDeleteTplDialog(null);
   };
@@ -266,51 +295,44 @@ export default function TemplateSettings() {
 
   const handleEditTask = () => {
     if (!editTaskDialog || !editTaskTitle.trim()) return;
-    updateTask(editTaskDialog.id, { title: editTaskTitle.trim() });
+    updateTask(editTaskDialog.templateId, editTaskDialog.task.id, { title: editTaskTitle.trim() });
     toast({ title: "Updated", description: "Task updated." });
     setEditTaskDialog(null);
   };
 
   const handleDeleteTask = () => {
     if (!deleteTaskDialog) return;
-    deleteTask(deleteTaskDialog.id);
-    toast({ title: "Deleted", description: `"${deleteTaskDialog.title}" removed.` });
+    deleteTask(deleteTaskDialog.templateId, deleteTaskDialog.task.id);
+    toast({ title: "Deleted", description: `"${deleteTaskDialog.task.title}" removed.` });
     setDeleteTaskDialog(null);
   };
 
-  const handleToggleActive = (task: TemplateTask) => {
-    updateTask(task.id, { isActive: !task.isActive });
-  };
-
-  const handleResetSamples = () => {
-    // Clear user's templates & tasks, reload samples
-    const allTpls = getTemplates().filter(t => t.ownerId !== currentUser.id);
-    saveTemplates(allTpls);
-    const userTplIds = templates.map(t => t.id);
-    saveTasksToStorage(getTasks().filter(t => !userTplIds.includes(t.templateId)));
-    loadSamples(currentUser.id);
-    reload();
+  const handleResetSamples = async () => {
+    if (!userId) return;
+    // Delete all user templates
+    await supabase.from("work_item_templates").delete().eq("created_by", userId);
+    // Re-seed
+    const samples = buildSamples(userId);
+    const { data } = await supabase.from("work_item_templates").insert(samples).select("*");
+    setTemplates((data || []).map(mapRow));
     toast({ title: "Reset", description: "Templates reset to samples." });
   };
 
   // ── Task Row ──────────────────────────────────────────────────────────────
-  const TaskRow = ({ task, index }: { task: TemplateTask; index: number }) => (
-    <Draggable draggableId={`task-${task.id}`} index={index}>
+  const TaskRow = ({ task, index, templateId }: { task: TemplateTask; index: number; templateId: number }) => (
+    <Draggable draggableId={`task-${templateId}-${task.id}`} index={index}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
           className={`grid grid-cols-[32px_1fr_90px_56px_72px] items-center border-b border-border/50 transition-colors ${task.isActive ? 'hover:bg-muted/30' : 'bg-muted/20 opacity-60'} ${snapshot.isDragging ? 'shadow-lg ring-1 ring-primary/20 bg-background' : ''}`}
         >
-          {/* Drag handle */}
           <div {...provided.dragHandleProps} className="flex items-center justify-center h-full cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100 transition-opacity">
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
-          {/* Task name */}
           <div className="py-3 pr-4">
             <p className={`text-sm font-medium ${!task.isActive ? 'line-through text-muted-foreground' : ''}`}>{task.title}</p>
           </div>
-          {/* Hours input */}
           <div className="flex items-center gap-1">
             <Input
               type="number"
@@ -319,23 +341,21 @@ export default function TemplateSettings() {
               value={task.estimatedHours ?? ""}
               onChange={(e) => {
                 const val = e.target.value ? parseFloat(e.target.value) : undefined;
-                updateTask(task.id, { estimatedHours: val });
+                updateTask(templateId, task.id, { estimatedHours: val });
               }}
               placeholder="0"
               className="h-7 w-14 text-xs text-center px-1 font-mono tabular-nums bg-muted/50 border-border/60"
             />
             <span className="text-[10px] text-muted-foreground uppercase tracking-tight">hr</span>
           </div>
-          {/* Active toggle */}
           <div className="flex justify-center">
-            <Switch checked={task.isActive} onCheckedChange={() => handleToggleActive(task)} className="scale-90" />
+            <Switch checked={task.isActive} onCheckedChange={() => updateTask(templateId, task.id, { isActive: !task.isActive })} className="scale-90" />
           </div>
-          {/* Actions */}
           <div className="flex justify-end gap-0.5 pr-2">
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditTaskTitle(task.title); setEditTaskDialog(task); }}>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditTaskTitle(task.title); setEditTaskDialog({ task, templateId }); }}>
               <Pencil className="h-3 w-3" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteTaskDialog(task)}>
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteTaskDialog({ task, templateId })}>
               <Trash2 className="h-3 w-3" />
             </Button>
           </div>
@@ -346,7 +366,7 @@ export default function TemplateSettings() {
 
   // ── Template Card ─────────────────────────────────────────────────────────
   const TemplateCard = ({ template }: { template: Template }) => {
-    const tplTasks = tasks.filter(t => t.templateId === template.id).sort((a, b) => a.itemOrder - b.itemOrder);
+    const tplTasks = [...template.tasks].sort((a, b) => a.itemOrder - b.itemOrder);
     const activeTasks = tplTasks.filter(t => t.isActive);
     const totalHours = activeTasks.reduce((sum, t) => sum + (t.estimatedHours || 0), 0);
     return (
@@ -362,7 +382,7 @@ export default function TemplateSettings() {
               <Badge variant="outline" className="ml-1 font-mono tabular-nums">{totalHours}h total</Badge>
             </div>
           </div>
-           <div className="flex items-center justify-between mt-1">
+          <div className="flex items-center justify-between mt-1">
             <div className="flex items-center gap-1.5">
               <CardDescription className="text-inherit opacity-80 text-xs">{template.description || "No description"}</CardDescription>
               {template.isLocked && (
@@ -395,7 +415,6 @@ export default function TemplateSettings() {
             </div>
           ) : (
             <>
-              {/* Column headers */}
               <div className="grid grid-cols-[32px_1fr_90px_56px_72px] items-center px-0 py-1.5 border-b border-border bg-muted/30">
                 <div />
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Task</div>
@@ -410,7 +429,7 @@ export default function TemplateSettings() {
                 <Droppable droppableId={`template-${template.id}`}>
                   {(provided) => (
                     <div ref={provided.innerRef} {...provided.droppableProps}>
-                      {tplTasks.map((task, index) => <TaskRow key={task.id} task={task} index={index} />)}
+                      {tplTasks.map((task, index) => <TaskRow key={task.id} task={task} index={index} templateId={template.id} />)}
                       {provided.placeholder}
                     </div>
                   )}
@@ -418,7 +437,6 @@ export default function TemplateSettings() {
               </DragDropContext>
             </>
           )}
-          {/* Footer */}
           <div className="mt-auto flex items-center justify-between px-3 py-2.5 border-t border-border bg-muted/10">
             <Button variant="ghost" size="sm" className="text-xs text-primary font-semibold hover:text-primary" onClick={() => { setNewTaskTitle(""); setAddTaskDialog({ open: true, templateId: template.id }); }}>
               <Plus className="h-3.5 w-3.5 mr-1" /> Add Task
@@ -434,10 +452,17 @@ export default function TemplateSettings() {
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold">Work Item Templates</h1>
@@ -455,7 +480,6 @@ export default function TemplateSettings() {
           </div>
         </div>
 
-        {/* Info */}
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex gap-3">
           <Info className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-amber-800">
@@ -469,7 +493,6 @@ export default function TemplateSettings() {
           </div>
         </div>
 
-        {/* Templates Grid */}
         {templates.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <LayoutTemplate className="h-12 w-12 mx-auto mb-3 opacity-40" />
@@ -577,7 +600,7 @@ export default function TemplateSettings() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Task</AlertDialogTitle>
-            <AlertDialogDescription>Remove <strong>"{deleteTaskDialog?.title}"</strong> from the template?</AlertDialogDescription>
+            <AlertDialogDescription>Remove <strong>"{deleteTaskDialog?.task.title}"</strong> from the template?</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
