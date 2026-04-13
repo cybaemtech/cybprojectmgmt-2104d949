@@ -422,6 +422,10 @@ export default function DailyStandup() {
                             <td className="px-2 py-1 text-xs text-neutral-600 text-right">
                               {item.estimate ? Number(item.estimate).toFixed(1) : "-"}
                             </td>
+                            <td className={cn("px-2 py-1 text-xs text-right", item.actualHours ? "text-neutral-600" : "text-rose-400 font-medium")}>
+                              {item.actualHours ? Number(item.actualHours).toFixed(1) : "-"}
+                            </td>
+                            </td>
                             <td className="px-2 py-1 text-right">
                               <span className={cn(
                                 "text-[9px] font-bold px-2 py-0.5 rounded border uppercase inline-block",
