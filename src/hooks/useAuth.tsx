@@ -1,75 +1,114 @@
 import { useState, useEffect } from "react";
-import { User } from "@/types/schema";
-import { DEMO_USER } from "@/lib/demo-data";
+import { supabase } from "@/integrations/supabase/client";
+import { setCachedUser, clearCachedUser } from "@/lib/supabase-store";
+import type { User } from "@/types/schema";
 
-const AUTH_STORAGE_KEY = "auth-user";
+const mapProfile = (row: any): User => ({
+  id: row.id,
+  username: row.username ?? "",
+  email: row.email ?? "",
+  fullName: row.full_name ?? "",
+  password: "",
+  avatarUrl: row.avatar_url,
+  isActive: row.is_active ?? true,
+  role: row.role ?? "USER",
+  lastLogin: row.last_login,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+} as any);
 
-function getStoredUser(): User | null {
-  try {
-    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : null;
-  } catch {
-    return null;
+export async function login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) return { success: false, error: error.message };
+
+  // Fetch & cache profile
+  if (data.user) {
+    const { data: profile } = await supabase.from("profiles").select("*").eq("id", data.user.id).single();
+    if (profile) {
+      setCachedUser(mapProfile(profile));
+    } else {
+      setCachedUser({
+        id: data.user.id,
+        username: email.split("@")[0],
+        email,
+        fullName: data.user.user_metadata?.full_name ?? email.split("@")[0],
+        password: "",
+        avatarUrl: null,
+        isActive: true,
+        role: "USER",
+        lastLogin: new Date().toISOString(),
+        createdAt: data.user.created_at,
+        updatedAt: data.user.created_at,
+      } as any);
+    }
   }
-}
 
-export function login(email: string, password: string): { success: boolean; error?: string } {
-  // Local credentials - no backend needed
-  const validCredentials = [
-    { email: "admin@cybaemtech.com", password: "admin123", role: "ADMIN" as const, fullName: "Admin User" },
-    { email: "demo@cybaemtech.com", password: "demo123", role: "ADMIN" as const, fullName: "Demo User" },
-    { email: "user@cybaemtech.com", password: "user123", role: "USER" as const, fullName: "Team Member" },
-  ];
-
-  const match = validCredentials.find(c => c.email === email && c.password === password);
-  if (!match) {
-    return { success: false, error: "Invalid email or password" };
-  }
-
-  const user: User = {
-    id: Math.floor(Math.random() * 1000) + 1,
-    username: match.email.split("@")[0],
-    email: match.email,
-    fullName: match.fullName,
-    password: "",
-    avatarUrl: null,
-    isActive: true,
-    role: match.role,
-    lastLogin: new Date().toISOString(),
-    createdAt: "2024-01-01",
-    updatedAt: new Date().toISOString(),
-  };
-
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-  window.dispatchEvent(new Event("auth-change"));
   return { success: true };
 }
 
-export function logout() {
-  localStorage.removeItem(AUTH_STORAGE_KEY);
-  sessionStorage.removeItem("demo-mode");
-  window.dispatchEvent(new Event("auth-change"));
+export async function logout() {
+  clearCachedUser();
+  await supabase.auth.signOut();
 }
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(getStoredUser);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const handler = () => setUser(getStoredUser());
-    window.addEventListener("auth-change", handler);
-    window.addEventListener("storage", handler);
-    return () => {
-      window.removeEventListener("auth-change", handler);
-      window.removeEventListener("storage", handler);
-    };
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        // Use setTimeout to avoid Supabase deadlock
+        setTimeout(async () => {
+          const { data: profile } = await supabase.from("profiles").select("*").eq("id", session.user.id).single();
+          if (profile) {
+            const mapped = mapProfile(profile);
+            setUser(mapped);
+            setCachedUser(mapped);
+          } else {
+            const fallback = {
+              id: session.user.id,
+              username: session.user.email?.split("@")[0] ?? "",
+              email: session.user.email ?? "",
+              fullName: session.user.user_metadata?.full_name ?? session.user.email?.split("@")[0] ?? "",
+              password: "",
+              avatarUrl: null,
+              isActive: true,
+              role: "USER",
+              lastLogin: new Date().toISOString(),
+              createdAt: session.user.created_at,
+              updatedAt: session.user.created_at,
+            } as any;
+            setUser(fallback);
+            setCachedUser(fallback);
+          }
+          setIsLoading(false);
+        }, 0);
+      } else {
+        setUser(null);
+        clearCachedUser();
+        setIsLoading(false);
+      }
+    });
+
+    // Then check existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        setIsLoading(false);
+      }
+      // The onAuthStateChange callback above will handle setting the user
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   return {
     user,
-    isLoading: false,
+    isLoading,
     isError: false,
     error: null,
     isAuthenticated: !!user,
-    isUnauthenticated: !user,
+    isUnauthenticated: !user && !isLoading,
   };
 }
