@@ -394,7 +394,7 @@ export function CreateItemModal({
       }
 
       // ── FEATURE automation chain ──────────────────────────────────────
-      const creatorId = currentUser?.id || currentLocalUser?.id || null;
+      const creatorId = currentUser?.id || null;
 
       if (data.type === 'FEATURE' && data.autoCreateTemplateTasks && selectedTemplateId) {
         const projectName = selectedProject?.name || "Project";
@@ -465,7 +465,7 @@ export function CreateItemModal({
         });
       } else if (data.type === 'STORY' && data.autoCreateTemplateTasks && selectedTemplateId) {
         // STORY (Change Request) automation: create STORY then auto-create TASKs from template
-        const creatorId = currentUser?.id || currentLocalUser?.id || null;
+        const creatorId = currentUser?.id || null;
         submitData.assigneeId = creatorId;
 
         // Auto-attach to a parent FEATURE if none selected
