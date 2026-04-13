@@ -128,8 +128,8 @@ const CalendarView = ({
     return workItemsWithDates.filter(item => {
       if (!item.startDate && !item.endDate) return false;
       
-      const startDate = item.startDate ? parseISO(item.startDate) : null;
-      const endDate = item.endDate ? parseISO(item.endDate) : null;
+      const startDate = item.startDate ? parseISO(String(item.startDate)) : null;
+      const endDate = item.endDate ? parseISO(String(item.endDate)) : null;
       
       if (startDate && endDate) {
         return date >= startDate && date <= endDate;
