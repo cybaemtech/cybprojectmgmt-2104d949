@@ -133,7 +133,9 @@ const workItemFormSchema = z.object({
   if (data.type === 'FEATURE' && data.autoCreateTemplateTasks) return true;
   // Skip for STORY when autoCreateTemplateTasks is on (will auto-attach to a FEATURE)
   if (data.type === 'STORY' && data.autoCreateTemplateTasks) return true;
-  if (['FEATURE', 'STORY', 'TASK', 'BUG'].includes(data.type)) {
+  // Skip for BUG – will auto-attach to first available STORY if no parent selected
+  if (data.type === 'BUG') return true;
+  if (['FEATURE', 'STORY', 'TASK'].includes(data.type)) {
     return data.parentId && data.parentId > 0;
   }
   return true;
