@@ -23,7 +23,7 @@ export default function Projects() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"active" | "archived" | "dailyStandup">("active");
-  const [viewMode, setViewMode] = useState<"card" | "table">("table");
+  // viewMode removed - table only
 
   // Daily Standup Filters - Changed to arrays for multi-select
   const [standupStatusFilter, setStandupStatusFilter] = useState<string[]>([]);
@@ -189,22 +189,7 @@ export default function Projects() {
                 </Button>
               )}
               </div>
-              <div className="flex space-x-2">
-                <Button
-                  variant={viewMode === "table" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("table")}
-                >
-                  Table
-                </Button>
-                <Button
-                  variant={viewMode === "card" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("card")}
-                >
-                  Cards
-                </Button>
-              </div>
+              
             </div>
 
             {/* Daily Standup View */}
@@ -631,7 +616,7 @@ export default function Projects() {
                       : "No projects found"}
                   </h3>
                 </div>
-              ) : viewMode === "table" ? (
+              ) : (
                 <div className="bg-white rounded-lg shadow overflow-hidden">
                   <table className="w-full">
                     <thead className="bg-gray-50 border-b border-gray-200">
@@ -727,28 +712,6 @@ export default function Projects() {
                       })}
                     </tbody>
                   </table>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredProjects.map((project: Project) => {
-                    const creator = users.find((user: User) => user.id === project.createdBy);
-                    const team = teams.find((team: Team) => team.id === project.teamId);
-                    const teamMemberIds = project.teamId ? teamMembersOf(project.teamId) : [];
-                    const memberCount = teamMemberIds.length;
-                    const projectItems = allWorkItems.filter(item => item.projectId === project.id);
-                    const stats = calculateProjectStats(projectItems);
-                    return (
-                      <ProjectCard
-                        key={project.id}
-                        project={project}
-                        creator={creator}
-                        team={team}
-                        stats={stats}
-                        memberCount={memberCount}
-                        teamMemberIds={teamMemberIds}
-                      />
-                    );
-                  })}
                 </div>
               )
             )}
