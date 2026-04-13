@@ -41,90 +41,65 @@ function migrateDate(d: string): string {
   return d;
 }
 
-const ROADMAP_TEMPLATES_KEY = 'local-roadmap-templates';
+function mapDbToTemplate(row: any): Template {
+  const tasks = row.tasks || {};
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description || '',
+    streams: tasks.streams || [],
+    projects: (tasks.projects || []).map((p: any) => ({
+      ...p,
+      startDate: migrateDate(p.startDate),
+      endDate: migrateDate(p.endDate),
+    })),
+  };
+}
 
-const SAMPLE_TEMPLATES: Template[] = [
-  {
-    id: 1,
-    name: 'Software Product Launch',
-    description: 'End-to-end roadmap for launching a new software product',
-    streams: ['Engineering', 'Design', 'Marketing', 'QA'],
-    projects: [
-      { id: 1, name: 'Core Architecture', startDate: '2026-01-01', endDate: '2026-03-31', stream: 'Engineering', actionPoints: ['Set up CI/CD pipeline', 'Define microservices architecture', 'Database schema design'] },
-      { id: 2, name: 'UI/UX Design', startDate: '2026-02-01', endDate: '2026-04-15', stream: 'Design', actionPoints: ['User research & personas', 'Wireframes & prototypes', 'Design system creation'] },
-      { id: 3, name: 'MVP Development', startDate: '2026-04-01', endDate: '2026-07-31', stream: 'Engineering', actionPoints: ['Feature development sprints', 'API integration', 'Performance optimization'] },
-      { id: 4, name: 'Testing & QA', startDate: '2026-06-01', endDate: '2026-08-31', stream: 'QA', actionPoints: ['Test plan creation', 'Automated testing', 'UAT & bug fixing'] },
-      { id: 5, name: 'Go-to-Market Campaign', startDate: '2026-07-01', endDate: '2026-09-30', stream: 'Marketing', actionPoints: ['Content strategy', 'Launch event planning', 'Social media campaign'] },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Digital Transformation',
-    description: 'Enterprise digital transformation initiative roadmap',
-    streams: ['Infrastructure', 'Applications', 'Data & Analytics', 'Change Management'],
-    projects: [
-      { id: 1, name: 'Cloud Migration', startDate: '2026-01-01', endDate: '2026-06-30', stream: 'Infrastructure', actionPoints: ['Cloud provider selection', 'Migration planning', 'Phased migration execution'] },
-      { id: 2, name: 'Legacy System Modernization', startDate: '2026-03-01', endDate: '2026-09-30', stream: 'Applications', actionPoints: ['System audit', 'API-first redesign', 'Incremental rollout'] },
-      { id: 3, name: 'Data Platform Setup', startDate: '2026-02-01', endDate: '2026-07-31', stream: 'Data & Analytics', actionPoints: ['Data warehouse design', 'ETL pipeline development', 'BI dashboard creation'] },
-      { id: 4, name: 'Training & Adoption', startDate: '2026-05-01', endDate: '2026-12-31', stream: 'Change Management', actionPoints: ['Training program design', 'Champion network setup', 'Feedback & iteration'] },
-    ],
-  },
-  {
-    id: 3,
-    name: 'Agile Team Scaling',
-    description: 'Roadmap for scaling agile practices across the organization',
-    streams: ['Process', 'People', 'Tools'],
-    projects: [
-      { id: 1, name: 'Agile Framework Selection', startDate: '2026-01-01', endDate: '2026-02-28', stream: 'Process', actionPoints: ['Evaluate SAFe vs LeSS', 'Pilot team selection', 'Framework customization'] },
-      { id: 2, name: 'Team Formation', startDate: '2026-02-01', endDate: '2026-04-30', stream: 'People', actionPoints: ['Cross-functional team design', 'Scrum Master hiring', 'Role definition'] },
-      { id: 3, name: 'Tooling Setup', startDate: '2026-03-01', endDate: '2026-05-31', stream: 'Tools', actionPoints: ['Jira/Azure DevOps configuration', 'CI/CD integration', 'Metrics dashboards'] },
-      { id: 4, name: 'Organization-wide Rollout', startDate: '2026-05-01', endDate: '2026-10-31', stream: 'Process', actionPoints: ['Phased department rollout', 'Retrospectives at scale', 'Continuous improvement'] },
-    ],
-  },
-];
+function templateToRow(t: Partial<Template> & { name: string }, userId?: string) {
+  return {
+    name: t.name,
+    description: t.description || '',
+    tasks: { streams: t.streams || [], projects: t.projects || [] },
+    created_by: userId || null,
+  };
+}
 
-function getTemplates(): Template[] {
-  try {
-    const stored = localStorage.getItem(ROADMAP_TEMPLATES_KEY);
-    if (stored) return JSON.parse(stored);
-    return [];
-  } catch {
-    return [];
+async function getTemplates(): Promise<Template[]> {
+  const { data, error } = await supabase.from('templates').select('*').order('created_at', { ascending: false });
+  if (error) { console.error('[roadmap] fetch templates error:', error); return []; }
+  return (data || []).map(mapDbToTemplate);
+}
+
+async function saveNewTemplate(t: { name: string; description: string; streams: string[]; projects: RoadmapProject[] }, userId?: string): Promise<Template | null> {
+  const row = templateToRow(t as any, userId);
+  const { data, error } = await supabase.from('templates').insert(row).select().single();
+  if (error) { console.error('[roadmap] insert template error:', error); return null; }
+  return mapDbToTemplate(data);
+}
+
+async function updateTemplateInDb(t: Template): Promise<void> {
+  const { error } = await supabase.from('templates').update({
+    name: t.name,
+    description: t.description,
+    tasks: { streams: t.streams, projects: t.projects },
+    updated_at: new Date().toISOString(),
+  }).eq('id', t.id);
+  if (error) console.error('[roadmap] update template error:', error);
+}
+
+async function deleteTemplateFromDb(id: number): Promise<void> {
+  const { error } = await supabase.from('templates').delete().eq('id', id);
+  if (error) console.error('[roadmap] delete template error:', error);
+}
+
+async function loadSampleTemplatesInDb(userId?: string): Promise<Template[]> {
+  const inserted: Template[] = [];
+  for (const sample of SAMPLE_TEMPLATES) {
+    const result = await saveNewTemplate({ ...sample }, userId);
+    if (result) inserted.push(result);
   }
-}
-
-function saveTemplates(templates: Template[]) {
-  localStorage.setItem(ROADMAP_TEMPLATES_KEY, JSON.stringify(templates));
-}
-
-function createTemplate(t: { name: string; description: string; streams: string[]; projects: RoadmapProject[] }): Template {
-  const templates = getTemplates();
-  const maxId = templates.reduce((m, tpl) => Math.max(m, tpl.id), 0);
-  const newTemplate: Template = { ...t, id: maxId + 1 };
-  templates.push(newTemplate);
-  saveTemplates(templates);
-  return newTemplate;
-}
-
-function updateTemplate(t: Template): Template {
-  const templates = getTemplates();
-  const idx = templates.findIndex(tpl => tpl.id === t.id);
-  if (idx >= 0) templates[idx] = t;
-  saveTemplates(templates);
-  return t;
-}
-
-function deleteTemplate(id: number) {
-  saveTemplates(getTemplates().filter(t => t.id !== id));
-}
-
-function loadSampleTemplates(): Template[] {
-  const existing = getTemplates();
-  const maxId = existing.reduce((m, t) => Math.max(m, t.id), 0);
-  const samples = SAMPLE_TEMPLATES.map((t, i) => ({ ...t, id: maxId + i + 1 }));
-  const merged = [...existing, ...samples];
-  saveTemplates(merged);
-  return merged;
+  return inserted;
 }
 
 const TemplateGallery = ({ templates, onSelect, onCreate, onDelete, onDuplicate, onLoadSamples }: {
