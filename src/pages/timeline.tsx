@@ -1,5 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Search, X, Users, Plus, BarChart3, ArrowLeft, ArrowRight } from "lucide-react";
 import { format, endOfMonth, endOfQuarter, differenceInDays, differenceInMonths, startOfMonth, endOfWeek, startOfWeek, addDays, addMonths, addWeeks, isSameMonth, isSameDay, parseISO, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
-import { apiGet } from "@/lib/api-config";
+import { projectStore, teamStore, workItemStore, userStore, teamMemberStore, getLocalUser } from "@/lib/local-store";
 import { User, Team, Project, WorkItem as SchemaWorkItem } from "@/types/schema";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Select,
   SelectContent,
