@@ -192,7 +192,8 @@ export default function ProjectDetails() {
 
 
   // New project view tab state
-  const [projectView, setProjectView] = useState<'overview' | 'board' | 'backlog' | 'settings'>('overview');
+  const [projectView, setProjectView] = useState<'overview' | 'board' | 'backlog' | 'documentation' | 'settings'>('overview');
+  const [docSearchTerm, setDocSearchTerm] = useState('');
 
   // Client info visibility toggle (persisted per project in localStorage)
   const [clientInfoVisible, setClientInfoVisible] = useState<boolean>(() => {
