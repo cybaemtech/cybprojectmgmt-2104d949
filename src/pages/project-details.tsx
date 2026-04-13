@@ -2722,9 +2722,11 @@ export default function ProjectDetails() {
                 }> = [];
 
                 if (item.pdfUploadBlob || item.pdfUploadPath) {
-                  const fileName = item.pdfUploadPath
+                  let fileName = item.pdfUploadPath
                     ? item.pdfUploadPath.split('/').pop() || 'Document.pdf'
                     : 'Uploaded Document.pdf';
+                  // Remove prefix like "pdf_1776083352106_" from filename
+                  fileName = fileName.replace(/^pdf_\d+_/, '');
                   docs.push({
                     id: `pdf-${item.id}`,
                     name: fileName,
@@ -2740,9 +2742,11 @@ export default function ProjectDetails() {
                 }
 
                 if (item.screenshotBlob || item.screenshotPath) {
-                  const fileName = item.screenshotPath
+                  let fileName = item.screenshotPath
                     ? item.screenshotPath.split('/').pop() || 'Screenshot.png'
                     : 'Screenshot.png';
+                  // Remove prefix like "screenshot_1776083352106_" from filename
+                  fileName = fileName.replace(/^screenshot_\d+_/, '');
                   docs.push({
                     id: `screenshot-${item.id}`,
                     name: fileName,
@@ -2857,7 +2861,6 @@ export default function ProjectDetails() {
                               <th className="text-left px-4 py-3 font-medium text-muted-foreground">Type</th>
                               <th className="text-left px-4 py-3 font-medium text-muted-foreground">Uploaded By</th>
                               <th className="text-left px-4 py-3 font-medium text-muted-foreground">Date Attached</th>
-                              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Action</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -2872,9 +2875,14 @@ export default function ProjectDetails() {
                                     }`}>
                                       {doc.type === 'PDF' ? 'PDF' : 'IMG'}
                                     </div>
-                                    <span className="font-medium truncate max-w-[200px]" title={doc.name}>
+                                    <button
+                                      onClick={() => handleViewDocument(doc)}
+                                      disabled={!doc.blob && !doc.path}
+                                      className="font-medium truncate max-w-[200px] text-primary hover:underline cursor-pointer text-left disabled:text-muted-foreground disabled:cursor-not-allowed disabled:no-underline"
+                                      title={doc.name}
+                                    >
                                       {doc.name}
-                                    </span>
+                                    </button>
                                   </div>
                                 </td>
                                 <td className="px-4 py-3">
@@ -2899,17 +2907,6 @@ export default function ProjectDetails() {
                                     month: 'short',
                                     day: 'numeric',
                                   })}
-                                </td>
-                                <td className="px-4 py-3">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleViewDocument(doc)}
-                                    disabled={!doc.blob && !doc.path}
-                                    className="text-primary hover:text-primary/80"
-                                  >
-                                    View
-                                  </Button>
                                 </td>
                               </tr>
                             ))}
