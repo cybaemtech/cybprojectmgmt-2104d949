@@ -23,25 +23,29 @@ import {
 } from "@/components/ui/form";
 import { Project, User, WorkItem } from "@/types/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { workItemStore } from "@/lib/local-store";
+import { workItemStore, getLocalUser } from "@/lib/local-store";
 import { apiGet } from "@/lib/api-config";
 
-// Template types (mirrored from template-settings, now DB-backed)
-import { supabaseCustom as supabaseTemplateClient } from "@/lib/supabase-custom";
-
+// Template types & storage helpers (mirrored from template-settings)
 interface TemplateOption {
   id: number;
   name: string;
-  createdBy: string;
+  ownerId: number;
   isLocked?: boolean;
-  tasks: TemplateTaskOption[];
 }
 interface TemplateTaskOption {
   id: number;
+  templateId: number;
   title: string;
   itemOrder: number;
   isActive: boolean;
   estimatedHours?: number;
+}
+function getTemplatesFromStorage(): TemplateOption[] {
+  try { return JSON.parse(localStorage.getItem("user-templates") || "[]"); } catch { return []; }
+}
+function getTemplateTasksFromStorage(): TemplateTaskOption[] {
+  try { return JSON.parse(localStorage.getItem("user-template-tasks") || "[]"); } catch { return []; }
 }
 import { useToast } from "@/hooks/use-toast";
 
@@ -197,36 +201,10 @@ export function CreateItemModal({
   const [selectedAttachmentFile, setSelectedAttachmentFile] = useState<File | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
 
-  // Load available templates from DB for the current user
-  const [availableTemplates, setAvailableTemplates] = useState<TemplateOption[]>([]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    (async () => {
-      const { data: userData } = await supabaseTemplateClient.auth.getUser();
-      const uid = userData?.user?.id;
-      if (!uid) return;
-      const { data } = await supabaseTemplateClient
-        .from("work_item_templates")
-        .select("*")
-        .eq("created_by", uid);
-      if (data) {
-        const mapped = data.map((row: any) => ({
-          id: row.id,
-          name: row.name,
-          createdBy: row.created_by,
-          isLocked: row.is_locked ?? false,
-          tasks: Array.isArray(row.tasks) ? row.tasks : [],
-        }));
-        setAvailableTemplates(mapped);
-      }
-    })();
-  }, [isOpen]);
-
-  // Flatten tasks for backward-compat usage
-  const availableTemplateTasks = availableTemplates.flatMap(tpl =>
-    (tpl.tasks || []).map(t => ({ ...t, templateId: tpl.id }))
-  );
+  // Load available templates for the current user
+  const currentLocalUser = getLocalUser();
+  const availableTemplates = getTemplatesFromStorage().filter(t => t.ownerId === currentLocalUser?.id);
+  const availableTemplateTasks = getTemplateTasksFromStorage();
 
   // Default to "Requirement Gathering" template when modal opens
   useEffect(() => {
@@ -394,7 +372,7 @@ export function CreateItemModal({
       }
 
       // ── FEATURE automation chain ──────────────────────────────────────
-      const creatorId = currentUser?.id || null;
+      const creatorId = currentUser?.id || currentLocalUser?.id || null;
 
       if (data.type === 'FEATURE' && data.autoCreateTemplateTasks && selectedTemplateId) {
         const projectName = selectedProject?.name || "Project";
@@ -465,7 +443,7 @@ export function CreateItemModal({
         });
       } else if (data.type === 'STORY' && data.autoCreateTemplateTasks && selectedTemplateId) {
         // STORY (Change Request) automation: create STORY then auto-create TASKs from template
-        const creatorId = currentUser?.id || null;
+        const creatorId = currentUser?.id || currentLocalUser?.id || null;
         submitData.assigneeId = creatorId;
 
         // Auto-attach to a parent FEATURE if none selected
