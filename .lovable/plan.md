@@ -1,36 +1,29 @@
 
 
-## Plan: Add Documentation Tab to Project Details
+## Plan: Template-Level Estimated Hours & Hide Dates on Auto-Create
 
 ### What it does
-Adds a new "Documentation" tab between "Board" and "Settings" in the project details view. This tab aggregates all documents (PDFs) attached to Client Requirement (FEATURE) and Change Request (STORY) work items, showing file name, the parent work item, who attached it, and when — providing a centralized audit view of all project documents.
+1. Adds an **Estimated Hours** field to each task in Template Settings, so users can pre-configure hours per task.
+2. When "Auto-create Template Tasks" is ticked, the automation uses each template task's configured hours instead of splitting the parent estimate evenly.
+3. Hides **Scheduled Start Date** and **Scheduled End Date** fields from the creation form for **Change Request (STORY)** and **Task** when "Auto-create Template Tasks" is checked. Also makes the **Estimated Hours** field on the parent read-only and auto-summed from template task hours.
 
 ### Technical approach
 
-**1. Update project view state type and tab navigation**
-- File: `src/pages/project-details.tsx`
-- Add `'documentation'` to the `projectView` state union type
-- Add a new tab link between "Board" and "Settings" in the nav bar
+**1. Update TemplateTask type and storage** (`src/pages/template-settings.tsx`)
+- Add `estimatedHours?: number` to the `TemplateTask` interface
+- Add an inline editable hours input next to each task row in the template card (small numeric input, e.g. "9h")
+- Update `addTask` to accept a default of 0 hours
+- Update `handleEditTask` to save hours changes
+- Update sample data to include reasonable default hours per task
 
-**2. Build the Documentation tab content**
-- File: `src/pages/project-details.tsx` (inline, before the Settings tab block)
-- Filter `workItems` for items that have `pdfUploadBlob` or `pdfUploadPath` set
-- Render a table with columns:
-  - **Document Name** — from `pdfUploadPath` (cleaned filename)
-  - **Work Item** — title + externalId of the parent work item, with type badge (Client Requirement / Change Request)
-  - **Uploaded By** — `createdByName` or `createdByEmail` from the work item
-  - **Date Attached** — `createdAt` or `updatedAt` of the work item
-  - **Action** — Download/View button to open the PDF
-- Include an empty state when no documents exist
-- Add a search/filter bar to filter documents by name or work item title
-- Show total document count as a badge on the tab or in the header
-
-**3. Include screenshot attachments too**
-- Also check for `screenshotBlob`/`screenshotPath` on BUG items so the documentation tab truly captures all attachments across the project
+**2. Mirror the type in create-item-modal** (`src/components/modals/create-item-modal.tsx`)
+- Add `estimatedHours?: number` to `TemplateTaskOption` interface
+- In FEATURE and STORY automation chains: use `tTask.estimatedHours` for each created task instead of the even-split calculation
+- Auto-sum template task hours and set as the parent's estimate when auto-create is on
+- When `autoCreateTemplateTasks` is checked for STORY: hide the Scheduled Start Date, Scheduled End Date, and make Estimated Hours read-only (showing the sum)
+- Same behavior for FEATURE: dates hidden when auto-create is on, estimate becomes sum of template hours
 
 ### Files to modify
-- `src/pages/project-details.tsx` — add tab, state type, and documentation view content
-
-### No database changes needed
-Documents are already stored as blobs on work items. This is purely a read-only aggregation view.
+- `src/pages/template-settings.tsx` — add `estimatedHours` to task model, UI input per task
+- `src/components/modals/create-item-modal.tsx` — use per-task hours from template, hide date fields when auto-create is ticked, auto-sum estimate
 
