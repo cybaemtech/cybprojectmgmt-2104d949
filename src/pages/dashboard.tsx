@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, AlertCircle, BarChart3, Calendar, Clock, Target, TrendingUp, Users, CheckCircle, AlertTriangle, Bug, Zap } from "lucide-react";
+import { Loader2, AlertCircle, BarChart3, Calendar, Clock, Target, TrendingUp, Users, CheckCircle, AlertTriangle, Bug, Zap, Database } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Project, WorkItem, User, Team } from "@/types/schema";
@@ -13,6 +14,8 @@ import { format, parseISO, isValid, isBefore, isAfter, addDays, differenceInDays
 import { useAuth } from "@/hooks/useAuth";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import { projectStore, teamStore, workItemStore, getLocalUser } from "@/lib/local-store";
+import { seedDatabase } from "@/lib/seed-data";
+import { useToast } from "@/hooks/use-toast";
 
 interface DashboardStats {
   totalProjects: number;
@@ -53,6 +56,8 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { isDemoMode } = useDemoMode();
   const { user: authUser } = useAuth();
+  const { toast } = useToast();
+  const [seeding, setSeeding] = useState(false);
 
   const currentUser = authUser || getLocalUser();
 
@@ -215,9 +220,31 @@ export default function Dashboard() {
 
   return (
     <div className="p-6">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-            <p className="text-gray-600">Overview of your project portfolio and work progress</p>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+              <p className="text-gray-600">Overview of your project portfolio and work progress</p>
+            </div>
+            {currentUser?.role === "ADMIN" && (
+              <Button
+                variant="outline"
+                disabled={seeding}
+                onClick={async () => {
+                  setSeeding(true);
+                  try {
+                    const result = await seedDatabase();
+                    toast({ title: "Data Seeded Successfully", description: `Created ${result.teams} teams, ${result.projects} projects, and ${result.workItems} work items.` });
+                  } catch (err: any) {
+                    toast({ title: "Seed Failed", description: err.message, variant: "destructive" });
+                  } finally {
+                    setSeeding(false);
+                  }
+                }}
+              >
+                {seeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
+                {seeding ? "Seeding..." : "Seed Test Data"}
+              </Button>
+            )}
           </div>
 
           {/* Key Statistics */}
