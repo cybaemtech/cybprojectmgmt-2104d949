@@ -111,7 +111,7 @@ async function loadSamples(userId: string): Promise<Template[]> {
     },
   ];
 
-  const { data, error } = await supabase.from("templates").insert(sampleTemplates).select();
+  const { data, error } = await supabase.from("work_item_templates").insert(sampleTemplates).select();
   if (error) {
     console.error("Failed to load samples:", error);
     return [];
@@ -128,7 +128,7 @@ export default function TemplateSettings() {
 
   const fetchTemplates = useCallback(async (uid: string) => {
     const { data, error } = await supabase
-      .from("templates")
+      .from("work_item_templates")
       .select("*")
       .eq("created_by", uid)
       .order("id", { ascending: true });
@@ -166,7 +166,7 @@ export default function TemplateSettings() {
   const createTemplate = async (name: string, description: string) => {
     if (!userId) return;
     const colorIdx = templates.length % COLORS.length;
-    const { data, error } = await supabase.from("templates").insert({
+    const { data, error } = await supabase.from("work_item_templates").insert({
       name,
       description,
       created_by: userId,
@@ -178,7 +178,7 @@ export default function TemplateSettings() {
   };
 
   const updateTemplateInDb = async (id: number, updates: Record<string, any>) => {
-    const { error } = await supabase.from("templates").update(updates).eq("id", id);
+    const { error } = await supabase.from("work_item_templates").update(updates).eq("id", id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return false; }
     return true;
   };
@@ -203,14 +203,14 @@ export default function TemplateSettings() {
       toast({ title: "Locked", description: `"${tpl.name}" is a mandatory template and cannot be deleted.`, variant: "destructive" });
       return;
     }
-    const { error } = await supabase.from("templates").delete().eq("id", id);
+    const { error } = await supabase.from("work_item_templates").delete().eq("id", id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     setTemplates(prev => prev.filter(t => t.id !== id));
   };
 
   const duplicateTemplate = async (tpl: Template) => {
     if (!userId) return;
-    const { data, error } = await supabase.from("templates").insert({
+    const { data, error } = await supabase.from("work_item_templates").insert({
       name: `${tpl.name} (Copy)`,
       description: tpl.description,
       created_by: userId,
@@ -333,7 +333,7 @@ export default function TemplateSettings() {
   const handleResetSamples = async () => {
     if (!userId) return;
     // Delete all user templates
-    const { error } = await supabase.from("templates").delete().eq("created_by", userId);
+    const { error } = await supabase.from("work_item_templates").delete().eq("created_by", userId);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     const samples = await loadSamples(userId);
     setTemplates(samples);
