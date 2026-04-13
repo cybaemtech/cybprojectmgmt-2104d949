@@ -469,10 +469,10 @@ export function CreateItemModal({
           });
         }
 
-        const taskCount = templateTasks.length;
+        const storyTaskCount = templateTasks.length;
         toast({
           title: "Automation Complete",
-          description: `Created: Change Request "${data.title}" → ${taskCount} task${taskCount !== 1 ? 's' : ''} from template.`,
+          description: `Created: Change Request "${data.title}" → ${storyTaskCount} task${storyTaskCount !== 1 ? 's' : ''} from template.`,
         });
       } else if (data.type === 'BUG') {
         // BUG: must always be under a STORY (Change Request)
