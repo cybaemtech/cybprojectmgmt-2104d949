@@ -207,12 +207,12 @@ export const projectStore = {
     const row = projectToRow(project);
     if (project.id) {
       // Update
-      const { data, error } = await supabase.from("projects").update(row).eq("id", project.id).select().single();
+      const { data, error } = await supabase.from("projects").update(row as any).eq("id", project.id).select().single();
       if (error) throw error;
       return mapProject(data);
     } else {
       // Insert
-      const { data, error } = await supabase.from("projects").insert(row).select().single();
+      const { data, error } = await supabase.from("projects").insert(row as any).select().single();
       if (error) throw error;
       return mapProject(data);
     }
@@ -245,11 +245,11 @@ export const teamStore = {
       is_active: team.isActive ?? true,
     };
     if (team.id) {
-      const { data, error } = await supabase.from("teams").update(row).eq("id", team.id).select().single();
+      const { data, error } = await supabase.from("teams").update(row as any).eq("id", team.id).select().single();
       if (error) throw error;
       return mapTeam(data);
     } else {
-      const { data, error } = await supabase.from("teams").insert(row).select().single();
+      const { data, error } = await supabase.from("teams").insert(row as any).select().single();
       if (error) throw error;
       return mapTeam(data);
     }
@@ -283,7 +283,7 @@ export const userStore = {
     if (updates.isActive !== undefined) row.is_active = updates.isActive;
     if (updates.lastLogin !== undefined) row.last_login = updates.lastLogin;
     row.updated_at = new Date().toISOString();
-    await supabase.from("profiles").update(row).eq("id", id);
+    await supabase.from("profiles").update(row as any).eq("id", id);
   },
 };
 
@@ -312,7 +312,7 @@ export const teamMemberStore = {
   add: async (teamId: number, userId: string, role: string = "MEMBER"): Promise<TeamMember> => {
     const { data, error } = await supabase
       .from("team_members")
-      .insert({ team_id: teamId, user_id: userId, role })
+      .insert({ team_id: teamId, user_id: userId, role } as any)
       .select()
       .single();
     if (error) throw error;
@@ -326,7 +326,7 @@ export const teamMemberStore = {
   updateRole: async (teamId: number, userId: string, role: string): Promise<void> => {
     await supabase
       .from("team_members")
-      .update({ role, updated_at: new Date().toISOString() })
+      .update({ role, updated_at: new Date().toISOString() } as any)
       .eq("team_id", teamId)
       .eq("user_id", userId);
   },
@@ -366,11 +366,11 @@ export const workItemStore = {
     const row = workItemToRow(item);
     if (item.id) {
       row.updated_at = new Date().toISOString();
-      const { data, error } = await supabase.from("work_items").update(row).eq("id", item.id).select("*, projects(key, name)").single();
+      const { data, error } = await supabase.from("work_items").update(row as any).eq("id", item.id).select("*, projects(key, name)").single();
       if (error) throw error;
       return mapWorkItem(data);
     } else {
-      const { data, error } = await supabase.from("work_items").insert(row).select("*, projects(key, name)").single();
+      const { data, error }: any = await supabase.from("work_items").insert(row as any).select("*, projects(key, name)").single();
       if (error) throw error;
       // Auto-generate external_id if needed
       if (!data.external_id) {
@@ -385,7 +385,7 @@ export const workItemStore = {
   update: async (id: number, updates: Partial<WorkItem>): Promise<WorkItem | undefined> => {
     const row = workItemToRow(updates);
     row.updated_at = new Date().toISOString();
-    const { data, error } = await supabase.from("work_items").update(row).eq("id", id).select("*, projects(key, name)").single();
+    const { data, error } = await supabase.from("work_items").update(row as any).eq("id", id).select("*, projects(key, name)").single();
     if (error) return undefined;
     return mapWorkItem(data);
   },
