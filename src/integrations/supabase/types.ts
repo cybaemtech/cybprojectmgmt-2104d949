@@ -422,6 +422,39 @@ export type Database = {
           },
         ]
       }
+      work_item_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: number
+          is_locked: boolean
+          name: string
+          tasks: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: number
+          is_locked?: boolean
+          name: string
+          tasks?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: number
+          is_locked?: boolean
+          name?: string
+          tasks?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       work_items: {
         Row: {
           actual_hours: string | null
