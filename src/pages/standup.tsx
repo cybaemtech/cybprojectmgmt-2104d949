@@ -129,7 +129,20 @@ export default function DailyStandup() {
                 </Button>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-3">
+              <div>
+                <label className="text-xs font-medium text-neutral-700 mb-1 block">Category</label>
+                <MultiSelect
+                  value={categoryFilter}
+                  onChange={setCategoryFilter}
+                  options={[
+                    { value: "CLIENT", label: "Client" },
+                    { value: "IN_HOUSE", label: "In-House" }
+                  ]}
+                  placeholder="All Categories"
+                  maxDisplay={1}
+                />
+              </div>
               <div>
                 <label className="text-xs font-medium text-neutral-700 mb-1 block">Project</label>
                 <MultiSelect
