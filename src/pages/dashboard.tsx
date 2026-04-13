@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { format, parseISO, isValid, isBefore, isAfter, addDays, differenceInDays } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useDemoMode } from "@/hooks/useDemoMode";
-import { DEMO_USER, DEMO_TEAMS, DEMO_PROJECTS, DEMO_WORK_ITEMS } from "@/lib/demo-data";
+import { projectStore, teamStore, workItemStore, getLocalUser } from "@/lib/local-store";
 
 interface DashboardStats {
   totalProjects: number;
@@ -54,58 +54,33 @@ export default function Dashboard() {
   const { isDemoMode } = useDemoMode();
   const { user: authUser } = useAuth();
 
-  // Fetch current user
-  const { data: currentUser } = useQuery<User>({
-    queryKey: ['/auth/user'],
-    queryFn: () => authUser || DEMO_USER,
-    initialData: authUser || DEMO_USER,
-  });
+  const currentUser = authUser || getLocalUser();
 
-  // Fetch teams data
-  const { data: allTeams = [] } = useQuery<Team[]>({
-    queryKey: ['/teams'],
-    queryFn: () => DEMO_TEAMS,
-    initialData: DEMO_TEAMS,
-  });
+  const allTeams = teamStore.all();
+  const allProjects = projectStore.all();
+  const isLoadingProjects = false;
 
-  // Fetch list of projects
-  const {
-    data: allProjects = [],
-    isLoading: isLoadingProjects
-  } = useQuery<Project[]>({
-    queryKey: ['/projects'],
-    queryFn: () => DEMO_PROJECTS,
-    initialData: DEMO_PROJECTS,
-  });
-
-  // Get user's team IDs by fetching team members for each team
-  const userTeamIds = useMemo(() => DEMO_TEAMS.map(t => t.id), []);
+  // Get user's team IDs
+  const userTeamIds = useMemo(() => allTeams.map(t => t.id), [allTeams]);
 
   // Determine if user is admin or scrum master
   const isAdminOrScrum = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'SCRUM_MASTER');
 
   // Projects: all for admin/scrum, filtered for others
   const projects = useMemo(() => isAdminOrScrum ? allProjects : allProjects.filter(project => {
-    // Fetch project members from API if needed
-    // For now, filter by team membership
     return project.teamId && userTeamIds.includes(project.teamId);
   }), [allProjects, currentUser, userTeamIds, isAdminOrScrum]);
 
   // Teams: all for admin/scrum, filtered for others
   const teams = useMemo(() => isAdminOrScrum ? allTeams : allTeams.filter(team => userTeamIds.includes(team.id)), [allTeams, userTeamIds, isAdminOrScrum]);
 
-  // Fetch all work items from all projects
-  const { data: allWorkItemsRaw = [], isLoading: isLoadingWorkItems } = useQuery<WorkItem[]>({
-    queryKey: ['/work-items/all'],
-    queryFn: () => DEMO_WORK_ITEMS,
-    initialData: DEMO_WORK_ITEMS,
-  });
+  const allWorkItemsRaw = workItemStore.all();
+  const isLoadingWorkItems = false;
 
   // Work items: all for admin/scrum, filtered for others
   const allWorkItems = useMemo(() => {
     if (isAdminOrScrum) return allWorkItemsRaw;
     if (!currentUser) return [];
-    // Only show items assigned to the user
     return allWorkItemsRaw.filter(item => item.assigneeId === currentUser.id);
   }, [allWorkItemsRaw, currentUser, isAdminOrScrum]);
 
