@@ -138,11 +138,6 @@ export function Sidebar({
                   return null;
                 }
               }
-              if (false) {
-                if (user.role !== "ADMIN" && user.role !== "SCRUM_MASTER") {
-                  return null;
-                }
-              }
 
               return (
                 <li key={item.href}>
