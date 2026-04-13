@@ -819,7 +819,7 @@ export function EditItemModal({
               )}
 
               <div className="flex justify-between pt-4 border-t bg-white sticky bottom-0">
-                {isAdminOrScrum && (
+                {(isAdminOrScrum || (workItem && ['TASK', 'BUG'].includes(workItem.type))) && (
                   <Button variant="destructive" type="button" onClick={() => setShowDeleteDialog(true)} className="flex items-center gap-2">
                     <Trash2 className="h-4 w-4" /> Delete Item
                   </Button>

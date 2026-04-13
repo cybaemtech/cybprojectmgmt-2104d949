@@ -2286,6 +2286,22 @@ export default function ProjectDetails() {
                                           </button>
                                         </div>
                                       )}
+
+                                      {/* Delete button for TASK and BUG items - all users */}
+                                      {['TASK', 'BUG'].includes(item.type) && currentUser && (
+                                        <div className="flex gap-1 ml-auto">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              openModal("deleteItem", { workItem: item });
+                                            }}
+                                            className="w-6 h-6 text-xs bg-red-50 text-red-600 hover:bg-red-100 rounded border border-red-200 transition-colors flex items-center justify-center"
+                                            title={`Delete ${item.type === 'TASK' ? 'Task' : 'Bug'}`}
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </button>
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </div>
