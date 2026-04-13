@@ -366,7 +366,7 @@ export function CreateItemModal({
           if (existingEpics.length > 0) {
             epicId = existingEpics[0].id;
           } else {
-            const epic = workItemStore.save({
+            const epic = await workItemStore.saveAsync({
               title: projectName,
               type: 'EPIC',
               projectId: selectedProjectId,
@@ -384,10 +384,10 @@ export function CreateItemModal({
 
         // 2. Create the FEATURE (Client Requirement) under the EPIC
         submitData.parentId = epicId;
-        const feature = workItemStore.save(submitData);
+        const feature = await workItemStore.saveAsync(submitData);
 
         // 3. Auto-create STORY "Initial Requirement Gathering" under the FEATURE
-        const story = workItemStore.save({
+        const story = await workItemStore.saveAsync({
           title: "Initial Requirement Gathering",
           type: 'STORY',
           projectId: selectedProjectId,
@@ -403,8 +403,8 @@ export function CreateItemModal({
           .filter(t => t.templateId === selectedTemplateId && t.isActive)
           .sort((a, b) => (a.itemOrder || 0) - (b.itemOrder || 0));
 
-        templateTasks.forEach((tTask) => {
-          workItemStore.save({
+        for (const tTask of templateTasks) {
+          await workItemStore.saveAsync({
             title: tTask.title,
             type: 'TASK',
             projectId: selectedProjectId,
@@ -414,7 +414,7 @@ export function CreateItemModal({
             assigneeId: creatorId,
             estimate: "9",
           });
-        });
+        }
 
         const taskCount = templateTasks.length;
         toast({
@@ -423,7 +423,6 @@ export function CreateItemModal({
         });
       } else if (data.type === 'STORY' && data.autoCreateTemplateTasks && selectedTemplateId) {
         // STORY (Change Request) automation: create STORY then auto-create TASKs from template
-        // Auto-assign the current user as assignee on the story
         const creatorId = currentUser?.id || currentLocalUser?.id || null;
         submitData.assigneeId = creatorId;
 
@@ -435,14 +434,14 @@ export function CreateItemModal({
           }
         }
 
-        const story = workItemStore.save(submitData);
+        const story = await workItemStore.saveAsync(submitData);
 
         const templateTasks = availableTemplateTasks
           .filter(t => t.templateId === selectedTemplateId && t.isActive)
           .sort((a, b) => (a.itemOrder || 0) - (b.itemOrder || 0));
 
-        templateTasks.forEach((tTask) => {
-          workItemStore.save({
+        for (const tTask of templateTasks) {
+          await workItemStore.saveAsync({
             title: tTask.title,
             type: 'TASK',
             status: 'TODO',
@@ -451,7 +450,7 @@ export function CreateItemModal({
             projectId: submitData.projectId,
             assigneeId: creatorId,
           });
-        });
+        }
 
         const taskCount = templateTasks.length;
         toast({
