@@ -15,13 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 type GanttViewMode = 'month' | 'quarter' | 'year';
 type CalendarViewMode = 'month' | 'week';
@@ -33,15 +26,21 @@ interface WorkItem {
   title: string;
   description: string | null;
   type: 'EPIC' | 'FEATURE' | 'STORY' | 'TASK' | 'BUG';
-  status: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  status: string;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | null;
   projectId: number;
   parentId: number | null;
   assigneeId: number | null;
-  reporterId: number;
-  estimate: number | null;
+  reporterId: number | null;
+  estimate: number | string | null;
   startDate: string | null;
   endDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+  projectKey?: string;
+  projectName?: string;
+}
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
