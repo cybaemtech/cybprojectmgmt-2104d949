@@ -405,6 +405,13 @@ export function CreateItemModal({
           .filter(t => t.templateId === selectedTemplateId && t.isActive)
           .sort((a, b) => (a.itemOrder || 0) - (b.itemOrder || 0));
 
+        // Split estimated hours evenly across tasks
+        const totalEstimate = parseFloat(data.estimate || '0');
+        const taskCount = templateTasks.length;
+        const perTaskEstimate = taskCount > 0 && totalEstimate > 0
+          ? Math.round((totalEstimate / taskCount) * 10) / 10
+          : 9;
+
         for (const tTask of templateTasks) {
           await workItemStore.saveAsync({
             title: tTask.title,
@@ -414,14 +421,14 @@ export function CreateItemModal({
             priority: 'MEDIUM',
             parentId: story.id,
             assigneeId: creatorId,
-            estimate: "9",
+            estimate: perTaskEstimate.toString(),
           });
         }
 
-        const taskCount = templateTasks.length;
+        const featureTaskCount = templateTasks.length;
         toast({
           title: "Automation Complete",
-          description: `Created: Epic → Client Requirement → Story "Initial Requirement Gathering" → ${taskCount} task${taskCount !== 1 ? 's' : ''} from template.`,
+          description: `Created: Epic → Client Requirement → Story "Initial Requirement Gathering" → ${featureTaskCount} task${featureTaskCount !== 1 ? 's' : ''} from template.`,
         });
       } else if (data.type === 'STORY' && data.autoCreateTemplateTasks && selectedTemplateId) {
         // STORY (Change Request) automation: create STORY then auto-create TASKs from template
@@ -442,6 +449,13 @@ export function CreateItemModal({
           .filter(t => t.templateId === selectedTemplateId && t.isActive)
           .sort((a, b) => (a.itemOrder || 0) - (b.itemOrder || 0));
 
+        // Split estimated hours evenly across tasks
+        const totalEstimate = parseFloat(data.estimate || '0');
+        const taskCount = templateTasks.length;
+        const perTaskEstimate = taskCount > 0 && totalEstimate > 0
+          ? Math.round((totalEstimate / taskCount) * 10) / 10
+          : 0;
+
         for (const tTask of templateTasks) {
           await workItemStore.saveAsync({
             title: tTask.title,
@@ -451,13 +465,14 @@ export function CreateItemModal({
             parentId: story.id,
             projectId: submitData.projectId,
             assigneeId: creatorId,
+            estimate: perTaskEstimate > 0 ? perTaskEstimate.toString() : undefined,
           });
         }
 
-        const taskCount = templateTasks.length;
+        const storyTaskCount = templateTasks.length;
         toast({
           title: "Automation Complete",
-          description: `Created: Change Request "${data.title}" → ${taskCount} task${taskCount !== 1 ? 's' : ''} from template.`,
+          description: `Created: Change Request "${data.title}" → ${storyTaskCount} task${storyTaskCount !== 1 ? 's' : ''} from template.`,
         });
       } else if (data.type === 'BUG') {
         // BUG: must always be under a STORY (Change Request)
