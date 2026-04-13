@@ -33,10 +33,10 @@ interface WorkItem {
   assigneeId: number | null;
   reporterId: number | null;
   estimate: number | string | null;
-  startDate: string | null;
-  endDate: string | null;
-  createdAt: string;
-  updatedAt: string;
+  startDate: string | Date | null;
+  endDate: string | Date | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
   completedAt: string | null;
   projectKey?: string;
   projectName?: string;
