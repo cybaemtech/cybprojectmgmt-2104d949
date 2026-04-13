@@ -214,7 +214,7 @@ export default function ProjectBugReports() {
     <div className="p-8">
       <div className="max-w-7xl mx-auto">
             <h1 className="text-2xl font-bold mb-6 flex items-center">
-              <Bug className="h-6 w-6 mr-2 text-red-500" /> Submit Feedback / Bug Report
+              <Bug className="h-6 w-6 mr-2 text-red-500" /> Submit Feedback | Report an Issue
             </h1>
 
             {/* Statistics Cards */}
