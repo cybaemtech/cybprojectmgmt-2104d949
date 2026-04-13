@@ -220,9 +220,31 @@ export default function Dashboard() {
 
   return (
     <div className="p-6">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-            <p className="text-gray-600">Overview of your project portfolio and work progress</p>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+              <p className="text-gray-600">Overview of your project portfolio and work progress</p>
+            </div>
+            {currentUser?.role === "ADMIN" && (
+              <Button
+                variant="outline"
+                disabled={seeding}
+                onClick={async () => {
+                  setSeeding(true);
+                  try {
+                    const result = await seedDatabase();
+                    toast({ title: "Data Seeded Successfully", description: `Created ${result.teams} teams, ${result.projects} projects, and ${result.workItems} work items.` });
+                  } catch (err: any) {
+                    toast({ title: "Seed Failed", description: err.message, variant: "destructive" });
+                  } finally {
+                    setSeeding(false);
+                  }
+                }}
+              >
+                {seeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
+                {seeding ? "Seeding..." : "Seed Test Data"}
+              </Button>
+            )}
           </div>
 
           {/* Key Statistics */}
