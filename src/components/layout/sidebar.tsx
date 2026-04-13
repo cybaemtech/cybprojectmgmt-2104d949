@@ -34,10 +34,9 @@ const menuItems = [
   { href: "/projects", icon: Layers, label: "Project Management", isActive: (loc: string) => loc === "/" || loc === "/projects" || loc.startsWith("/projects/") },
   { href: "/standup", icon: ListTodo, label: "Daily Standup", isActive: (loc: string) => loc === "/standup" },
   { href: "/timeline", icon: Calendar, label: "Timeline", isActive: (loc: string) => loc === "/timeline" || loc === "/calendar" },
-  { href: "/reports", icon: BarChart, label: "Reports", isActive: (loc: string) => loc === "/reports" },
   { href: "/templates", icon: Settings, label: "Template Settings", isActive: (loc: string) => loc === "/templates" },
+  { href: "/reports", icon: BarChart, label: "Reports", isActive: (loc: string) => loc === "/reports" },
   { href: "/project-bug-reports", icon: Bug, label: "Raise Ticket", isActive: (loc: string) => loc === "/project-bug-reports" },
-  
 ];
 
 // Initialize sidebar state from localStorage
