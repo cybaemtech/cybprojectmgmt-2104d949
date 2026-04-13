@@ -171,10 +171,11 @@ export default function ProjectDetails() {
     resizingCol.current = { col, startX, startWidth };
 
     const onMouseMove = (ev: MouseEvent) => {
-      if (!resizingCol.current) return;
-      const diff = ev.clientX - resizingCol.current.startX;
-      const newWidth = Math.max(50, resizingCol.current.startWidth + diff);
-      setColumnWidths(prev => ({ ...prev, [resizingCol.current!.col]: newWidth }));
+      const current = resizingCol.current;
+      if (!current) return;
+      const diff = ev.clientX - current.startX;
+      const newWidth = Math.max(50, current.startWidth + diff);
+      setColumnWidths(prev => ({ ...prev, [current.col]: newWidth }));
     };
     const onMouseUp = () => {
       resizingCol.current = null;
