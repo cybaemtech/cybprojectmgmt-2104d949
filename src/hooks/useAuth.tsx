@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseCustom as supabase } from "@/lib/supabase-custom";
 import { setCachedUser, clearCachedUser } from "@/lib/supabase-store";
 import type { User } from "@/types/schema";
 
