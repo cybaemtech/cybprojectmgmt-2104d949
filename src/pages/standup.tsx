@@ -1,15 +1,14 @@
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useModal } from "@/hooks/use-modal";
 import { useToast } from "@/hooks/use-toast";
 import { ListTodo, Filter, X, CheckCircle, AlertTriangle, Search, Layers, Calendar } from "lucide-react";
-import { apiGet } from "@/lib/api-config";
 import { User, Team, Project, WorkItem } from "@/types/schema";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { cn } from "@/lib/utils";
+import { projectStore, workItemStore, userStore, getLocalUser } from "@/lib/local-store";
 
 export default function DailyStandup() {
   const { toast } = useToast();
@@ -28,49 +27,21 @@ export default function DailyStandup() {
 
   const { openModal } = useModal();
 
-  const { data: users = [] } = useQuery<User[]>({
-    queryKey: ["/users"],
-    queryFn: () => apiGet("/users"),
-  });
+  // Use local store instead of API calls
+  const [users, setUsers] = useState<User[]>(() => userStore.all());
+  const [projects, setProjects] = useState<Project[]>(() => projectStore.all());
+  const [allWorkItems, setAllWorkItems] = useState<WorkItem[]>(() => workItemStore.all());
+  const currentUser = getLocalUser();
 
-  const { data: currentUser } = useQuery<User>({
-    queryKey: ["/auth/user"],
-    queryFn: () => apiGet("/auth/user"),
-  });
-
-  const { data: teams = [] } = useQuery<Team[]>({
-    queryKey: ["/teams"],
-    queryFn: () => apiGet("/teams"),
-  });
-
-  const { data: projects = [] } = useQuery<Project[]>({
-    queryKey: ["/projects"],
-    queryFn: () => apiGet("/projects"),
-  });
-
-  const isAdminOrScrum = currentUser?.role === "ADMIN" || currentUser?.role === "SCRUM_MASTER";
-
-  const { data: allWorkItems = [] } = useQuery<WorkItem[]>({
-    queryKey: ["/work-items/all"],
-    queryFn: async () => {
-      if (!projects.length) return [];
-      const workItemPromises = projects.map(async (project: Project) => {
-        try {
-          const items = await apiGet(`/projects/${project.id}/work-items`);
-          return items.map((item: WorkItem) => ({
-            ...item,
-            projectKey: project.key,
-            projectName: project.name
-          }));
-        } catch {
-          return [];
-        }
-      });
-      const results = await Promise.all(workItemPromises);
-      return results.flat();
-    },
-    enabled: projects.length > 0,
-  });
+  useEffect(() => {
+    const refresh = () => {
+      setUsers(userStore.all());
+      setProjects(projectStore.all());
+      setAllWorkItems(workItemStore.all());
+    };
+    window.addEventListener("store-change", refresh);
+    return () => window.removeEventListener("store-change", refresh);
+  }, []);
 
   const totals = React.useMemo(() => {
     const totalItems = allWorkItems.length;
