@@ -1196,23 +1196,36 @@ export function CreateItemModal({
                   )}
 
 
-                  {/* For FEATURE & STORY: Dates first, then Estimate (auto-calculated) */}
+                  {/* For FEATURE & STORY: Dates (hidden when auto-create on), then Estimate */}
                   {(watchedType === 'FEATURE' || watchedType === 'STORY') && (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="startDate" render={({ field }) => (
-                          <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
-                        )} />
-                        <FormField control={form.control} name="endDate" render={({ field }) => (
-                          <FormItem><FormLabel>Scheduled End Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
-                        )} />
-                      </div>
+                      {!watchedAutoCreate && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField control={form.control} name="startDate" render={({ field }) => (
+                            <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                          )} />
+                          <FormField control={form.control} name="endDate" render={({ field }) => (
+                            <FormItem><FormLabel>Scheduled End Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                          )} />
+                        </div>
+                      )}
                       <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="estimate" render={({ field }) => (
                           <FormItem>
                             <FormLabel>Estimated Hours <span className="text-destructive">*</span></FormLabel>
-                            <FormControl><Input {...field} placeholder="Auto-calculated from dates" readOnly className="bg-muted" /></FormControl>
-                            <p className="text-xs text-muted-foreground">Auto-calculated: Working days (Mon–Fri) × 9 hrs</p>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder={watchedAutoCreate ? "Sum of template task hours" : "Auto-calculated from dates"}
+                                readOnly
+                                className="bg-muted"
+                              />
+                            </FormControl>
+                            <p className="text-xs text-muted-foreground">
+                              {watchedAutoCreate
+                                ? `Auto-summed from template task hours (${selectedTemplateTotalHours}h)`
+                                : "Auto-calculated: Working days (Mon–Fri) × 9 hrs"}
+                            </p>
                             <FormMessage />
                           </FormItem>
                         )} />
