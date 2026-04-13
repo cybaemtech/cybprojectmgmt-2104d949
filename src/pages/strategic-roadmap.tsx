@@ -724,7 +724,7 @@ export default function StrategicRoadmapPage() {
   const activeTemplate = templates.find(t => t.id === activeId);
 
   const handleCreate = async ({ name, description, streams }: { name: string; description: string; streams: string[] }) => {
-    const created = await saveNewTemplate({ name, description, streams, projects: [] }, user?.id);
+    const created = await saveNewTemplate({ name, description, streams, projects: [] }, String(user?.id));
     if (created) {
       setTemplates(prev => [...prev, created]);
       setActiveId(created.id);
@@ -739,7 +739,7 @@ export default function StrategicRoadmapPage() {
   };
 
   const handleLoadSamples = async () => {
-    const inserted = await loadSampleTemplatesInDb(user?.id);
+    const inserted = await loadSampleTemplatesInDb(String(user?.id));
     setTemplates(prev => [...prev, ...inserted]);
   };
 
@@ -751,7 +751,7 @@ export default function StrategicRoadmapPage() {
       description: src.description,
       streams: src.streams,
       projects: src.projects,
-    }, user?.id);
+    }, String(user?.id));
     if (created) setTemplates(prev => [...prev, created]);
   };
 
