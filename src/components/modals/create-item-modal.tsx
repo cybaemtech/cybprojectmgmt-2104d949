@@ -460,12 +460,21 @@ export function CreateItemModal({
           description: `Created: Change Request "${data.title}" → ${taskCount} task${taskCount !== 1 ? 's' : ''} from template.`,
         });
       } else if (data.type === 'BUG') {
-        // BUG: auto-attach to first available STORY if no parent selected
+        // BUG: must always be under a STORY (Change Request)
         if (!submitData.parentId) {
           const projectStories = workItems.filter(w => w.type === 'STORY' && w.projectId === submitData.projectId);
           if (projectStories.length > 0) {
             submitData.parentId = projectStories[0].id;
+          } else {
+            toast({ title: "Error", description: "No Change Request found. Please create a Change Request first before reporting a bug.", variant: "destructive" });
+            return;
           }
+        }
+        // Verify parent is a STORY, not an EPIC or FEATURE
+        const parentItem = workItems.find(w => w.id === submitData.parentId);
+        if (parentItem && parentItem.type !== 'STORY') {
+          toast({ title: "Error", description: "Bugs must be created under a Change Request (Story), not under " + getTypeDisplayName(parentItem.type) + ".", variant: "destructive" });
+          return;
         }
         workItemStore.save(submitData);
         toast({ title: "Bug created", description: `Bug "${data.title}" created successfully.` });
@@ -950,7 +959,7 @@ export function CreateItemModal({
               {/* BUG specific block */}
               {watchedType === 'BUG' && (
                 <div className="space-y-4 bg-blue-50 p-4 rounded border border-blue-200">
-                  {/* Parent Change Request selector */}
+                  {/* Parent Change Request selector - mandatory for bugs */}
                   {(() => {
                     const parentStories = workItems.filter(w => w.type === 'STORY' && w.projectId === selectedProjectId);
                     return parentStories.length > 0 ? (
@@ -959,20 +968,24 @@ export function CreateItemModal({
                         name="parentId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm">Change Request (Parent)</FormLabel>
+                            <FormLabel className="text-sm">Change Request (Parent) <span className="text-destructive">*</span></FormLabel>
                             <FormControl>
                               <Combobox
                                 options={parentStories.map(s => ({ value: s.id.toString(), label: s.title }))}
                                 value={field.value?.toString() || ""}
                                 onValueChange={v => field.onChange(v ? parseInt(v) : null)}
-                                placeholder="Auto-select first available..."
+                                placeholder="Select a Change Request..."
                               />
                             </FormControl>
-                            <p className="text-xs text-muted-foreground">Leave empty to auto-attach to the first Change Request</p>
+                            <p className="text-xs text-muted-foreground">Bug will be created under this Change Request</p>
                           </FormItem>
                         )}
                       />
-                    ) : null;
+                    ) : (
+                      <p className="text-sm text-destructive font-medium p-2 bg-destructive/10 rounded">
+                        No Change Requests found. Please create a Change Request first before reporting a bug.
+                      </p>
+                    );
                   })()}
                   <div className="grid grid-cols-3 gap-4">
                     <FormField
