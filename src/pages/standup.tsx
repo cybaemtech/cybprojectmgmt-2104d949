@@ -48,27 +48,76 @@ export default function DailyStandup() {
   }, []);
   const isAdminOrScrum = currentUser?.role === "ADMIN" || currentUser?.role === "SCRUM_MASTER";
 
+  const filteredWorkItems = useMemo(() => {
+    let items = allWorkItems;
+
+    // Filter by category — only keep items whose project matches selected categories
+    if (categoryFilter.length > 0) {
+      const categoryProjectIds = new Set(
+        projects.filter(p => categoryFilter.includes(p.category || "IN_HOUSE")).map(p => p.id)
+      );
+      items = items.filter(i => categoryProjectIds.has(i.projectId));
+    }
+
+    // Filter by project
+    if (standupProjectFilter.length > 0) {
+      items = items.filter(i => standupProjectFilter.includes(i.projectId.toString()));
+    }
+
+    // Filter by status
+    if (standupStatusFilter.length > 0) {
+      items = items.filter(i => standupStatusFilter.includes(i.status));
+    }
+
+    // Filter by priority
+    if (standupPriorityFilter.length > 0) {
+      items = items.filter(i => i.priority && standupPriorityFilter.includes(i.priority));
+    }
+
+    // Filter by type
+    if (standupTypeFilter.length > 0) {
+      items = items.filter(i => standupTypeFilter.includes(i.type));
+    }
+
+    // Filter by assignee
+    if (standupAssigneeFilter.length > 0) {
+      items = items.filter(i => i.assigneeId && standupAssigneeFilter.includes(i.assigneeId.toString()));
+    }
+
+    // Filter by date range
+    if (dateRange.from || dateRange.to) {
+      items = items.filter(i => {
+        const itemDate = new Date(i.createdAt);
+        if (dateRange.from && itemDate < dateRange.from) return false;
+        if (dateRange.to && itemDate > dateRange.to) return false;
+        return true;
+      });
+    }
+
+    return items;
+  }, [allWorkItems, projects, categoryFilter, standupProjectFilter, standupStatusFilter, standupPriorityFilter, standupTypeFilter, standupAssigneeFilter, dateRange]);
+
   const totals = React.useMemo(() => {
-    const totalItems = allWorkItems.length;
-    const tasks = allWorkItems.filter(i => i.type === "TASK").length;
-    const bugs = allWorkItems.filter(i => i.type === "BUG").length;
+    const totalItems = filteredWorkItems.length;
+    const tasks = filteredWorkItems.filter(i => i.type === "TASK").length;
+    const bugs = filteredWorkItems.filter(i => i.type === "BUG").length;
     
-    const done = allWorkItems.filter(i => i.status === "DONE").length;
-    const inProgress = allWorkItems.filter(i => i.status === "IN_PROGRESS").length;
-    const toDo = allWorkItems.filter(i => i.status === "TODO").length;
-    const onHold = allWorkItems.filter(i => i.status === "ON_HOLD").length;
+    const done = filteredWorkItems.filter(i => i.status === "DONE").length;
+    const inProgress = filteredWorkItems.filter(i => i.status === "IN_PROGRESS").length;
+    const toDo = filteredWorkItems.filter(i => i.status === "TODO").length;
+    const onHold = filteredWorkItems.filter(i => i.status === "ON_HOLD").length;
     
     const bugsByPriority = {
-      CRITICAL: allWorkItems.filter(i => i.type === "BUG" && i.priority === "CRITICAL").length,
-      HIGH: allWorkItems.filter(i => i.type === "BUG" && i.priority === "HIGH").length,
-      MEDIUM: allWorkItems.filter(i => i.type === "BUG" && i.priority === "MEDIUM").length,
-      LOW: allWorkItems.filter(i => i.type === "BUG" && i.priority === "LOW").length,
+      CRITICAL: filteredWorkItems.filter(i => i.type === "BUG" && i.priority === "CRITICAL").length,
+      HIGH: filteredWorkItems.filter(i => i.type === "BUG" && i.priority === "HIGH").length,
+      MEDIUM: filteredWorkItems.filter(i => i.type === "BUG" && i.priority === "MEDIUM").length,
+      LOW: filteredWorkItems.filter(i => i.type === "BUG" && i.priority === "LOW").length,
     };
     
-    const estimatedHours = allWorkItems.reduce((acc, curr) => acc + (Number(curr.estimate) || 0), 0);
+    const estimatedHours = filteredWorkItems.reduce((acc, curr) => acc + (Number(curr.estimate) || 0), 0);
     
     return { totalItems, tasks, bugs, done, inProgress, toDo, onHold, bugsByPriority, estimatedHours };
-  }, [allWorkItems]);
+  }, [filteredWorkItems]);
 
   const hasActiveStandupFilters = standupStatusFilter.length > 0 ||
     standupPriorityFilter.length > 0 ||
