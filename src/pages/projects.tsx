@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ProjectCard } from "@/components/projects/project-card";
 import { CreateProject } from "@/components/projects/create-project";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useModal } from "@/hooks/use-modal";
 import { useToast } from "@/hooks/use-toast";
-import { Layers, PlusCircle, Search, Folder, Archive, ListTodo, Filter, X, CheckCircle, AlertTriangle, Clock, Users, Settings } from "lucide-react";
+import { Layers, PlusCircle, Search, Folder, Archive, ListTodo, Filter, X, CheckCircle, AlertTriangle, Clock, Users, Settings, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { calculateProjectStats } from "@/lib/data-utils";
 import { User, Team, Project, WorkItem } from "@/types/schema";
 import { projectStore, teamStore, workItemStore, getLocalUser } from "@/lib/local-store";
@@ -23,7 +23,9 @@ export default function Projects() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"active" | "archived" | "dailyStandup">("active");
-  // viewMode removed - table only
+  const [categoryFilter, setCategoryFilter] = useState<"ALL" | "CLIENT" | "IN_HOUSE">("ALL");
+  const [projectStatusFilter, setProjectStatusFilter] = useState<"ALL" | "PLANNING" | "ACTIVE" | "COMPLETED">("ALL");
+  const [targetDateSort, setTargetDateSort] = useState<"none" | "asc" | "desc">("none");
 
   // Daily Standup Filters - Changed to arrays for multi-select
   const [standupStatusFilter, setStandupStatusFilter] = useState<string[]>([]);
@@ -82,42 +84,51 @@ export default function Projects() {
     standupAssigneeFilter.length > 0 ||
     standupProjectFilter.length > 0;
 
-  const filteredProjects = projects.filter((project: Project) => {
-    // Apply search filter
-    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (project.key && project.key.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredProjects = useMemo(() => {
+    let result = projects.filter((project: Project) => {
+      const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (project.key && project.key.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    // For daily standup, filter based on team membership
-    if (statusFilter === "dailyStandup") {
-      const isActive = project.status !== 'ARCHIVED';
-      if (!isActive || !matchesSearch) return false;
-
-      // Admins and Scrum Masters can see all projects
-      if (isAdminOrScrum) {
-        return true;
+      if (statusFilter === "dailyStandup") {
+        const isActive = project.status !== 'ARCHIVED';
+        if (!isActive || !matchesSearch) return false;
+        if (isAdminOrScrum) return true;
+        const isTeamMember = currentUser && project.teamId && teamMembersOf(project.teamId).includes(currentUser.id);
+        return isTeamMember;
       }
-      // Only show if user is assigned as a member of the project's team
+
+      const matchesStatusFilter = statusFilter === "active"
+        ? project.status !== 'ARCHIVED'
+        : project.status === 'ARCHIVED';
+
+      if (!matchesStatusFilter || !matchesSearch) return false;
+
+      // Category filter
+      if (categoryFilter !== "ALL" && project.category !== categoryFilter) return false;
+
+      // Project status filter
+      if (projectStatusFilter !== "ALL" && project.status !== projectStatusFilter) return false;
+
+      if (isAdminOrScrum) return true;
       const isTeamMember = currentUser && project.teamId && teamMembersOf(project.teamId).includes(currentUser.id);
       return isTeamMember;
+    });
+
+    // Sort by target date
+    if (targetDateSort !== "none") {
+      result = [...result].sort((a, b) => {
+        const dateA = a.targetDate ? new Date(a.targetDate).getTime() : 0;
+        const dateB = b.targetDate ? new Date(b.targetDate).getTime() : 0;
+        if (!a.targetDate && !b.targetDate) return 0;
+        if (!a.targetDate) return 1;
+        if (!b.targetDate) return -1;
+        return targetDateSort === "asc" ? dateA - dateB : dateB - dateA;
+      });
     }
 
-    // Apply status filter for regular project views
-    const matchesStatusFilter = statusFilter === "active"
-      ? project.status !== 'ARCHIVED'
-      : project.status === 'ARCHIVED';
-
-    if (!matchesStatusFilter || !matchesSearch) return false;
-
-    // Admins and Scrum Masters can see all projects
-    if (isAdminOrScrum) {
-      return true;
-    }
-
-    // Only show if user is assigned as a member of the project's team
-    const isTeamMember = currentUser && project.teamId && teamMembersOf(project.teamId).includes(currentUser.id);
-    return isTeamMember;
-  });
+    return result;
+  }, [projects, searchQuery, statusFilter, categoryFilter, projectStatusFilter, targetDateSort, isAdminOrScrum, currentUser]);
 
   return (
     <>
@@ -157,8 +168,8 @@ export default function Projects() {
             {/* Project Information Section */}
            
 
-            {/* Status Filter Tabs + View Toggle */}
-            <div className="flex justify-between items-center mb-6">
+            {/* Status Filter Tabs */}
+            <div className="flex justify-between items-center mb-4">
               <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
               <Button
                 variant="ghost"
@@ -189,8 +200,49 @@ export default function Projects() {
                 </Button>
               )}
               </div>
-              
             </div>
+
+            {/* Filters Row */}
+            {statusFilter !== "dailyStandup" && (
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-neutral-500" />
+                  <span className="text-sm font-medium text-neutral-600">Filters:</span>
+                </div>
+                <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as any)}>
+                  <SelectTrigger className="w-[150px] h-8 text-sm">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Categories</SelectItem>
+                    <SelectItem value="CLIENT">Client</SelectItem>
+                    <SelectItem value="IN_HOUSE">In-House</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={projectStatusFilter} onValueChange={(v) => setProjectStatusFilter(v as any)}>
+                  <SelectTrigger className="w-[150px] h-8 text-sm">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Statuses</SelectItem>
+                    <SelectItem value="PLANNING">Planning</SelectItem>
+                    <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="COMPLETED">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+                {(categoryFilter !== "ALL" || projectStatusFilter !== "ALL") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setCategoryFilter("ALL"); setProjectStatusFilter("ALL"); }}
+                    className="text-xs h-8"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Clear
+                  </Button>
+                )}
+              </div>
+            )}
 
             {/* Daily Standup View */}
             {statusFilter === "dailyStandup" ? (
@@ -626,7 +678,17 @@ export default function Projects() {
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">STATUS</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">TEAM</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">WORK ITEMS</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">TARGET DATE</th>
+                        <th
+                          className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase cursor-pointer select-none hover:bg-gray-100 transition-colors"
+                          onClick={() => setTargetDateSort(prev => prev === "none" ? "asc" : prev === "asc" ? "desc" : "none")}
+                        >
+                          <div className="flex items-center gap-1">
+                            TARGET DATE
+                            {targetDateSort === "none" && <ArrowUpDown className="h-3 w-3 text-gray-400" />}
+                            {targetDateSort === "asc" && <ArrowUp className="h-3 w-3 text-blue-600" />}
+                            {targetDateSort === "desc" && <ArrowDown className="h-3 w-3 text-blue-600" />}
+                          </div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
