@@ -2,7 +2,7 @@
  * seed-data.ts – Insert synthetic test data directly into Supabase.
  * Call seedDatabase() to populate 10 teams and 25 projects with work items.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseCustom as supabase } from "@/lib/supabase-custom";
 import { refreshStore } from "./local-store";
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
