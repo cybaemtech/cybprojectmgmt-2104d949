@@ -137,8 +137,8 @@ function TimelineHeader({ periods }: TimelineHeaderProps) {
 
 interface TimelineBarProps {
   name: string;
-  startDate: string | null | undefined;
-  endDate: string | null | undefined;
+  startDate: string | Date | null | undefined;
+  endDate: string | Date | null | undefined;
   periods: Period[];
   color: string;
   textColor: string;
