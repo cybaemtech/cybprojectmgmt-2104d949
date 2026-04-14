@@ -70,56 +70,63 @@ export function InviteModal({
       
       for (const email of inviteData.emails) {
         try {
-          // Send invite email via proper API endpoint
-          console.log(`Inviting ${email} with role ${inviteData.role} to team ${inviteData.teamId}`);
+          const trimmedEmail = email.trim().toLowerCase();
+          console.log(`Inviting ${trimmedEmail} with role ${inviteData.role} to team ${inviteData.teamId}`);
           
-          // Use apiRequest for consistent API handling
-          const response = await apiRequest('POST', '/invite', { 
-            email: email.trim(),
-            role: inviteData.role,
-            teamId: parseInt(inviteData.teamId)
-          });
+          // Check if user already exists in profiles
+          const { data: existingProfile } = await supabaseCustom
+            .from("profiles")
+            .select("id")
+            .eq("email", trimmedEmail)
+            .maybeSingle();
           
-          const result = await response.json();
-          console.log(`Invite result for ${email}:`, result);
-          
-          if (result.success) {
-            results.push({ 
-              success: true, 
-              email, 
-              user: result.user 
-            });
-          } else {
+          if (!existingProfile) {
             results.push({ 
               success: false, 
-              email, 
-              error: result.message || 'Unknown error occurred' 
+              email: trimmedEmail, 
+              error: `No account found for ${trimmedEmail}. User must sign up first.` 
             });
+            continue;
           }
+          
+          // Check if already a team member
+          const { data: existingMember } = await supabaseCustom
+            .from("team_members")
+            .select("id")
+            .eq("team_id", parseInt(inviteData.teamId))
+            .eq("user_id", existingProfile.id)
+            .maybeSingle();
+          
+          if (existingMember) {
+            results.push({ 
+              success: false, 
+              email: trimmedEmail, 
+              error: `${trimmedEmail} is already a member of this team.` 
+            });
+            continue;
+          }
+          
+          // Add user to the team
+          const { error: insertError } = await supabaseCustom
+            .from("team_members")
+            .insert({
+              team_id: parseInt(inviteData.teamId),
+              user_id: existingProfile.id,
+              role: inviteData.role as any,
+            });
+          
+          if (insertError) throw insertError;
+          
+          results.push({ 
+            success: true, 
+            email: trimmedEmail, 
+          });
         } catch (error) {
           console.error(`Invite error for ${email}:`, error);
-          
-          // Parse error message if it's from apiRequest
-          let errorMessage = String(error);
-          if (error instanceof Error) {
-            // Check if error contains JSON response
-            try {
-              const match = errorMessage.match(/\d+:\s*(.+)/);
-              if (match) {
-                const jsonPart = match[1];
-                const parsed = JSON.parse(jsonPart);
-                errorMessage = parsed.message || errorMessage;
-              }
-            } catch {
-              // Use the original error message
-              errorMessage = error.message || errorMessage;
-            }
-          }
-          
           results.push({ 
             success: false, 
             email, 
-            error: errorMessage 
+            error: error instanceof Error ? error.message : String(error)
           });
         }
       }
