@@ -4,6 +4,7 @@ import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseCustom } from "@/lib/supabase-custom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -20,7 +21,6 @@ import {
 import { Team } from "@/types/schema";
 import { useToast } from "@/hooks/use-toast";
 import { validateCorporateEmails } from "@/lib/email-validation";
-import { apiRequest } from "@/lib/queryClient";
 
 // Define the form schema with validation
 const inviteFormSchema = z.object({
