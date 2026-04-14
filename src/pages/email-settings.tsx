@@ -49,9 +49,7 @@ export default function EmailSettings() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedTemplate, setSelectedTemplate] = useState("welcome");
-  const [recipientEmail, setRecipientEmail] = useState("");
-  const [templateData, setTemplateData] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const [smtpForm, setSmtpForm] = useState<SmtpConfig>({
