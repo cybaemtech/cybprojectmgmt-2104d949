@@ -61,51 +61,49 @@ export function Header({
     setShowChangePassword(true);
   };
 
-  const handleTruncateAllData = async () => {
+  const handleTruncate = async (type: 'teams' | 'projects' | 'all') => {
     setIsTruncating(true);
     try {
-      const tables = [
-        'work_item_history',
-        'comments',
-        'attachments',
-        'work_items',
-        'project_members',
-        'projects',
-        'team_members',
-        'teams',
-        'activity_logs',
-        'email_logs',
-        'email_rate_limits',
-      ];
+      let tables: string[] = [];
+
+      if (type === 'teams') {
+        tables = ['team_members', 'teams'];
+      } else if (type === 'projects') {
+        tables = ['work_item_history', 'comments', 'attachments', 'work_items', 'project_members', 'projects'];
+      } else {
+        tables = [
+          'work_item_history', 'comments', 'attachments', 'work_items',
+          'project_members', 'projects', 'team_members', 'teams',
+          'activity_logs', 'email_logs', 'email_rate_limits',
+        ];
+      }
 
       for (const table of tables) {
         const { error } = await supabaseCustom.from(table).delete().gte('id', 0);
-        if (error) {
-          console.error(`Error truncating ${table}:`, error);
-        }
+        if (error) console.error(`Error truncating ${table}:`, error);
       }
 
-      // Clear query cache to reflect changes
       queryClient.clear();
 
+      const labels = { teams: 'Team Management', projects: 'Project Management', all: 'All' };
       toast({
-        title: "All Data Truncated",
-        description: "All table data has been successfully removed.",
+        title: `${labels[type]} Data Truncated`,
+        description: `${labels[type]} data has been successfully removed.`,
       });
 
-      // Reload to reflect clean state
       window.location.reload();
     } catch (error) {
       console.error('Truncate error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to truncate data. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to truncate data.", variant: "destructive" });
     } finally {
       setIsTruncating(false);
       setShowTruncateAlert(false);
     }
+  };
+
+  const openTruncateAlert = (type: 'teams' | 'projects' | 'all') => {
+    setTruncateType(type);
+    setShowTruncateAlert(true);
   };
 
   const handleLogout = async () => {
