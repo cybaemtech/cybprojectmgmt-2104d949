@@ -369,29 +369,7 @@ export default function EmailSettings() {
         </CardContent>
       </Card>
 
-      {/* Features */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Email Service Features</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-3 text-sm">
-            {[
-              { icon: <Shield className="h-4 w-4 text-emerald-500" />, text: "Backend-only sending — SMTP credentials never exposed to frontend" },
-              { icon: <RefreshCw className="h-4 w-4 text-blue-500" />, text: "Auto-retry with exponential backoff (up to 3 attempts)" },
-              { icon: <Clock className="h-4 w-4 text-amber-500" />, text: "Rate limiting: max 10 emails/hour per recipient" },
-              { icon: <Mail className="h-4 w-4 text-purple-500" />, text: "6 HTML email templates (welcome, verify, reset, notification, admin, invitation)" },
-              { icon: <CheckCircle className="h-4 w-4 text-emerald-500" />, text: "Full delivery logging with status tracking" },
-              { icon: <AlertTriangle className="h-4 w-4 text-red-500" />, text: "Admin-only access — configurable at admin level only" },
-            ].map((item, i) => (
-              <li key={i} className="flex items-start gap-3">
-                {item.icon}
-                <span className="text-muted-foreground">{item.text}</span>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+
 
       {/* Email Logs */}
       <Card>
