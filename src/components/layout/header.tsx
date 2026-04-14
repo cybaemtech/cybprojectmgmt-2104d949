@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, Search, Bell, HelpCircle, ChevronDown, LogOut, Key, Settings } from "lucide-react";
+import { Menu, Search, Bell, HelpCircle, ChevronDown, LogOut, Key, Settings, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,10 +12,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ChangePasswordModal } from "@/components/modals/change-password-modal";
 import { Project, User as UserType } from "@/types/schema";
 import { queryClient } from "@/lib/queryClient";
 import { SessionTimer } from "@/components/ui/session-timer";
+import { supabaseCustom } from "@/lib/supabase-custom";
+import { useToast } from "@/hooks/use-toast";
 
 interface HeaderProps {
   currentProject?: Project;
@@ -35,6 +47,10 @@ export function Header({
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const [showTruncateAlert, setShowTruncateAlert] = useState(false);
+  const [isTruncating, setIsTruncating] = useState(false);
+  const { toast } = useToast();
+
   const handleBackToTeams = (e: React.MouseEvent) => {
     e.preventDefault();
     navigate('/teams');
@@ -42,6 +58,53 @@ export function Header({
 
   const handleChangePassword = () => {
     setShowChangePassword(true);
+  };
+
+  const handleTruncateAllData = async () => {
+    setIsTruncating(true);
+    try {
+      const tables = [
+        'work_item_history',
+        'comments',
+        'attachments',
+        'work_items',
+        'project_members',
+        'projects',
+        'team_members',
+        'teams',
+        'activity_logs',
+        'email_logs',
+        'email_rate_limits',
+      ];
+
+      for (const table of tables) {
+        const { error } = await supabaseCustom.from(table).delete().gte('id', 0);
+        if (error) {
+          console.error(`Error truncating ${table}:`, error);
+        }
+      }
+
+      // Clear query cache to reflect changes
+      queryClient.clear();
+
+      toast({
+        title: "All Data Truncated",
+        description: "All table data has been successfully removed.",
+      });
+
+      // Reload to reflect clean state
+      window.location.reload();
+    } catch (error) {
+      console.error('Truncate error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to truncate data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTruncating(false);
+      setShowTruncateAlert(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -191,6 +254,20 @@ export function Header({
               </DropdownMenuItem>
             )}
 
+            {user && user.role === 'ADMIN' && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setShowTruncateAlert(true)}
+                  className="cursor-pointer text-orange-600 focus:text-orange-600 focus:bg-orange-50"
+                  disabled={isLoggingOut || isTruncating}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Truncate All Data</span>
+                </DropdownMenuItem>
+              </>
+            )}
+
             <DropdownMenuSeparator />
 
             <DropdownMenuItem
@@ -210,6 +287,36 @@ export function Header({
         isOpen={showChangePassword}
         onClose={() => setShowChangePassword(false)}
       />
+
+      {/* Truncate All Data Alert */}
+      <AlertDialog open={showTruncateAlert} onOpenChange={setShowTruncateAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-600">⚠️ Truncate All Data</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block font-semibold text-foreground">
+                This action is irreversible and will permanently delete ALL data from the following tables:
+              </span>
+              <span className="block text-sm">
+                Projects, Work Items, Teams, Team Members, Project Members, Comments, Attachments, Activity Logs, Email Logs, and Work Item History.
+              </span>
+              <span className="block font-semibold text-red-600 mt-2">
+                Are you absolutely sure you want to proceed?
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isTruncating}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleTruncateAllData}
+              disabled={isTruncating}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {isTruncating ? 'Truncating...' : 'Yes, Truncate Everything'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 }
