@@ -48,6 +48,7 @@ export function Header({
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const [showTruncateAlert, setShowTruncateAlert] = useState(false);
+  const [truncateType, setTruncateType] = useState<'teams' | 'projects' | 'all'>('all');
   const [isTruncating, setIsTruncating] = useState(false);
   const { toast } = useToast();
 
@@ -60,51 +61,49 @@ export function Header({
     setShowChangePassword(true);
   };
 
-  const handleTruncateAllData = async () => {
+  const handleTruncate = async (type: 'teams' | 'projects' | 'all') => {
     setIsTruncating(true);
     try {
-      const tables = [
-        'work_item_history',
-        'comments',
-        'attachments',
-        'work_items',
-        'project_members',
-        'projects',
-        'team_members',
-        'teams',
-        'activity_logs',
-        'email_logs',
-        'email_rate_limits',
-      ];
+      let tables: string[] = [];
+
+      if (type === 'teams') {
+        tables = ['team_members', 'teams'];
+      } else if (type === 'projects') {
+        tables = ['work_item_history', 'comments', 'attachments', 'work_items', 'project_members', 'projects'];
+      } else {
+        tables = [
+          'work_item_history', 'comments', 'attachments', 'work_items',
+          'project_members', 'projects', 'team_members', 'teams',
+          'activity_logs', 'email_logs', 'email_rate_limits',
+        ];
+      }
 
       for (const table of tables) {
         const { error } = await supabaseCustom.from(table).delete().gte('id', 0);
-        if (error) {
-          console.error(`Error truncating ${table}:`, error);
-        }
+        if (error) console.error(`Error truncating ${table}:`, error);
       }
 
-      // Clear query cache to reflect changes
       queryClient.clear();
 
+      const labels = { teams: 'Team Management', projects: 'Project Management', all: 'All' };
       toast({
-        title: "All Data Truncated",
-        description: "All table data has been successfully removed.",
+        title: `${labels[type]} Data Truncated`,
+        description: `${labels[type]} data has been successfully removed.`,
       });
 
-      // Reload to reflect clean state
       window.location.reload();
     } catch (error) {
       console.error('Truncate error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to truncate data. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to truncate data.", variant: "destructive" });
     } finally {
       setIsTruncating(false);
       setShowTruncateAlert(false);
     }
+  };
+
+  const openTruncateAlert = (type: 'teams' | 'projects' | 'all') => {
+    setTruncateType(type);
+    setShowTruncateAlert(true);
   };
 
   const handleLogout = async () => {
@@ -258,8 +257,24 @@ export function Header({
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => setShowTruncateAlert(true)}
+                  onClick={() => openTruncateAlert('teams')}
                   className="cursor-pointer text-orange-600 focus:text-orange-600 focus:bg-orange-50"
+                  disabled={isLoggingOut || isTruncating}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Truncate Team Data</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => openTruncateAlert('projects')}
+                  className="cursor-pointer text-orange-600 focus:text-orange-600 focus:bg-orange-50"
+                  disabled={isLoggingOut || isTruncating}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Truncate Project Data</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => openTruncateAlert('all')}
+                  className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
                   disabled={isLoggingOut || isTruncating}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
@@ -288,17 +303,21 @@ export function Header({
         onClose={() => setShowChangePassword(false)}
       />
 
-      {/* Truncate All Data Alert */}
+      {/* Truncate Data Alert */}
       <AlertDialog open={showTruncateAlert} onOpenChange={setShowTruncateAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-red-600">⚠️ Truncate All Data</AlertDialogTitle>
+            <AlertDialogTitle className="text-red-600">
+              ⚠️ {truncateType === 'teams' ? 'Truncate Team Data' : truncateType === 'projects' ? 'Truncate Project Data' : 'Truncate All Data'}
+            </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
               <span className="block font-semibold text-foreground">
-                This action is irreversible and will permanently delete ALL data from the following tables:
+                This action is irreversible and will permanently delete the following data:
               </span>
               <span className="block text-sm">
-                Projects, Work Items, Teams, Team Members, Project Members, Comments, Attachments, Activity Logs, Email Logs, and Work Item History.
+                {truncateType === 'teams' && 'Teams and Team Members.'}
+                {truncateType === 'projects' && 'Projects, Work Items, Project Members, Comments, Attachments, and Work Item History.'}
+                {truncateType === 'all' && 'Projects, Work Items, Teams, Team Members, Project Members, Comments, Attachments, Activity Logs, Email Logs, and Work Item History.'}
               </span>
               <span className="block font-semibold text-red-600 mt-2">
                 Are you absolutely sure you want to proceed?
@@ -308,11 +327,11 @@ export function Header({
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isTruncating}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleTruncateAllData}
+              onClick={() => handleTruncate(truncateType)}
               disabled={isTruncating}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
             >
-              {isTruncating ? 'Truncating...' : 'Yes, Truncate Everything'}
+              {isTruncating ? 'Truncating...' : 'Yes, Truncate'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
