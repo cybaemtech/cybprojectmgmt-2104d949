@@ -255,9 +255,15 @@ export default function Teams() {
 
               <TabsContent value="users" className="focus-visible:outline-none">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                  <div className="flex gap-4 text-sm font-medium">
-                    <span className="text-muted-foreground">Active: <span className="text-foreground font-bold">{users.filter(u => u.isActive).length}</span></span>
-                    <span className="text-muted-foreground">Inactive: <span className="text-foreground font-bold">{users.filter(u => !u.isActive).length}</span></span>
+                  <div className="flex items-center gap-4">
+                    <div className="flex gap-4 text-sm font-medium">
+                      <span className="text-muted-foreground">Active: <span className="text-foreground font-bold">{users.filter(u => u.isActive).length}</span></span>
+                      <span className="text-muted-foreground">Inactive: <span className="text-foreground font-bold">{users.filter(u => !u.isActive).length}</span></span>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={refresh} title="Refresh users">
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Refresh
+                    </Button>
                   </div>
                   <div className="relative w-full md:w-[400px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -297,6 +303,60 @@ export default function Teams() {
                     </TabsContent>
                   </Tabs>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="invitations" className="focus-visible:outline-none">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="flex gap-4 text-sm font-medium">
+                      <span className="text-muted-foreground">Total: <span className="text-foreground font-bold">{invitations.length}</span></span>
+                      <span className="text-muted-foreground">Pending: <span className="text-foreground font-bold">{invitations.filter(i => i.status === 'PENDING').length}</span></span>
+                      <span className="text-muted-foreground">Active: <span className="text-foreground font-bold">{invitations.filter(i => i.status === 'ACTIVE').length}</span></span>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => { fetchInvitations(); refresh(); }} title="Refresh invitations">
+                      <RefreshCw className={cn("h-4 w-4 mr-1", invitationsLoading && "animate-spin")} />
+                      Refresh
+                    </Button>
+                  </div>
+                </div>
+
+                {invitationsLoading ? (
+                  <div className="space-y-3">
+                    {[1,2,3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+                  </div>
+                ) : invitations.length === 0 ? (
+                  <div className="text-center py-20 bg-muted/5 rounded-xl border border-dashed">
+                    <Mail className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No invitations sent yet</h3>
+                    <p className="text-muted-foreground">Use the Invite button to send team invitations</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {invitations.map(inv => (
+                      <Card key={inv.id} className="transition-colors hover:bg-accent/50">
+                        <CardContent className="p-4 flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-10 w-10 border">
+                              <AvatarFallback className="bg-primary/5 text-primary font-bold">
+                                {inv.email.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="font-semibold">{inv.email}</span>
+                              <span className="text-xs text-muted-foreground">
+                                Invited on {new Date(inv.created_at).toLocaleDateString()} · Team Role: {inv.team_role || 'MEMBER'}
+                                {inv.team_id ? ` · Team: ${teams.find(t => t.id === inv.team_id)?.name || inv.team_id}` : ''}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {getStatusBadge(inv.status)}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
