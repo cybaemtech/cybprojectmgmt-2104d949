@@ -323,7 +323,7 @@ export function Header({
               <span className="block text-sm">
                 {truncateType === 'teams' && 'Teams and Team Members.'}
                 {truncateType === 'projects' && 'Projects, Work Items, Project Members, Comments, Attachments, and Work Item History.'}
-                {truncateType === 'all' && 'Projects, Work Items, Teams, Team Members, Project Members, Comments, Attachments, Activity Logs, Email Logs, and Work Item History.'}
+                {truncateType === 'all' && 'Projects, Work Items, Teams, Team Members, Project Members, Comments, Attachments, Activity Logs, Email Logs, Work Item History, and all User Profiles (except your own).'}
               </span>
               <span className="block font-semibold text-red-600 mt-2">
                 Are you absolutely sure you want to proceed?
