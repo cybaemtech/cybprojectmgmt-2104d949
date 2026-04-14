@@ -195,8 +195,9 @@ export default function EmailSettings() {
   // Send email mutation
   const sendEmail = useMutation({
     mutationFn: async (payload: { templateName: string; recipientEmail: string; templateData: Record<string, string> }) => {
+      const { data: { session: extSession } } = await supabaseCustom.auth.getSession();
       const { data, error } = await supabase.functions.invoke("send-email", {
-        body: payload,
+        body: { ...payload, externalAuthToken: extSession?.access_token },
       });
       if (error) throw error;
       return data;
