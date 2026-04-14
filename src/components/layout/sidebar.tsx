@@ -15,6 +15,7 @@ import {
   ChevronsRight,
   Map,
   Settings,
+  Mail,
 } from "lucide-react";
 import { Team, Project, User } from "@/types/schema";
 import CybaemLogo from "@/assets/cybaem-logo.png";
@@ -36,6 +37,7 @@ const menuItems = [
   { href: "/timeline", icon: Calendar, label: "Timeline", isActive: (loc: string) => loc === "/timeline" || loc === "/calendar" },
   { href: "/templates", icon: Settings, label: "Template Settings", isActive: (loc: string) => loc === "/templates" },
   { href: "/reports", icon: BarChart, label: "Reports", isActive: (loc: string) => loc === "/reports" },
+  { href: "/email-settings", icon: Mail, label: "Email Settings", isActive: (loc: string) => loc === "/email-settings" },
   { href: "/project-bug-reports", icon: Bug, label: "Raise Ticket", isActive: (loc: string) => loc === "/project-bug-reports" },
 ];
 
