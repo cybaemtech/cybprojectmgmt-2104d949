@@ -1,4 +1,4 @@
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import nodemailer from "npm:nodemailer@6.9.16";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,24 +21,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    const client = new SMTPClient({
-      connection: {
-        hostname: host,
-        port: Number(port),
-        tls: security === "SSL",
-        auth: { username, password },
-      },
+    const portNum = Number(port);
+    const transporter = nodemailer.createTransport({
+      host,
+      port: portNum,
+      secure: security === "SSL" || portNum === 465,
+      auth: { user: username, pass: password },
+      tls: { rejectUnauthorized: false },
     });
 
-    await client.send({
+    await transporter.sendMail({
       from: `Test <${username}>`,
       to: username,
       subject: "SMTP Connection Test",
-      content: "This is a test email to verify SMTP connectivity.",
+      text: "This is a test email to verify SMTP connectivity.",
       html: `<p>✅ SMTP connection test successful from CYB Project Management.</p><p>Sent at: ${new Date().toISOString()}</p>`,
     });
-
-    await client.close();
 
     return new Response(
       JSON.stringify({ success: true, message: "SMTP connection successful! Test email sent." }),
@@ -46,6 +44,7 @@ Deno.serve(async (req) => {
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error("SMTP test error:", message);
     return new Response(
       JSON.stringify({ success: false, error: `Connection failed: ${message}` }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
