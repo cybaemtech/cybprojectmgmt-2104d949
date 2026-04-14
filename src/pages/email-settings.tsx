@@ -80,15 +80,18 @@ export default function EmailSettings() {
 
   const isAdmin = profile?.role === "ADMIN";
 
-  // Fetch SMTP config via edge function
+  // Fetch SMTP config from external DB
   const { data: smtpConfig, isLoading: configLoading } = useQuery({
     queryKey: ["smtp-config"],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("manage-smtp-config", {
-        body: { action: "get" },
-      });
+      const { data, error } = await supabaseCustom
+        .from("smtp_config")
+        .select("*")
+        .eq("id", 1)
+        .single();
+      if (error && error.code === "PGRST116") return null;
       if (error) throw error;
-      return data?.data as (SmtpConfig & { id: number }) | null;
+      return data as SmtpConfig & { id: number };
     },
     enabled: isAdmin,
   });
@@ -109,14 +112,36 @@ export default function EmailSettings() {
 
   const isConfigured = !!(smtpForm.username && smtpForm.password && smtpForm.host);
 
-  // Save SMTP config via edge function
+  // Save SMTP config to external DB
   const saveConfig = useMutation({
     mutationFn: async (config: SmtpConfig) => {
-      const { data, error } = await supabase.functions.invoke("manage-smtp-config", {
-        body: { action: "save", config },
-      });
+      // Check if unchanged
+      if (smtpConfig) {
+        const unchanged =
+          smtpConfig.host === config.host &&
+          smtpConfig.port === config.port &&
+          smtpConfig.username === config.username &&
+          smtpConfig.password === config.password &&
+          smtpConfig.security === config.security &&
+          smtpConfig.from_email === config.from_email &&
+          smtpConfig.from_name === config.from_name;
+        if (unchanged) return { unchanged: true };
+      }
+      const { error } = await supabaseCustom
+        .from("smtp_config")
+        .upsert({
+          id: 1,
+          host: config.host,
+          port: config.port,
+          username: config.username,
+          password: config.password,
+          security: config.security,
+          from_email: config.from_email,
+          from_name: config.from_name,
+          updated_at: new Date().toISOString(),
+        });
       if (error) throw error;
-      return data;
+      return { unchanged: false };
     },
     onSuccess: (data: any) => {
       if (data?.unchanged) {
@@ -152,11 +177,11 @@ export default function EmailSettings() {
     },
   });
 
-  // Fetch email logs
+  // Fetch email logs from external DB
   const { data: emailLogs = [], isLoading: logsLoading, refetch: refetchLogs } = useQuery({
     queryKey: ["email-logs"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseCustom
         .from("email_logs")
         .select("*")
         .order("created_at", { ascending: false })
