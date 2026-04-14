@@ -453,98 +453,29 @@ export default function EmailSettings() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Send Email */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Send className="h-4 w-4 text-blue-500" />
-              Send Email
-            </CardTitle>
-            <CardDescription>Select a template and send</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label>Template</Label>
-              <Select value={selectedTemplate} onValueChange={(v) => { setSelectedTemplate(v); setTemplateData({}); }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {TEMPLATES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      <div className="flex flex-col">
-                        <span>{t.label}</span>
-                        <span className="text-xs text-muted-foreground">{t.description}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Recipient Email</Label>
-              <Input
-                type="email"
-                placeholder="user@example.com"
-                value={recipientEmail}
-                onChange={(e) => setRecipientEmail(e.target.value)}
-              />
-            </div>
-
-            {getTemplateFields(selectedTemplate).map((field) => (
-              <div key={field.key}>
-                <Label>{field.label}</Label>
-                {field.key === "message" || field.key === "details" ? (
-                  <Textarea
-                    placeholder={field.placeholder}
-                    value={templateData[field.key] || ""}
-                    onChange={(e) => setTemplateData((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                    rows={3}
-                  />
-                ) : (
-                  <Input
-                    placeholder={field.placeholder}
-                    value={templateData[field.key] || ""}
-                    onChange={(e) => setTemplateData((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                  />
-                )}
-              </div>
+      {/* Features */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Email Service Features</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-3 text-sm">
+            {[
+              { icon: <Shield className="h-4 w-4 text-emerald-500" />, text: "Backend-only sending — SMTP credentials never exposed to frontend" },
+              { icon: <RefreshCw className="h-4 w-4 text-blue-500" />, text: "Auto-retry with exponential backoff (up to 3 attempts)" },
+              { icon: <Clock className="h-4 w-4 text-amber-500" />, text: "Rate limiting: max 10 emails/hour per recipient" },
+              { icon: <Mail className="h-4 w-4 text-purple-500" />, text: "6 HTML email templates (welcome, verify, reset, notification, admin, invitation)" },
+              { icon: <CheckCircle className="h-4 w-4 text-emerald-500" />, text: "Full delivery logging with status tracking" },
+              { icon: <AlertTriangle className="h-4 w-4 text-red-500" />, text: "Admin-only access — configurable at admin level only" },
+            ].map((item, i) => (
+              <li key={i} className="flex items-start gap-3">
+                {item.icon}
+                <span className="text-muted-foreground">{item.text}</span>
+              </li>
             ))}
-
-            <Button onClick={handleSend} disabled={sendEmail.isPending || !isConfigured} className="w-full">
-              {sendEmail.isPending ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Sending...</>
-              ) : (
-                <><Send className="h-4 w-4 mr-2" />Send Email</>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Features */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Email Service Features</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3 text-sm">
-              {[
-                { icon: <Shield className="h-4 w-4 text-emerald-500" />, text: "Backend-only sending — SMTP credentials never exposed to frontend" },
-                { icon: <RefreshCw className="h-4 w-4 text-blue-500" />, text: "Auto-retry with exponential backoff (up to 3 attempts)" },
-                { icon: <Clock className="h-4 w-4 text-amber-500" />, text: "Rate limiting: max 10 emails/hour per recipient" },
-                { icon: <Mail className="h-4 w-4 text-purple-500" />, text: "6 HTML email templates (welcome, verify, reset, notification, admin, invitation)" },
-                { icon: <CheckCircle className="h-4 w-4 text-emerald-500" />, text: "Full delivery logging with status tracking" },
-                { icon: <AlertTriangle className="h-4 w-4 text-red-500" />, text: "Admin-only access — configurable at admin level only" },
-              ].map((item, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  {item.icon}
-                  <span className="text-muted-foreground">{item.text}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
+          </ul>
+        </CardContent>
+      </Card>
 
       {/* Email Logs */}
       <Card>
