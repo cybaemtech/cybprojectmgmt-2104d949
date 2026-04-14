@@ -551,31 +551,30 @@ export default function Dashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="divide-y divide-gray-100">
                   {projectProgress
                     .flatMap(p => p.recentActivity.map(item => ({ ...item, projectName: p.project.name })))
                     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-                    .slice(0, 8)
+                    .slice(0, 10)
                     .map(item => (
-                      <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={item.id} className="flex items-center justify-between py-2 px-1">
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{item.externalId}</p>
-                          <p className="text-sm text-gray-600 truncate">{item.title}</p>
-                          <p className="text-xs text-gray-500">{(item as any).projectName}</p>
+                          <p className="text-sm font-medium truncate">{item.title}</p>
+                          <p className="text-xs text-muted-foreground">{(item as any).projectName}</p>
                         </div>
-                        <div className="text-right ml-4">
+                        <div className="flex items-center gap-2 ml-3 shrink-0">
                           <Badge
                             variant={item.status === 'DONE' ? 'default' : item.status === 'IN_PROGRESS' ? 'secondary' : 'outline'}
-                            className="text-xs"
+                            className="text-[10px] px-1.5 py-0"
                           >
                             {item.status.replace('_', ' ')}
                           </Badge>
-                          <p className="text-xs text-gray-600 mt-1">
+                          <span className="text-[10px] text-muted-foreground w-10 text-right">
                             {(() => {
                               const updatedAt = typeof item.updatedAt === 'string' ? parseISO(item.updatedAt) : new Date(item.updatedAt);
                               return format(updatedAt, 'MMM d');
                             })()}
-                          </p>
+                          </span>
                         </div>
                       </div>
                     ))}
