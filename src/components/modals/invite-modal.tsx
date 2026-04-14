@@ -81,10 +81,17 @@ export function InviteModal({
             .maybeSingle();
           
           if (!existingProfile) {
+            // Record invitation as PENDING for users who haven't signed up yet
+            await supabaseCustom.from("invitations").insert({
+              email: trimmedEmail,
+              team_id: parseInt(inviteData.teamId),
+              team_role: inviteData.role,
+              invited_by: (await supabaseCustom.auth.getUser()).data.user?.id,
+              status: 'PENDING',
+            });
             results.push({ 
-              success: false, 
+              success: true, 
               email: trimmedEmail, 
-              error: `No account found for ${trimmedEmail}. User must sign up first.` 
             });
             continue;
           }
@@ -116,6 +123,15 @@ export function InviteModal({
             });
           
           if (insertError) throw insertError;
+
+          // Record invitation as ACTIVE (user already exists)
+          await supabaseCustom.from("invitations").insert({
+            email: trimmedEmail,
+            team_id: parseInt(inviteData.teamId),
+            team_role: inviteData.role,
+            invited_by: (await supabaseCustom.auth.getUser()).data.user?.id,
+            status: 'ACTIVE',
+          });
           
           results.push({ 
             success: true, 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 import { TeamCard } from "@/components/teams/team-card";
 import { CreateTeam } from "@/components/teams/create-team";
@@ -13,10 +13,9 @@ import {
   PlusCircle, 
   Search, 
   UserPlus, 
-  Settings, 
   UserRound,
-  Minus,
-  Plus
+  RefreshCw,
+  Mail,
 } from "lucide-react";
 import { Team, User, Project } from "@/types/schema";
 import { queryClient } from "@/lib/queryClient";
@@ -27,6 +26,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { projectStore, teamStore, userStore, teamMemberStore, getLocalUser } from "@/lib/local-store";
+import { supabaseCustom } from "@/lib/supabase-custom";
+
+interface Invitation {
+  id: number;
+  email: string;
+  full_name: string | null;
+  team_id: number | null;
+  team_role: string | null;
+  global_role: string | null;
+  invited_by: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function Teams() {
   const { toast } = useToast();
@@ -35,6 +48,8 @@ export default function Teams() {
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [showManageTeam, setShowManageTeam] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [invitationsLoading, setInvitationsLoading] = useState(false);
   const { modalType, openModal, closeModal, isOpen } = useModal();
   
   const refresh = () => setRefreshKey(k => k + 1);
@@ -46,6 +61,25 @@ export default function Teams() {
   const users = userStore.all();
 
   const isAdminOrScrum = currentUser?.role === 'ADMIN' || currentUser?.role === 'SCRUM_MASTER';
+
+  const fetchInvitations = useCallback(async () => {
+    setInvitationsLoading(true);
+    try {
+      const { data, error } = await supabaseCustom
+        .from("invitations")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (!error && data) setInvitations(data as Invitation[]);
+    } catch (e) {
+      console.error("Error fetching invitations:", e);
+    } finally {
+      setInvitationsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAdminOrScrum) fetchInvitations();
+  }, [isAdminOrScrum, refreshKey, fetchInvitations]);
 
   const filteredTeams = teams.filter(team => 
     team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -72,6 +106,17 @@ export default function Teams() {
       title: "Status Updated",
       description: `${user.fullName} is now ${!user.isActive ? 'active' : 'inactive'}.`,
     });
+  };
+
+  const getStatusBadge = (status: string) => {
+    const map: Record<string, { label: string; className: string }> = {
+      PENDING: { label: "Pending Sign-Up", className: "bg-yellow-100 text-yellow-800 border-yellow-200" },
+      SIGNED_UP: { label: "Signed Up (Unverified)", className: "bg-blue-100 text-blue-800 border-blue-200" },
+      CONFIRMED: { label: "Email Confirmed", className: "bg-indigo-100 text-indigo-800 border-indigo-200" },
+      ACTIVE: { label: "Active", className: "bg-green-100 text-green-800 border-green-200" },
+    };
+    const info = map[status] || { label: status, className: "" };
+    return <Badge variant="outline" className={cn("text-xs font-medium", info.className)}>{info.label}</Badge>;
   };
 
   const UserCard = ({ user }: { user: User }) => (
@@ -149,6 +194,12 @@ export default function Teams() {
                     All Users ({users.length})
                   </TabsTrigger>
                 )}
+                {isAdminOrScrum && (
+                  <TabsTrigger value="invitations" className="px-8 py-2">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Invitations Sent ({invitations.length})
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               <TabsContent value="teams" className="focus-visible:outline-none">
@@ -204,9 +255,15 @@ export default function Teams() {
 
               <TabsContent value="users" className="focus-visible:outline-none">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                  <div className="flex gap-4 text-sm font-medium">
-                    <span className="text-muted-foreground">Active: <span className="text-foreground font-bold">{users.filter(u => u.isActive).length}</span></span>
-                    <span className="text-muted-foreground">Inactive: <span className="text-foreground font-bold">{users.filter(u => !u.isActive).length}</span></span>
+                  <div className="flex items-center gap-4">
+                    <div className="flex gap-4 text-sm font-medium">
+                      <span className="text-muted-foreground">Active: <span className="text-foreground font-bold">{users.filter(u => u.isActive).length}</span></span>
+                      <span className="text-muted-foreground">Inactive: <span className="text-foreground font-bold">{users.filter(u => !u.isActive).length}</span></span>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={refresh} title="Refresh users">
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Refresh
+                    </Button>
                   </div>
                   <div className="relative w-full md:w-[400px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -246,6 +303,60 @@ export default function Teams() {
                     </TabsContent>
                   </Tabs>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="invitations" className="focus-visible:outline-none">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="flex gap-4 text-sm font-medium">
+                      <span className="text-muted-foreground">Total: <span className="text-foreground font-bold">{invitations.length}</span></span>
+                      <span className="text-muted-foreground">Pending: <span className="text-foreground font-bold">{invitations.filter(i => i.status === 'PENDING').length}</span></span>
+                      <span className="text-muted-foreground">Active: <span className="text-foreground font-bold">{invitations.filter(i => i.status === 'ACTIVE').length}</span></span>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => { fetchInvitations(); refresh(); }} title="Refresh invitations">
+                      <RefreshCw className={cn("h-4 w-4 mr-1", invitationsLoading && "animate-spin")} />
+                      Refresh
+                    </Button>
+                  </div>
+                </div>
+
+                {invitationsLoading ? (
+                  <div className="space-y-3">
+                    {[1,2,3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+                  </div>
+                ) : invitations.length === 0 ? (
+                  <div className="text-center py-20 bg-muted/5 rounded-xl border border-dashed">
+                    <Mail className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No invitations sent yet</h3>
+                    <p className="text-muted-foreground">Use the Invite button to send team invitations</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {invitations.map(inv => (
+                      <Card key={inv.id} className="transition-colors hover:bg-accent/50">
+                        <CardContent className="p-4 flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-10 w-10 border">
+                              <AvatarFallback className="bg-primary/5 text-primary font-bold">
+                                {inv.email.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="font-semibold">{inv.email}</span>
+                              <span className="text-xs text-muted-foreground">
+                                Invited on {new Date(inv.created_at).toLocaleDateString()} · Team Role: {inv.team_role || 'MEMBER'}
+                                {inv.team_id ? ` · Team: ${teams.find(t => t.id === inv.team_id)?.name || inv.team_id}` : ''}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {getStatusBadge(inv.status)}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
