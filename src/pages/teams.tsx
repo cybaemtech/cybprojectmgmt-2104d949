@@ -194,6 +194,12 @@ export default function Teams() {
                     All Users ({users.length})
                   </TabsTrigger>
                 )}
+                {isAdminOrScrum && (
+                  <TabsTrigger value="invitations" className="px-8 py-2">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Invitations Sent ({invitations.length})
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               <TabsContent value="teams" className="focus-visible:outline-none">
