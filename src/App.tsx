@@ -23,6 +23,7 @@ import ProjectBugReports from "@/pages/project-bug-reports";
 import DailyStandup from "@/pages/standup";
 import StrategicRoadmap from "@/pages/strategic-roadmap";
 import TemplateSettings from "@/pages/template-settings";
+import EmailSettings from "@/pages/email-settings";
 
 import NotFound from "@/pages/NotFound";
 
@@ -83,6 +84,7 @@ function AppRoutes() {
         <Route path="/standup" element={<DailyStandup />} />
         <Route path="/roadmap" element={<StrategicRoadmap />} />
         <Route path="/templates" element={<TemplateSettings />} />
+        <Route path="/email-settings" element={<EmailSettings />} />
         
       </Route>
       
