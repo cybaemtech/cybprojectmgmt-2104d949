@@ -50,7 +50,6 @@ export default function EmailSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   const [smtpForm, setSmtpForm] = useState<SmtpConfig>({
     host: "smtp.gmail.com",
@@ -189,79 +188,6 @@ export default function EmailSettings() {
     },
     enabled: isAdmin,
   });
-
-  // Send email mutation
-  const sendEmail = useMutation({
-    mutationFn: async (payload: { templateName: string; recipientEmail: string; templateData: Record<string, string> }) => {
-      const { data: { session: extSession } } = await supabaseCustom.auth.getSession();
-      const { data, error } = await supabase.functions.invoke("send-email", {
-        body: { ...payload, externalAuthToken: extSession?.access_token },
-      });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      toast({ title: "Email sent", description: data.message || "Email dispatched successfully." });
-      queryClient.invalidateQueries({ queryKey: ["email-logs"] });
-      setRecipientEmail("");
-      setTemplateData({});
-    },
-    onError: (error: any) => {
-      toast({ variant: "destructive", title: "Failed to send", description: error.message || "Email sending failed." });
-    },
-  });
-
-  const handleSend = () => {
-    if (!recipientEmail) {
-      toast({ variant: "destructive", title: "Error", description: "Please enter a recipient email." });
-      return;
-    }
-    sendEmail.mutate({ templateName: selectedTemplate, recipientEmail, templateData });
-  };
-
-  const getTemplateFields = (template: string) => {
-    switch (template) {
-      case "welcome":
-        return [
-          { key: "fullName", label: "Full Name", placeholder: "John Doe" },
-          { key: "loginUrl", label: "Login URL", placeholder: "https://yourapp.com/login" },
-        ];
-      case "email-verification":
-        return [
-          { key: "otp", label: "OTP Code", placeholder: "123456" },
-          { key: "expiryMinutes", label: "Expiry (minutes)", placeholder: "15" },
-          { key: "verificationUrl", label: "Verification URL (optional)", placeholder: "https://..." },
-        ];
-      case "password-reset":
-        return [
-          { key: "email", label: "User Email", placeholder: "user@example.com" },
-          { key: "resetUrl", label: "Reset URL", placeholder: "https://yourapp.com/reset?token=..." },
-          { key: "expiryMinutes", label: "Expiry (minutes)", placeholder: "60" },
-        ];
-      case "notification":
-        return [
-          { key: "title", label: "Title", placeholder: "Important Update" },
-          { key: "message", label: "Message", placeholder: "Your task has been completed..." },
-          { key: "actionUrl", label: "Action URL (optional)", placeholder: "https://..." },
-          { key: "actionLabel", label: "Button Label (optional)", placeholder: "View Details" },
-        ];
-      case "admin-notification":
-        return [
-          { key: "title", label: "Alert Title", placeholder: "System Alert" },
-          { key: "message", label: "Message", placeholder: "A critical event occurred..." },
-          { key: "details", label: "Technical Details (optional)", placeholder: "Error stack trace..." },
-        ];
-      case "invitation":
-        return [
-          { key: "teamName", label: "Team Name", placeholder: "Engineering Team" },
-          { key: "role", label: "Role", placeholder: "Team Member" },
-          { key: "invitedBy", label: "Invited By (optional)", placeholder: "Admin Name" },
-          { key: "loginUrl", label: "Login URL", placeholder: "https://yourapp.com/login" },
-        ];
-      default:
-        return [];
-    }
-  };
 
   const statusBadge = (status: string) => {
     switch (status) {
