@@ -165,6 +165,41 @@ function getTemplate(
 </body></html>`,
       };
 
+    case "invitation":
+      return {
+        subject: `You're invited to join ${data.teamName || DEFAULT_FROM_NAME}`,
+        html: `
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f7;font-family:Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;margin-top:20px;">
+  <div style="background:#1a1a2e;padding:30px;text-align:center;">
+    <h1 style="color:#fff;margin:0;font-size:24px;">${DEFAULT_FROM_NAME}</h1>
+  </div>
+  <div style="padding:30px;">
+    <h2 style="color:#1a1a2e;margin-top:0;">You've Been Invited!</h2>
+    <p style="color:#555;line-height:1.6;">You have been invited to join <strong>${data.teamName || "our team"}</strong> on ${DEFAULT_FROM_NAME} as a <strong>${data.role || "Team Member"}</strong>.</p>
+    ${data.invitedBy ? `<p style="color:#555;line-height:1.6;">Invited by: <strong>${data.invitedBy}</strong></p>` : ""}
+    <div style="background:#f0f4ff;border-radius:8px;padding:20px;margin:25px 0;">
+      <p style="color:#1a1a2e;margin:0 0 5px;font-weight:bold;">What you can do:</p>
+      <ul style="color:#555;line-height:1.8;margin:0;padding-left:20px;">
+        <li>Collaborate with your team on projects</li>
+        <li>Track tasks, stories, and bugs</li>
+        <li>Monitor project timelines and progress</li>
+      </ul>
+    </div>
+    <div style="text-align:center;margin:30px 0;">
+      <a href="${data.loginUrl || "#"}" style="background:#3b82f6;color:#fff;padding:14px 35px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:16px;">Get Started</a>
+    </div>
+    <p style="color:#999;font-size:12px;">If you believe this invitation was sent in error, please ignore this email.</p>
+  </div>
+  <div style="background:#f4f4f7;padding:15px;text-align:center;">
+    <p style="color:#999;font-size:12px;margin:0;">© ${new Date().getFullYear()} ${DEFAULT_FROM_NAME}. All rights reserved.</p>
+  </div>
+</div>
+</body></html>`,
+      };
+
     default:
       throw new Error(`Unknown template: ${templateName}`);
   }

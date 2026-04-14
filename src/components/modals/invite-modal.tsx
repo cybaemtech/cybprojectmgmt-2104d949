@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -125,13 +126,43 @@ export function InviteModal({
       console.log("Final invite results:", results);
       return results;
     },
-    onSuccess: (results) => {
+    onSuccess: async (results) => {
       const successful = results.filter(r => r.success);
       const failed = results.filter(r => !r.success);
       
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['/users'] });
       queryClient.invalidateQueries({ queryKey: ['/teams'] });
+
+      // Send invitation emails for successful invites
+      const selectedTeam = teams.find(t => t.id.toString() === form.getValues("teamId"));
+      const role = form.getValues("role");
+      const roleLabels: Record<string, string> = {
+        MEMBER: "Team Member",
+        LEAD: "Team Lead",
+        MANAGER: "Project Manager",
+        ADMIN: "Administrator",
+      };
+      const loginUrl = `${window.location.origin}/login`;
+
+      for (const result of successful) {
+        try {
+          await supabase.functions.invoke("send-email", {
+            body: {
+              templateName: "invitation",
+              recipientEmail: result.email,
+              templateData: {
+                teamName: selectedTeam?.name || "the team",
+                role: roleLabels[role] || role,
+                loginUrl,
+              },
+            },
+          });
+          console.log(`Invitation email sent to ${result.email}`);
+        } catch (emailErr) {
+          console.error(`Failed to send invitation email to ${result.email}:`, emailErr);
+        }
+      }
       
       if (successful.length > 0) {
         const emails = successful.map(r => r.email).join(', ');
@@ -143,7 +174,6 @@ export function InviteModal({
       
       if (failed.length > 0) {
         console.error("Failed invitations:", failed);
-        const failureDetails = failed.map(f => `${f.email}: ${f.error}`).join('\n');
         toast({
           title: `${failed.length} invitation${failed.length > 1 ? "s" : ""} failed`,
           description: failed.length === 1 ? 
