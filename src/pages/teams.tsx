@@ -28,6 +28,19 @@ import { cn } from "@/lib/utils";
 import { projectStore, teamStore, userStore, teamMemberStore, getLocalUser } from "@/lib/local-store";
 import { supabaseCustom } from "@/lib/supabase-custom";
 
+interface Invitation {
+  id: number;
+  email: string;
+  full_name: string | null;
+  team_id: number | null;
+  team_role: string | null;
+  global_role: string | null;
+  invited_by: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function Teams() {
   const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -35,6 +48,8 @@ export default function Teams() {
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [showManageTeam, setShowManageTeam] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [invitationsLoading, setInvitationsLoading] = useState(false);
   const { modalType, openModal, closeModal, isOpen } = useModal();
   
   const refresh = () => setRefreshKey(k => k + 1);
@@ -46,6 +61,25 @@ export default function Teams() {
   const users = userStore.all();
 
   const isAdminOrScrum = currentUser?.role === 'ADMIN' || currentUser?.role === 'SCRUM_MASTER';
+
+  const fetchInvitations = useCallback(async () => {
+    setInvitationsLoading(true);
+    try {
+      const { data, error } = await supabaseCustom
+        .from("invitations")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (!error && data) setInvitations(data as Invitation[]);
+    } catch (e) {
+      console.error("Error fetching invitations:", e);
+    } finally {
+      setInvitationsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAdminOrScrum) fetchInvitations();
+  }, [isAdminOrScrum, refreshKey, fetchInvitations]);
 
   const filteredTeams = teams.filter(team => 
     team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -72,6 +106,17 @@ export default function Teams() {
       title: "Status Updated",
       description: `${user.fullName} is now ${!user.isActive ? 'active' : 'inactive'}.`,
     });
+  };
+
+  const getStatusBadge = (status: string) => {
+    const map: Record<string, { label: string; className: string }> = {
+      PENDING: { label: "Pending Sign-Up", className: "bg-yellow-100 text-yellow-800 border-yellow-200" },
+      SIGNED_UP: { label: "Signed Up (Unverified)", className: "bg-blue-100 text-blue-800 border-blue-200" },
+      CONFIRMED: { label: "Email Confirmed", className: "bg-indigo-100 text-indigo-800 border-indigo-200" },
+      ACTIVE: { label: "Active", className: "bg-green-100 text-green-800 border-green-200" },
+    };
+    const info = map[status] || { label: status, className: "" };
+    return <Badge variant="outline" className={cn("text-xs font-medium", info.className)}>{info.label}</Badge>;
   };
 
   const UserCard = ({ user }: { user: User }) => (
