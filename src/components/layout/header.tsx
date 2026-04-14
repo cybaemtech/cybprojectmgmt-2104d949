@@ -12,10 +12,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ChangePasswordModal } from "@/components/modals/change-password-modal";
 import { Project, User as UserType } from "@/types/schema";
 import { queryClient } from "@/lib/queryClient";
 import { SessionTimer } from "@/components/ui/session-timer";
+import { supabaseCustom } from "@/lib/supabase-custom";
+import { useToast } from "@/hooks/use-toast";
 
 interface HeaderProps {
   currentProject?: Project;
