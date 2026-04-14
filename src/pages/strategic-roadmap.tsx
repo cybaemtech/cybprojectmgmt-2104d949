@@ -793,9 +793,10 @@ export default function StrategicRoadmapPage() {
         onCreate={() => setShowNewModal(true)}
         onDelete={handleDelete}
         onDuplicate={handleDuplicate}
-        onLoadSamples={handleLoadSamples}
+        onLoadSamples={isDemoMode ? undefined : handleLoadSamples}
+        hideCreateActions={isDemoMode}
       />
-      {showNewModal && <NewTemplateModal onConfirm={handleCreate} onCancel={() => setShowNewModal(false)} />}
+      {showNewModal && !isDemoMode && <NewTemplateModal onConfirm={handleCreate} onCancel={() => setShowNewModal(false)} />}
     </>
   );
 
