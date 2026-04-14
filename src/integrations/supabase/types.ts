@@ -120,6 +120,72 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          attempts: number
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          recipient_email: string
+          sent_by: string | null
+          status: Database["public"]["Enums"]["email_status"]
+          subject: string
+          template_name: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email: string
+          sent_by?: string | null
+          status?: Database["public"]["Enums"]["email_status"]
+          subject: string
+          template_name: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email?: string
+          sent_by?: string | null
+          status?: Database["public"]["Enums"]["email_status"]
+          subject?: string
+          template_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_rate_limits: {
+        Row: {
+          created_at: string
+          id: string
+          recipient_email: string
+          sent_count: number
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          recipient_email: string
+          sent_count?: number
+          window_start?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          recipient_email?: string
+          sent_count?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -596,6 +662,7 @@ export type Database = {
     }
     Enums: {
       client_status: "LEAD" | "ONBOARDING" | "ACTIVE" | "CHURNED"
+      email_status: "pending" | "sent" | "failed" | "retrying"
       item_status: "TODO" | "IN_PROGRESS" | "ON_HOLD" | "DONE"
       item_type: "EPIC" | "FEATURE" | "STORY" | "TASK" | "BUG"
       priority_level: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
@@ -731,6 +798,7 @@ export const Constants = {
   public: {
     Enums: {
       client_status: ["LEAD", "ONBOARDING", "ACTIVE", "CHURNED"],
+      email_status: ["pending", "sent", "failed", "retrying"],
       item_status: ["TODO", "IN_PROGRESS", "ON_HOLD", "DONE"],
       item_type: ["EPIC", "FEATURE", "STORY", "TASK", "BUG"],
       priority_level: ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
