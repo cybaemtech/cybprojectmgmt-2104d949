@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 import { TeamCard } from "@/components/teams/team-card";
 import { CreateTeam } from "@/components/teams/create-team";
@@ -13,10 +13,9 @@ import {
   PlusCircle, 
   Search, 
   UserPlus, 
-  Settings, 
   UserRound,
-  Minus,
-  Plus
+  RefreshCw,
+  Mail,
 } from "lucide-react";
 import { Team, User, Project } from "@/types/schema";
 import { queryClient } from "@/lib/queryClient";
@@ -27,6 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { projectStore, teamStore, userStore, teamMemberStore, getLocalUser } from "@/lib/local-store";
+import { supabaseCustom } from "@/lib/supabase-custom";
 
 export default function Teams() {
   const { toast } = useToast();
