@@ -47,6 +47,10 @@ export function Header({
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const [showTruncateAlert, setShowTruncateAlert] = useState(false);
+  const [isTruncating, setIsTruncating] = useState(false);
+  const { toast } = useToast();
+
   const handleBackToTeams = (e: React.MouseEvent) => {
     e.preventDefault();
     navigate('/teams');
