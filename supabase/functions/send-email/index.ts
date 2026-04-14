@@ -7,14 +7,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// ── SMTP config ──────────────────────────────────────────────
-const SMTP_HOST = "smtp.gmail.com";
-const SMTP_PORT = 587;
-const SMTP_USER = Deno.env.get("SMTP_USER")!;
-const SMTP_PASS = Deno.env.get("SMTP_PASS")!;
-const DEFAULT_FROM_EMAIL = SMTP_USER; // Gmail requires sending from authenticated user
-const DEFAULT_FROM_NAME = "CYB Project Management";
-
 // ── Rate limit config ────────────────────────────────────────
 const RATE_LIMIT_WINDOW_MINUTES = 60;
 const RATE_LIMIT_MAX_PER_WINDOW = 10;
@@ -25,6 +17,50 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// ── SMTP config (loaded from DB, fallback to env) ───────────
+interface SmtpConfig {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  security: string;
+  from_email: string;
+  from_name: string;
+}
+
+async function getSmtpConfig(): Promise<SmtpConfig> {
+  const { data } = await supabase
+    .from("smtp_config")
+    .select("*")
+    .eq("id", 1)
+    .single();
+
+  if (data && data.username && data.password) {
+    return {
+      host: data.host,
+      port: data.port,
+      username: data.username,
+      password: data.password,
+      security: data.security,
+      from_email: data.from_email || data.username,
+      from_name: data.from_name || "CYB Project Management",
+    };
+  }
+
+  // Fallback to env vars
+  const SMTP_USER = Deno.env.get("SMTP_USER")!;
+  const SMTP_PASS = Deno.env.get("SMTP_PASS")!;
+  return {
+    host: "smtp.gmail.com",
+    port: 587,
+    username: SMTP_USER,
+    password: SMTP_PASS,
+    security: "TLS",
+    from_email: SMTP_USER,
+    from_name: "CYB Project Management",
+  };
+}
+
 // ── Email templates ──────────────────────────────────────────
 interface TemplateData {
   [key: string]: string | number | undefined;
@@ -32,19 +68,21 @@ interface TemplateData {
 
 function getTemplate(
   templateName: string,
-  data: TemplateData
+  data: TemplateData,
+  fromName: string
 ): { subject: string; html: string } {
+  const APP_NAME = fromName;
   switch (templateName) {
     case "welcome":
       return {
-        subject: `Welcome to ${DEFAULT_FROM_NAME}!`,
+        subject: `Welcome to ${APP_NAME}!`,
         html: `
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f4f4f7;font-family:Arial,sans-serif;">
 <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;margin-top:20px;">
   <div style="background:#1a1a2e;padding:30px;text-align:center;">
-    <h1 style="color:#fff;margin:0;font-size:24px;">${DEFAULT_FROM_NAME}</h1>
+    <h1 style="color:#fff;margin:0;font-size:24px;">${APP_NAME}</h1>
   </div>
   <div style="padding:30px;">
     <h2 style="color:#1a1a2e;margin-top:0;">Welcome, ${data.fullName || "User"}!</h2>
@@ -55,7 +93,7 @@ function getTemplate(
     <p style="color:#999;font-size:12px;">If you did not create this account, please ignore this email.</p>
   </div>
   <div style="background:#f4f4f7;padding:15px;text-align:center;">
-    <p style="color:#999;font-size:12px;margin:0;">© ${new Date().getFullYear()} ${DEFAULT_FROM_NAME}. All rights reserved.</p>
+    <p style="color:#999;font-size:12px;margin:0;">© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</p>
   </div>
 </div>
 </body></html>`,
@@ -70,7 +108,7 @@ function getTemplate(
 <body style="margin:0;padding:0;background:#f4f4f7;font-family:Arial,sans-serif;">
 <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;margin-top:20px;">
   <div style="background:#1a1a2e;padding:30px;text-align:center;">
-    <h1 style="color:#fff;margin:0;font-size:24px;">${DEFAULT_FROM_NAME}</h1>
+    <h1 style="color:#fff;margin:0;font-size:24px;">${APP_NAME}</h1>
   </div>
   <div style="padding:30px;">
     <h2 style="color:#1a1a2e;margin-top:0;">Verify Your Email</h2>
@@ -85,7 +123,7 @@ function getTemplate(
     <p style="color:#999;font-size:12px;">If you did not request this, please ignore this email.</p>
   </div>
   <div style="background:#f4f4f7;padding:15px;text-align:center;">
-    <p style="color:#999;font-size:12px;margin:0;">© ${new Date().getFullYear()} ${DEFAULT_FROM_NAME}. All rights reserved.</p>
+    <p style="color:#999;font-size:12px;margin:0;">© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</p>
   </div>
 </div>
 </body></html>`,
@@ -100,7 +138,7 @@ function getTemplate(
 <body style="margin:0;padding:0;background:#f4f4f7;font-family:Arial,sans-serif;">
 <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;margin-top:20px;">
   <div style="background:#1a1a2e;padding:30px;text-align:center;">
-    <h1 style="color:#fff;margin:0;font-size:24px;">${DEFAULT_FROM_NAME}</h1>
+    <h1 style="color:#fff;margin:0;font-size:24px;">${APP_NAME}</h1>
   </div>
   <div style="padding:30px;">
     <h2 style="color:#1a1a2e;margin-top:0;">Password Reset Request</h2>
@@ -112,7 +150,7 @@ function getTemplate(
     <p style="color:#999;font-size:12px;">If you did not request a password reset, please ignore this email. Your password will remain unchanged.</p>
   </div>
   <div style="background:#f4f4f7;padding:15px;text-align:center;">
-    <p style="color:#999;font-size:12px;margin:0;">© ${new Date().getFullYear()} ${DEFAULT_FROM_NAME}. All rights reserved.</p>
+    <p style="color:#999;font-size:12px;margin:0;">© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</p>
   </div>
 </div>
 </body></html>`,
@@ -127,7 +165,7 @@ function getTemplate(
 <body style="margin:0;padding:0;background:#f4f4f7;font-family:Arial,sans-serif;">
 <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;margin-top:20px;">
   <div style="background:#1a1a2e;padding:30px;text-align:center;">
-    <h1 style="color:#fff;margin:0;font-size:24px;">${DEFAULT_FROM_NAME}</h1>
+    <h1 style="color:#fff;margin:0;font-size:24px;">${APP_NAME}</h1>
   </div>
   <div style="padding:30px;">
     <h2 style="color:#1a1a2e;margin-top:0;">${data.title || "Notification"}</h2>
@@ -135,7 +173,7 @@ function getTemplate(
     ${data.actionUrl ? `<div style="text-align:center;margin:30px 0;"><a href="${data.actionUrl}" style="background:#3b82f6;color:#fff;padding:12px 30px;border-radius:6px;text-decoration:none;font-weight:bold;">${data.actionLabel || "View Details"}</a></div>` : ""}
   </div>
   <div style="background:#f4f4f7;padding:15px;text-align:center;">
-    <p style="color:#999;font-size:12px;margin:0;">© ${new Date().getFullYear()} ${DEFAULT_FROM_NAME}. All rights reserved.</p>
+    <p style="color:#999;font-size:12px;margin:0;">© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</p>
   </div>
 </div>
 </body></html>`,
@@ -156,10 +194,10 @@ function getTemplate(
     <h2 style="color:#1a1a2e;margin-top:0;">${data.title || "System Alert"}</h2>
     <p style="color:#555;line-height:1.6;">${data.message || ""}</p>
     ${data.details ? `<div style="background:#fef2f2;border-left:4px solid #dc2626;padding:15px;margin:20px 0;border-radius:4px;"><pre style="margin:0;white-space:pre-wrap;color:#555;font-size:13px;">${data.details}</pre></div>` : ""}
-    <p style="color:#999;font-size:12px;">This is an automated admin notification from ${DEFAULT_FROM_NAME}.</p>
+    <p style="color:#999;font-size:12px;">This is an automated admin notification from ${APP_NAME}.</p>
   </div>
   <div style="background:#f4f4f7;padding:15px;text-align:center;">
-    <p style="color:#999;font-size:12px;margin:0;">© ${new Date().getFullYear()} ${DEFAULT_FROM_NAME}. All rights reserved.</p>
+    <p style="color:#999;font-size:12px;margin:0;">© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</p>
   </div>
 </div>
 </body></html>`,
@@ -167,18 +205,18 @@ function getTemplate(
 
     case "invitation":
       return {
-        subject: `You're invited to join ${data.teamName || DEFAULT_FROM_NAME}`,
+        subject: `You're invited to join ${data.teamName || APP_NAME}`,
         html: `
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f4f4f7;font-family:Arial,sans-serif;">
 <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;margin-top:20px;">
   <div style="background:#1a1a2e;padding:30px;text-align:center;">
-    <h1 style="color:#fff;margin:0;font-size:24px;">${DEFAULT_FROM_NAME}</h1>
+    <h1 style="color:#fff;margin:0;font-size:24px;">${APP_NAME}</h1>
   </div>
   <div style="padding:30px;">
     <h2 style="color:#1a1a2e;margin-top:0;">You've Been Invited!</h2>
-    <p style="color:#555;line-height:1.6;">You have been invited to join <strong>${data.teamName || "our team"}</strong> on ${DEFAULT_FROM_NAME} as a <strong>${data.role || "Team Member"}</strong>.</p>
+    <p style="color:#555;line-height:1.6;">You have been invited to join <strong>${data.teamName || "our team"}</strong> on ${APP_NAME} as a <strong>${data.role || "Team Member"}</strong>.</p>
     ${data.invitedBy ? `<p style="color:#555;line-height:1.6;">Invited by: <strong>${data.invitedBy}</strong></p>` : ""}
     <div style="background:#f0f4ff;border-radius:8px;padding:20px;margin:25px 0;">
       <p style="color:#1a1a2e;margin:0 0 5px;font-weight:bold;">What you can do:</p>
@@ -194,7 +232,7 @@ function getTemplate(
     <p style="color:#999;font-size:12px;">If you believe this invitation was sent in error, please ignore this email.</p>
   </div>
   <div style="background:#f4f4f7;padding:15px;text-align:center;">
-    <p style="color:#999;font-size:12px;margin:0;">© ${new Date().getFullYear()} ${DEFAULT_FROM_NAME}. All rights reserved.</p>
+    <p style="color:#999;font-size:12px;margin:0;">© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</p>
   </div>
 </div>
 </body></html>`,
@@ -220,7 +258,7 @@ async function checkRateLimit(recipientEmail: string): Promise<boolean> {
     .limit(1);
 
   if (data && data.length > 0 && data[0].sent_count >= RATE_LIMIT_MAX_PER_WINDOW) {
-    return false; // rate limited
+    return false;
   }
   return true;
 }
@@ -282,7 +320,8 @@ async function sendWithRetry(
   subject: string,
   html: string,
   logId: string,
-  templateName: string
+  templateName: string,
+  smtpConfig: SmtpConfig
 ): Promise<{ success: boolean; error?: string }> {
   let lastError = "";
 
@@ -292,15 +331,15 @@ async function sendWithRetry(
 
       const client = new SMTPClient({
         connection: {
-          hostname: SMTP_HOST,
-          port: SMTP_PORT,
-          tls: false,
-          auth: { username: SMTP_USER, password: SMTP_PASS },
+          hostname: smtpConfig.host,
+          port: smtpConfig.port,
+          tls: smtpConfig.security === "SSL",
+          auth: { username: smtpConfig.username, password: smtpConfig.password },
         },
       });
 
       await client.send({
-        from: `${DEFAULT_FROM_NAME} <${DEFAULT_FROM_EMAIL}>`,
+        from: `${smtpConfig.from_name} <${smtpConfig.from_email}>`,
         to,
         subject,
         content: "Please view this email in an HTML-compatible client.",
@@ -316,7 +355,6 @@ async function sendWithRetry(
       console.error(`Attempt ${attempt}/${MAX_RETRY_ATTEMPTS} failed:`, lastError);
 
       if (attempt < MAX_RETRY_ATTEMPTS) {
-        // Exponential backoff: 1s, 2s, 4s
         await new Promise((r) => setTimeout(r, Math.pow(2, attempt - 1) * 1000));
       }
     }
@@ -358,6 +396,9 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Load SMTP config from DB
+    const smtpConfig = await getSmtpConfig();
+
     const body = await req.json();
     const { templateName, recipientEmail, templateData = {}, customSubject } = body;
 
@@ -379,7 +420,7 @@ Deno.serve(async (req) => {
     }
 
     // Generate email from template
-    const template = getTemplate(templateName, templateData);
+    const template = getTemplate(templateName, templateData, smtpConfig.from_name);
     const subject = customSubject || template.subject;
     const logId = crypto.randomUUID();
 
@@ -392,7 +433,8 @@ Deno.serve(async (req) => {
       subject,
       template.html,
       logId,
-      templateName
+      templateName,
+      smtpConfig
     );
 
     if (result.success) {
