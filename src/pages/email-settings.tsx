@@ -11,17 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Send, RefreshCw, Shield, Clock, AlertTriangle, CheckCircle, XCircle, Loader2, Save, Plug, Eye, EyeOff } from "lucide-react";
+import { Mail, RefreshCw, Shield, Clock, AlertTriangle, CheckCircle, XCircle, Loader2, Save, Plug, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const TEMPLATES = [
-  { value: "welcome", label: "Welcome Email", description: "Sent when a new user registers" },
-  { value: "email-verification", label: "Email Verification", description: "OTP/link verification" },
-  { value: "password-reset", label: "Password Reset", description: "Password recovery email" },
-  { value: "notification", label: "Notification", description: "System alerts and updates" },
-  { value: "admin-notification", label: "Admin Notification", description: "Admin-level alerts" },
-  { value: "invitation", label: "Team Invitation", description: "Sent when inviting users to a team" },
-];
 
 interface EmailLog {
   id: string;
