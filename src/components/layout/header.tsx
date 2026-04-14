@@ -48,6 +48,7 @@ export function Header({
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const [showTruncateAlert, setShowTruncateAlert] = useState(false);
+  const [truncateType, setTruncateType] = useState<'teams' | 'projects' | 'all'>('all');
   const [isTruncating, setIsTruncating] = useState(false);
   const { toast } = useToast();
 
