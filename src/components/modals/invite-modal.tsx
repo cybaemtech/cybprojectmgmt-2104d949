@@ -152,12 +152,16 @@ export function InviteModal({
       };
       const loginUrl = `${window.location.origin}/login`;
 
+      const { data: { session: extSession } } = await supabaseCustom.auth.getSession();
+      const extToken = extSession?.access_token;
+
       for (const result of successful) {
         try {
           await supabase.functions.invoke("send-email", {
             body: {
               templateName: "invitation",
               recipientEmail: result.email,
+              externalAuthToken: extToken,
               templateData: {
                 teamName: selectedTeam?.name || "the team",
                 role: roleLabels[role] || role,

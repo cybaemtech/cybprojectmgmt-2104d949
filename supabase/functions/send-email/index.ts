@@ -362,9 +362,11 @@ async function sendWithRetry(
 }
 
 // ── Auth check (admin only) ─────────────────────────────────
-async function verifyAdmin(authHeader: string | null): Promise<boolean> {
-  if (!authHeader) return false;
-  const token = authHeader.replace("Bearer ", "");
+async function verifyAdmin(authHeader: string | null, externalToken?: string): Promise<boolean> {
+  // Prefer the explicit external token passed in the request body
+  const token = externalToken || (authHeader ? authHeader.replace("Bearer ", "") : null);
+  if (!token) return false;
+  
   const { data: { user } } = await supabase.auth.getUser(token);
   if (!user) return false;
 
@@ -384,8 +386,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify admin
-    const isAdmin = await verifyAdmin(req.headers.get("Authorization"));
+    // Parse body early to extract external token
+    const body = await req.json();
+    const { templateName, recipientEmail, templateData = {}, customSubject, externalAuthToken } = body;
+
+    // Verify admin using external auth token
+    const isAdmin = await verifyAdmin(req.headers.get("Authorization"), externalAuthToken);
     if (!isAdmin) {
       return new Response(
         JSON.stringify({ error: "Unauthorized. Admin access required." }),
