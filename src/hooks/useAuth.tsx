@@ -17,6 +17,23 @@ const mapProfile = (row: any): User => ({
   updatedAt: row.updated_at,
 } as any);
 
+export async function signup(email: string, password: string, fullName: string): Promise<{ success: boolean; error?: string }> {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name: fullName, username: email.split("@")[0] },
+      emailRedirectTo: window.location.origin,
+    },
+  });
+  if (error) return { success: false, error: error.message };
+  // If email confirmation is required, user won't have a session yet
+  if (data.user && !data.session) {
+    return { success: true };
+  }
+  return { success: true };
+}
+
 export async function login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { success: false, error: error.message };
