@@ -186,6 +186,45 @@ export type Database = {
         }
         Relationships: []
       }
+      invitations: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string | null
+          global_role: string | null
+          id: number
+          invited_by: string | null
+          status: Database["public"]["Enums"]["invitation_status"]
+          team_id: number | null
+          team_role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          global_role?: string | null
+          id?: number
+          invited_by?: string | null
+          status?: Database["public"]["Enums"]["invitation_status"]
+          team_id?: number | null
+          team_role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          global_role?: string | null
+          id?: number
+          invited_by?: string | null
+          status?: Database["public"]["Enums"]["invitation_status"]
+          team_id?: number | null
+          team_role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -702,6 +741,7 @@ export type Database = {
     Enums: {
       client_status: "LEAD" | "ONBOARDING" | "ACTIVE" | "CHURNED"
       email_status: "pending" | "sent" | "failed" | "retrying"
+      invitation_status: "PENDING" | "SIGNED_UP" | "CONFIRMED" | "ACTIVE"
       item_status: "TODO" | "IN_PROGRESS" | "ON_HOLD" | "DONE"
       item_type: "EPIC" | "FEATURE" | "STORY" | "TASK" | "BUG"
       priority_level: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
@@ -838,6 +878,7 @@ export const Constants = {
     Enums: {
       client_status: ["LEAD", "ONBOARDING", "ACTIVE", "CHURNED"],
       email_status: ["pending", "sent", "failed", "retrying"],
+      invitation_status: ["PENDING", "SIGNED_UP", "CONFIRMED", "ACTIVE"],
       item_status: ["TODO", "IN_PROGRESS", "ON_HOLD", "DONE"],
       item_type: ["EPIC", "FEATURE", "STORY", "TASK", "BUG"],
       priority_level: ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
