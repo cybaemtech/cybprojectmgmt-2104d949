@@ -83,6 +83,12 @@ export function Header({
         if (error) console.error(`Error truncating ${table}:`, error);
       }
 
+      // For 'all', also delete all profiles except the current admin user
+      if (type === 'all' && user?.id) {
+        const { error } = await supabaseCustom.from('profiles').delete().neq('id', user.id);
+        if (error) console.error('Error truncating profiles:', error);
+      }
+
       queryClient.clear();
 
       const labels = { teams: 'Team Management', projects: 'Project Management', all: 'All' };
@@ -317,7 +323,7 @@ export function Header({
               <span className="block text-sm">
                 {truncateType === 'teams' && 'Teams and Team Members.'}
                 {truncateType === 'projects' && 'Projects, Work Items, Project Members, Comments, Attachments, and Work Item History.'}
-                {truncateType === 'all' && 'Projects, Work Items, Teams, Team Members, Project Members, Comments, Attachments, Activity Logs, Email Logs, and Work Item History.'}
+                {truncateType === 'all' && 'Projects, Work Items, Teams, Team Members, Project Members, Comments, Attachments, Activity Logs, Email Logs, Work Item History, and all User Profiles (except your own).'}
               </span>
               <span className="block font-semibold text-red-600 mt-2">
                 Are you absolutely sure you want to proceed?
