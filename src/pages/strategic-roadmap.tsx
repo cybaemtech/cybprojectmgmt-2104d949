@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useDemoMode } from '@/hooks/useDemoMode';
 import { Plus, X, CheckCircle, Edit2, ChevronDown, ChevronRight, LayoutTemplate, Trash2, Copy, ArrowLeft, GripVertical } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabaseCustom as supabase } from '@/lib/supabase-custom';
@@ -142,13 +143,14 @@ async function loadSampleTemplatesInDb(userId?: string): Promise<Template[]> {
   return inserted;
 }
 
-const TemplateGallery = ({ templates, onSelect, onCreate, onDelete, onDuplicate, onLoadSamples }: {
+const TemplateGallery = ({ templates, onSelect, onCreate, onDelete, onDuplicate, onLoadSamples, hideCreateActions }: {
   templates: Template[];
   onSelect: (id: number) => void;
   onCreate: () => void;
   onDelete: (id: number) => void;
   onDuplicate: (id: number) => void;
   onLoadSamples?: () => void;
+  hideCreateActions?: boolean;
 }) => {
   const tagColors = ['bg-blue-100 text-blue-700', 'bg-green-100 text-green-700', 'bg-purple-100 text-purple-700', 'bg-orange-100 text-orange-700', 'bg-pink-100 text-pink-700'];
 
@@ -160,7 +162,7 @@ const TemplateGallery = ({ templates, onSelect, onCreate, onDelete, onDuplicate,
           <p className="text-gray-500">Select a template to open or create a new one from scratch.</p>
         </div>
 
-        {templates.length === 0 ? (
+        {templates.length === 0 && !hideCreateActions ? (
           <div className="text-center py-16">
             <div className="max-w-md mx-auto">
               <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
@@ -187,18 +189,24 @@ const TemplateGallery = ({ templates, onSelect, onCreate, onDelete, onDuplicate,
               </div>
             </div>
           </div>
+        ) : templates.length === 0 && hideCreateActions ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="text-gray-500">Loading sample templates...</div>
+          </div>
         ) : (
           <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-            <button
-              onClick={onCreate}
-              className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-8 hover:border-blue-400 hover:bg-blue-50 transition-all group min-h-48"
-            >
-              <div className="w-12 h-12 rounded-full bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center mb-3 transition-colors">
-                <Plus size={24} className="text-gray-400 group-hover:text-blue-500" />
-              </div>
-              <span className="font-semibold text-gray-600 group-hover:text-blue-600">New Template</span>
-              <span className="text-sm text-gray-400 mt-1">Start from scratch</span>
-            </button>
+            {!hideCreateActions && (
+              <button
+                onClick={onCreate}
+                className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-8 hover:border-blue-400 hover:bg-blue-50 transition-all group min-h-48"
+              >
+                <div className="w-12 h-12 rounded-full bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center mb-3 transition-colors">
+                  <Plus size={24} className="text-gray-400 group-hover:text-blue-500" />
+                </div>
+                <span className="font-semibold text-gray-600 group-hover:text-blue-600">New Template</span>
+                <span className="text-sm text-gray-400 mt-1">Start from scratch</span>
+              </button>
+            )}
 
             {templates.map((tpl, ti) => (
               <div
@@ -704,6 +712,7 @@ const RoadmapEditor = ({ template, onUpdate, onBack }: {
 
 export default function StrategicRoadmapPage() {
   const { user } = useAuth();
+  const { isDemoMode } = useDemoMode();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
@@ -715,11 +724,17 @@ export default function StrategicRoadmapPage() {
   }, [user]);
 
   useEffect(() => {
-    getTemplates().then(data => {
-      setTemplates(data);
+    if (isDemoMode) {
+      // In demo mode, directly load sample templates without DB
+      setTemplates(SAMPLE_TEMPLATES);
       setLoading(false);
-    });
-  }, []);
+    } else {
+      getTemplates().then(data => {
+        setTemplates(data);
+        setLoading(false);
+      });
+    }
+  }, [isDemoMode]);
 
   const activeTemplate = templates.find(t => t.id === activeId);
 
@@ -778,9 +793,10 @@ export default function StrategicRoadmapPage() {
         onCreate={() => setShowNewModal(true)}
         onDelete={handleDelete}
         onDuplicate={handleDuplicate}
-        onLoadSamples={handleLoadSamples}
+        onLoadSamples={isDemoMode ? undefined : handleLoadSamples}
+        hideCreateActions={isDemoMode}
       />
-      {showNewModal && <NewTemplateModal onConfirm={handleCreate} onCancel={() => setShowNewModal(false)} />}
+      {showNewModal && !isDemoMode && <NewTemplateModal onConfirm={handleCreate} onCancel={() => setShowNewModal(false)} />}
     </>
   );
 
