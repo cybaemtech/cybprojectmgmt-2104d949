@@ -333,7 +333,7 @@ async function sendWithRetry(
         connection: {
           hostname: smtpConfig.host,
           port: smtpConfig.port,
-          tls: smtpConfig.security === "SSL",
+          tls: smtpConfig.security === "SSL" || smtpConfig.port === 465,
           auth: { username: smtpConfig.username, password: smtpConfig.password },
         },
       });
