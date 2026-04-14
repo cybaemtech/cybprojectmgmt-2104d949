@@ -21,11 +21,16 @@ Deno.serve(async (req) => {
       );
     }
 
+    const portNum = Number(port);
+    // For SSL (port 465): connect with TLS immediately
+    // For TLS/STARTTLS (port 587): connect plain, then upgrade via STARTTLS
+    const useImplicitTls = security === "SSL" || portNum === 465;
+
     const client = new SMTPClient({
       connection: {
         hostname: host,
-        port: Number(port),
-        tls: security === "SSL",
+        port: portNum,
+        tls: useImplicitTls,
         auth: { username, password },
       },
     });
@@ -46,6 +51,7 @@ Deno.serve(async (req) => {
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error("SMTP test error:", message);
     return new Response(
       JSON.stringify({ success: false, error: `Connection failed: ${message}` }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
