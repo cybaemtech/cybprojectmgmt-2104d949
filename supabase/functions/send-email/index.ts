@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import nodemailer from "npm:nodemailer@6.9.16";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -329,24 +329,21 @@ async function sendWithRetry(
     try {
       await logEmail(logId, to, subject, templateName, "retrying", undefined, attempt);
 
-      const client = new SMTPClient({
-        connection: {
-          hostname: smtpConfig.host,
-          port: smtpConfig.port,
-          tls: smtpConfig.security === "SSL" || smtpConfig.port === 465,
-          auth: { username: smtpConfig.username, password: smtpConfig.password },
-        },
+      const transporter = nodemailer.createTransport({
+        host: smtpConfig.host,
+        port: smtpConfig.port,
+        secure: smtpConfig.security === "SSL" || smtpConfig.port === 465,
+        auth: { user: smtpConfig.username, pass: smtpConfig.password },
+        tls: { rejectUnauthorized: false },
       });
 
-      await client.send({
+      await transporter.sendMail({
         from: `${smtpConfig.from_name} <${smtpConfig.from_email}>`,
         to,
         subject,
-        content: "Please view this email in an HTML-compatible client.",
+        text: "Please view this email in an HTML-compatible client.",
         html,
       });
-
-      await client.close();
       await logEmail(logId, to, subject, templateName, "sent", undefined, attempt);
       await incrementRateLimit(to);
       return { success: true };
