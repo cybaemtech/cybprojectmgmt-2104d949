@@ -44,6 +44,7 @@ interface Invitation {
 }
 
 export default function Teams() {
+  const { isDemoMode } = useDemoMode();
   const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,6 +66,10 @@ export default function Teams() {
   const isAdminOrScrum = currentUser?.role === 'ADMIN' || currentUser?.role === 'SCRUM_MASTER';
 
   const fetchInvitations = useCallback(async () => {
+    if (isDemoMode) {
+      setInvitations(DEMO_INVITATIONS as Invitation[]);
+      return;
+    }
     setInvitationsLoading(true);
     try {
       const { data, error } = await supabaseCustom
@@ -77,7 +82,7 @@ export default function Teams() {
     } finally {
       setInvitationsLoading(false);
     }
-  }, []);
+  }, [isDemoMode]);
 
   useEffect(() => {
     if (isAdminOrScrum) fetchInvitations();
