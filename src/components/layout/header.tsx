@@ -303,17 +303,21 @@ export function Header({
         onClose={() => setShowChangePassword(false)}
       />
 
-      {/* Truncate All Data Alert */}
+      {/* Truncate Data Alert */}
       <AlertDialog open={showTruncateAlert} onOpenChange={setShowTruncateAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-red-600">⚠️ Truncate All Data</AlertDialogTitle>
+            <AlertDialogTitle className="text-red-600">
+              ⚠️ {truncateType === 'teams' ? 'Truncate Team Data' : truncateType === 'projects' ? 'Truncate Project Data' : 'Truncate All Data'}
+            </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
               <span className="block font-semibold text-foreground">
-                This action is irreversible and will permanently delete ALL data from the following tables:
+                This action is irreversible and will permanently delete the following data:
               </span>
               <span className="block text-sm">
-                Projects, Work Items, Teams, Team Members, Project Members, Comments, Attachments, Activity Logs, Email Logs, and Work Item History.
+                {truncateType === 'teams' && 'Teams and Team Members.'}
+                {truncateType === 'projects' && 'Projects, Work Items, Project Members, Comments, Attachments, and Work Item History.'}
+                {truncateType === 'all' && 'Projects, Work Items, Teams, Team Members, Project Members, Comments, Attachments, Activity Logs, Email Logs, and Work Item History.'}
               </span>
               <span className="block font-semibold text-red-600 mt-2">
                 Are you absolutely sure you want to proceed?
@@ -323,11 +327,11 @@ export function Header({
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isTruncating}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleTruncateAllData}
+              onClick={() => handleTruncate(truncateType)}
               disabled={isTruncating}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
             >
-              {isTruncating ? 'Truncating...' : 'Yes, Truncate Everything'}
+              {isTruncating ? 'Truncating...' : 'Yes, Truncate'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
