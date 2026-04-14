@@ -7,23 +7,54 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// ── SMTP config ──────────────────────────────────────────────
-const SMTP_HOST = "smtp.gmail.com";
-const SMTP_PORT = 587;
-const SMTP_USER = Deno.env.get("SMTP_USER")!;
-const SMTP_PASS = Deno.env.get("SMTP_PASS")!;
-const DEFAULT_FROM_EMAIL = SMTP_USER; // Gmail requires sending from authenticated user
-const DEFAULT_FROM_NAME = "CYB Project Management";
-
-// ── Rate limit config ────────────────────────────────────────
-const RATE_LIMIT_WINDOW_MINUTES = 60;
-const RATE_LIMIT_MAX_PER_WINDOW = 10;
-const MAX_RETRY_ATTEMPTS = 3;
-
 // ── Supabase client (service role) ───────────────────────────
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+// ── SMTP config (loaded from DB, fallback to env) ───────────
+interface SmtpConfig {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  security: string;
+  from_email: string;
+  from_name: string;
+}
+
+async function getSmtpConfig(): Promise<SmtpConfig> {
+  const { data } = await supabase
+    .from("smtp_config")
+    .select("*")
+    .eq("id", 1)
+    .single();
+
+  if (data && data.username && data.password) {
+    return {
+      host: data.host,
+      port: data.port,
+      username: data.username,
+      password: data.password,
+      security: data.security,
+      from_email: data.from_email || data.username,
+      from_name: data.from_name || "CYB Project Management",
+    };
+  }
+
+  // Fallback to env vars
+  const SMTP_USER = Deno.env.get("SMTP_USER")!;
+  const SMTP_PASS = Deno.env.get("SMTP_PASS")!;
+  return {
+    host: "smtp.gmail.com",
+    port: 587,
+    username: SMTP_USER,
+    password: SMTP_PASS,
+    security: "TLS",
+    from_email: SMTP_USER,
+    from_name: "CYB Project Management",
+  };
+}
 
 // ── Email templates ──────────────────────────────────────────
 interface TemplateData {
