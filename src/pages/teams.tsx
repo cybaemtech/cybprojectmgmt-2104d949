@@ -27,6 +27,8 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { projectStore, teamStore, userStore, teamMemberStore, getLocalUser } from "@/lib/local-store";
 import { supabaseCustom } from "@/lib/supabase-custom";
+import { useDemoMode } from "@/hooks/useDemoMode";
+import { DEMO_INVITATIONS } from "@/lib/demo-data";
 
 interface Invitation {
   id: number;

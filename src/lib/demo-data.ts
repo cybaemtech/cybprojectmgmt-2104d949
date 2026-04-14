@@ -394,3 +394,14 @@ export const DEMO_WORK_ITEMS: WorkItem[] = [
   secStory2, secTask3,
   secBug1,
 ];
+
+// ── Demo Invitations ─────────────────────────────────────────────────
+export const DEMO_INVITATIONS = [
+  { id: 1, email: "sarah.connor@example.com", full_name: "Sarah Connor", team_id: 1, team_role: "MEMBER", global_role: "USER", invited_by: "demo@cybaemtech.com", status: "ACTIVE", created_at: daysAgo(30), updated_at: daysAgo(2) },
+  { id: 2, email: "james.lee@example.com", full_name: "James Lee", team_id: 2, team_role: "MEMBER", global_role: "USER", invited_by: "demo@cybaemtech.com", status: "CONFIRMED", created_at: daysAgo(14), updated_at: daysAgo(5) },
+  { id: 3, email: "maria.santos@example.com", full_name: "Maria Santos", team_id: 3, team_role: "ADMIN", global_role: "SCRUM_MASTER", invited_by: "demo@cybaemtech.com", status: "SIGNED_UP", created_at: daysAgo(7), updated_at: daysAgo(3) },
+  { id: 4, email: "alex.turner@example.com", full_name: "Alex Turner", team_id: 1, team_role: "MEMBER", global_role: "USER", invited_by: "demo@cybaemtech.com", status: "PENDING", created_at: daysAgo(3), updated_at: daysAgo(3) },
+  { id: 5, email: "priya.sharma@example.com", full_name: "Priya Sharma", team_id: 5, team_role: "MEMBER", global_role: "USER", invited_by: "diana.patel@cybaemtech.com", status: "PENDING", created_at: daysAgo(1), updated_at: daysAgo(1) },
+  { id: 6, email: "tom.wilson@example.com", full_name: "Tom Wilson", team_id: 4, team_role: "MEMBER", global_role: "USER", invited_by: "demo@cybaemtech.com", status: "ACTIVE", created_at: daysAgo(45), updated_at: daysAgo(10) },
+  { id: 7, email: "linda.nguyen@example.com", full_name: "Linda Nguyen", team_id: 6, team_role: "MEMBER", global_role: "USER", invited_by: "diana.patel@cybaemtech.com", status: "CONFIRMED", created_at: daysAgo(10), updated_at: daysAgo(4) },
+];
