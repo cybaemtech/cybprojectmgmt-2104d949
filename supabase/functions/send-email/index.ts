@@ -402,8 +402,8 @@ Deno.serve(async (req) => {
     // Load SMTP config from DB
     const smtpConfig = await getSmtpConfig();
 
-    const body = await req.json();
-    const { templateName, recipientEmail, templateData = {}, customSubject } = body;
+
+
 
     // Validate input
     if (!templateName || !recipientEmail) {
