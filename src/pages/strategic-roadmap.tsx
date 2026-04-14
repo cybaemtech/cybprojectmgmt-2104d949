@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useDemoMode } from '@/hooks/useDemoMode';
 import { Plus, X, CheckCircle, Edit2, ChevronDown, ChevronRight, LayoutTemplate, Trash2, Copy, ArrowLeft, GripVertical } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabaseCustom as supabase } from '@/lib/supabase-custom';
