@@ -60,6 +60,53 @@ export function Header({
     setShowChangePassword(true);
   };
 
+  const handleTruncateAllData = async () => {
+    setIsTruncating(true);
+    try {
+      const tables = [
+        'work_item_history',
+        'comments',
+        'attachments',
+        'work_items',
+        'project_members',
+        'projects',
+        'team_members',
+        'teams',
+        'activity_logs',
+        'email_logs',
+        'email_rate_limits',
+      ];
+
+      for (const table of tables) {
+        const { error } = await supabaseCustom.from(table).delete().gte('id', 0);
+        if (error) {
+          console.error(`Error truncating ${table}:`, error);
+        }
+      }
+
+      // Clear query cache to reflect changes
+      queryClient.clear();
+
+      toast({
+        title: "All Data Truncated",
+        description: "All table data has been successfully removed.",
+      });
+
+      // Reload to reflect clean state
+      window.location.reload();
+    } catch (error) {
+      console.error('Truncate error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to truncate data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTruncating(false);
+      setShowTruncateAlert(false);
+    }
+  };
+
   const handleLogout = async () => {
     if (isLoggingOut) return;
 
