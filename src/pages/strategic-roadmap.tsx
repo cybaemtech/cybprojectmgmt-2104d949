@@ -143,13 +143,14 @@ async function loadSampleTemplatesInDb(userId?: string): Promise<Template[]> {
   return inserted;
 }
 
-const TemplateGallery = ({ templates, onSelect, onCreate, onDelete, onDuplicate, onLoadSamples }: {
+const TemplateGallery = ({ templates, onSelect, onCreate, onDelete, onDuplicate, onLoadSamples, hideCreateActions }: {
   templates: Template[];
   onSelect: (id: number) => void;
   onCreate: () => void;
   onDelete: (id: number) => void;
   onDuplicate: (id: number) => void;
   onLoadSamples?: () => void;
+  hideCreateActions?: boolean;
 }) => {
   const tagColors = ['bg-blue-100 text-blue-700', 'bg-green-100 text-green-700', 'bg-purple-100 text-purple-700', 'bg-orange-100 text-orange-700', 'bg-pink-100 text-pink-700'];
 
@@ -161,7 +162,7 @@ const TemplateGallery = ({ templates, onSelect, onCreate, onDelete, onDuplicate,
           <p className="text-gray-500">Select a template to open or create a new one from scratch.</p>
         </div>
 
-        {templates.length === 0 ? (
+        {templates.length === 0 && !hideCreateActions ? (
           <div className="text-center py-16">
             <div className="max-w-md mx-auto">
               <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
@@ -187,6 +188,10 @@ const TemplateGallery = ({ templates, onSelect, onCreate, onDelete, onDuplicate,
                 )}
               </div>
             </div>
+          </div>
+        ) : templates.length === 0 && hideCreateActions ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="text-gray-500">Loading sample templates...</div>
           </div>
         ) : (
           <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
