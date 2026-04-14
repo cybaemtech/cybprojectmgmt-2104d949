@@ -257,8 +257,24 @@ export function Header({
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => setShowTruncateAlert(true)}
+                  onClick={() => openTruncateAlert('teams')}
                   className="cursor-pointer text-orange-600 focus:text-orange-600 focus:bg-orange-50"
+                  disabled={isLoggingOut || isTruncating}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Truncate Team Data</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => openTruncateAlert('projects')}
+                  className="cursor-pointer text-orange-600 focus:text-orange-600 focus:bg-orange-50"
+                  disabled={isLoggingOut || isTruncating}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Truncate Project Data</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => openTruncateAlert('all')}
+                  className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
                   disabled={isLoggingOut || isTruncating}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
