@@ -80,17 +80,15 @@ export default function EmailSettings() {
 
   const isAdmin = profile?.role === "ADMIN";
 
-  // Fetch SMTP config
+  // Fetch SMTP config via edge function
   const { data: smtpConfig, isLoading: configLoading } = useQuery({
     queryKey: ["smtp-config"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("smtp_config" as any)
-        .select("*")
-        .eq("id", 1)
-        .single();
+      const { data, error } = await supabase.functions.invoke("manage-smtp-config", {
+        body: { action: "get" },
+      });
       if (error) throw error;
-      return data as any as SmtpConfig & { id: number };
+      return data?.data as (SmtpConfig & { id: number }) | null;
     },
     enabled: isAdmin,
   });
@@ -111,26 +109,21 @@ export default function EmailSettings() {
 
   const isConfigured = !!(smtpForm.username && smtpForm.password && smtpForm.host);
 
-  // Save SMTP config
+  // Save SMTP config via edge function
   const saveConfig = useMutation({
     mutationFn: async (config: SmtpConfig) => {
-      const { error } = await supabase
-        .from("smtp_config" as any)
-        .upsert({
-          id: 1,
-          host: config.host,
-          port: config.port,
-          username: config.username,
-          password: config.password,
-          security: config.security,
-          from_email: config.from_email,
-          from_name: config.from_name,
-          updated_at: new Date().toISOString(),
-        } as any);
+      const { data, error } = await supabase.functions.invoke("manage-smtp-config", {
+        body: { action: "save", config },
+      });
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      toast({ title: "Configuration Saved", description: "SMTP settings have been saved successfully." });
+    onSuccess: (data: any) => {
+      if (data?.unchanged) {
+        toast({ title: "No Changes", description: "Configuration is already saved. No changes detected." });
+      } else {
+        toast({ title: "Configuration Saved", description: "SMTP settings have been saved successfully." });
+      }
       queryClient.invalidateQueries({ queryKey: ["smtp-config"] });
     },
     onError: (error: any) => {
