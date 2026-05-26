@@ -88,10 +88,10 @@ export default function LoginPage() {
 
         <img src={cybaemLogo} alt="Cybaem Tech" className="w-72 mb-10 relative z-10" />
         <h1 className="text-3xl font-bold text-white mb-4 relative z-10 text-center">
-          Agile Project Management
+          Project Management
         </h1>
         <p className="text-[hsl(210,20%,70%)] text-center max-w-sm relative z-10 leading-relaxed">
-          Plan sprints, track progress, and deliver projects on time with your team.
+          Plan, strategize, track progress and deliver projects with a strong value based-approach before time with your team!
         </p>
 
         <div className="mt-16 grid grid-cols-3 gap-8 relative z-10">
