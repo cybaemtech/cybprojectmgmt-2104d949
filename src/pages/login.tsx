@@ -90,8 +90,8 @@ export default function LoginPage() {
         <h1 className="text-3xl font-bold text-white mb-4 relative z-10 text-center">
           Project Management, Reimagined!
         </h1>
-        <p className="text-[hsl(210,20%,70%)] text-center max-w-sm relative z-10 leading-relaxed">
-          Plan smarter, align teams faster, and deliver projects with complete visibility — all from one intelligent workspace!
+        <p className="text-[hsl(210,20%,70%)] text-center max-w-sm relative z-10 leading-relaxed whitespace-pre-line">
+          Built for Modern Project Execution that plans smarter, align teams faster, and deliver projects with complete visibility — all from one intelligent workspace.{"\n\n"}
         </p>
 
         <div className="mt-16 grid grid-cols-3 gap-8 relative z-10">
