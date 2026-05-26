@@ -177,6 +177,7 @@ export default function TemplateSettings() {
 
   // ── Helper: persist tasks for a template ──────────────────────────────────
   const persistTasks = async (templateId: number, tasks: TemplateTask[]) => {
+    if (isDemoMode) return;
     const { error } = await supabase
       .from("work_item_templates")
       .update({ tasks, updated_at: new Date().toISOString() })
@@ -187,6 +188,15 @@ export default function TemplateSettings() {
   // ── Template CRUD ─────────────────────────────────────────────────────────
   const createTemplate = async (name: string, description: string) => {
     if (!userId) return;
+    if (isDemoMode) {
+      const nextId = templates.reduce((m, t) => Math.max(m, t.id), 0) + 1;
+      const now = new Date().toISOString();
+      setTemplates(prev => [...prev, {
+        id: nextId, name, description, color: COLORS[prev.length % COLORS.length],
+        isLocked: false, tasks: [], createdAt: now, updatedAt: now,
+      }]);
+      return;
+    }
     const { data, error } = await supabase
       .from("work_item_templates")
       .insert({ name, description, created_by: userId, tasks: [], is_locked: false })
@@ -202,11 +212,13 @@ export default function TemplateSettings() {
       toast({ title: "Locked", description: `"${tpl.name}" is a mandatory template and cannot be renamed.`, variant: "destructive" });
       return;
     }
-    const { error } = await supabase
-      .from("work_item_templates")
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq("id", id);
-    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    if (!isDemoMode) {
+      const { error } = await supabase
+        .from("work_item_templates")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    }
     setTemplates(prev => prev.map(t => t.id === id ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t));
   };
 
@@ -216,14 +228,27 @@ export default function TemplateSettings() {
       toast({ title: "Locked", description: `"${tpl.name}" is a mandatory template and cannot be deleted.`, variant: "destructive" });
       return;
     }
-    const { error } = await supabase.from("work_item_templates").delete().eq("id", id);
-    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    if (!isDemoMode) {
+      const { error } = await supabase.from("work_item_templates").delete().eq("id", id);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    }
     setTemplates(prev => prev.filter(t => t.id !== id));
   };
 
   const duplicateTemplate = async (tpl: Template) => {
     if (!userId) return;
     const newTasks = tpl.tasks.map(t => ({ ...t }));
+    if (isDemoMode) {
+      const nextId = templates.reduce((m, t) => Math.max(m, t.id), 0) + 1;
+      const now = new Date().toISOString();
+      setTemplates(prev => [...prev, {
+        id: nextId, name: `${tpl.name} (Copy)`, description: tpl.description,
+        color: COLORS[prev.length % COLORS.length], isLocked: false, tasks: newTasks,
+        createdAt: now, updatedAt: now,
+      }]);
+      toast({ title: "Duplicated", description: `"${tpl.name}" has been duplicated.` });
+      return;
+    }
     const { data, error } = await supabase
       .from("work_item_templates")
       .insert({ name: `${tpl.name} (Copy)`, description: tpl.description, created_by: userId, tasks: newTasks, is_locked: false })
@@ -233,6 +258,7 @@ export default function TemplateSettings() {
     setTemplates(prev => [...prev, mapRow(data, prev.length)]);
     toast({ title: "Duplicated", description: `"${tpl.name}" has been duplicated.` });
   };
+
 
   // ── Task CRUD (in-memory + persist) ───────────────────────────────────────
   const addTask = (title: string, templateId: number) => {
