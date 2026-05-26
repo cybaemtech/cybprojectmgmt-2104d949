@@ -18,6 +18,7 @@ import {
 import { Plus, Pencil, Trash2, GripVertical, LayoutTemplate, Info, Download, Copy, Lock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabaseCustom as supabase } from "@/lib/supabase-custom";
+import { useDemoMode } from "@/hooks/useDemoMode";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface TemplateTask {
