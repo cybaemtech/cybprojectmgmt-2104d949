@@ -18,6 +18,7 @@ import {
 import { Plus, Pencil, Trash2, GripVertical, LayoutTemplate, Info, Download, Copy, Lock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabaseCustom as supabase } from "@/lib/supabase-custom";
+import { useDemoMode } from "@/hooks/useDemoMode";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface TemplateTask {
@@ -102,21 +103,44 @@ function buildSamples(userId: string) {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function TemplateSettings() {
   const { toast } = useToast();
+  const { isDemoMode } = useDemoMode();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Get current user id
+  // Get current user id (skipped in demo mode)
   useEffect(() => {
+    if (isDemoMode) {
+      setUserId("demo-user");
+      return;
+    }
     supabase.auth.getUser().then(({ data }) => {
       setUserId(data.user?.id ?? null);
     });
-  }, []);
+  }, [isDemoMode]);
 
-  // ── Fetch from DB ─────────────────────────────────────────────────────────
+  // ── Fetch from DB (or load samples in demo mode) ──────────────────────────
   const reload = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
+
+    if (isDemoMode) {
+      const samples = buildSamples(userId);
+      const seeded: Template[] = samples.map((s, i) => ({
+        id: i + 1,
+        name: s.name,
+        description: s.description,
+        color: COLORS[i % COLORS.length],
+        isLocked: s.is_locked,
+        tasks: s.tasks,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+      setTemplates(seeded);
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase
       .from("work_item_templates")
       .select("*")
@@ -146,12 +170,14 @@ export default function TemplateSettings() {
       setTemplates(data.map(mapRow));
     }
     setLoading(false);
-  }, [userId]);
+  }, [userId, isDemoMode]);
 
   useEffect(() => { reload(); }, [reload]);
 
+
   // ── Helper: persist tasks for a template ──────────────────────────────────
   const persistTasks = async (templateId: number, tasks: TemplateTask[]) => {
+    if (isDemoMode) return;
     const { error } = await supabase
       .from("work_item_templates")
       .update({ tasks, updated_at: new Date().toISOString() })
@@ -162,6 +188,15 @@ export default function TemplateSettings() {
   // ── Template CRUD ─────────────────────────────────────────────────────────
   const createTemplate = async (name: string, description: string) => {
     if (!userId) return;
+    if (isDemoMode) {
+      const nextId = templates.reduce((m, t) => Math.max(m, t.id), 0) + 1;
+      const now = new Date().toISOString();
+      setTemplates(prev => [...prev, {
+        id: nextId, name, description, color: COLORS[prev.length % COLORS.length],
+        isLocked: false, tasks: [], createdAt: now, updatedAt: now,
+      }]);
+      return;
+    }
     const { data, error } = await supabase
       .from("work_item_templates")
       .insert({ name, description, created_by: userId, tasks: [], is_locked: false })
@@ -177,11 +212,13 @@ export default function TemplateSettings() {
       toast({ title: "Locked", description: `"${tpl.name}" is a mandatory template and cannot be renamed.`, variant: "destructive" });
       return;
     }
-    const { error } = await supabase
-      .from("work_item_templates")
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq("id", id);
-    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    if (!isDemoMode) {
+      const { error } = await supabase
+        .from("work_item_templates")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    }
     setTemplates(prev => prev.map(t => t.id === id ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t));
   };
 
@@ -191,14 +228,27 @@ export default function TemplateSettings() {
       toast({ title: "Locked", description: `"${tpl.name}" is a mandatory template and cannot be deleted.`, variant: "destructive" });
       return;
     }
-    const { error } = await supabase.from("work_item_templates").delete().eq("id", id);
-    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    if (!isDemoMode) {
+      const { error } = await supabase.from("work_item_templates").delete().eq("id", id);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    }
     setTemplates(prev => prev.filter(t => t.id !== id));
   };
 
   const duplicateTemplate = async (tpl: Template) => {
     if (!userId) return;
     const newTasks = tpl.tasks.map(t => ({ ...t }));
+    if (isDemoMode) {
+      const nextId = templates.reduce((m, t) => Math.max(m, t.id), 0) + 1;
+      const now = new Date().toISOString();
+      setTemplates(prev => [...prev, {
+        id: nextId, name: `${tpl.name} (Copy)`, description: tpl.description,
+        color: COLORS[prev.length % COLORS.length], isLocked: false, tasks: newTasks,
+        createdAt: now, updatedAt: now,
+      }]);
+      toast({ title: "Duplicated", description: `"${tpl.name}" has been duplicated.` });
+      return;
+    }
     const { data, error } = await supabase
       .from("work_item_templates")
       .insert({ name: `${tpl.name} (Copy)`, description: tpl.description, created_by: userId, tasks: newTasks, is_locked: false })
@@ -208,6 +258,7 @@ export default function TemplateSettings() {
     setTemplates(prev => [...prev, mapRow(data, prev.length)]);
     toast({ title: "Duplicated", description: `"${tpl.name}" has been duplicated.` });
   };
+
 
   // ── Task CRUD (in-memory + persist) ───────────────────────────────────────
   const addTask = (title: string, templateId: number) => {
@@ -309,6 +360,17 @@ export default function TemplateSettings() {
 
   const handleResetSamples = async () => {
     if (!userId) return;
+    if (isDemoMode) {
+      const samples = buildSamples(userId);
+      const now = new Date().toISOString();
+      setTemplates(samples.map((s, i) => ({
+        id: i + 1, name: s.name, description: s.description,
+        color: COLORS[i % COLORS.length], isLocked: s.is_locked,
+        tasks: s.tasks, createdAt: now, updatedAt: now,
+      })));
+      toast({ title: "Reset", description: "Templates reset to samples." });
+      return;
+    }
     // Delete all user templates
     await supabase.from("work_item_templates").delete().eq("created_by", userId);
     // Re-seed
