@@ -103,21 +103,44 @@ function buildSamples(userId: string) {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function TemplateSettings() {
   const { toast } = useToast();
+  const { isDemoMode } = useDemoMode();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Get current user id
+  // Get current user id (skipped in demo mode)
   useEffect(() => {
+    if (isDemoMode) {
+      setUserId("demo-user");
+      return;
+    }
     supabase.auth.getUser().then(({ data }) => {
       setUserId(data.user?.id ?? null);
     });
-  }, []);
+  }, [isDemoMode]);
 
-  // ── Fetch from DB ─────────────────────────────────────────────────────────
+  // ── Fetch from DB (or load samples in demo mode) ──────────────────────────
   const reload = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
+
+    if (isDemoMode) {
+      const samples = buildSamples(userId);
+      const seeded: Template[] = samples.map((s, i) => ({
+        id: i + 1,
+        name: s.name,
+        description: s.description,
+        color: COLORS[i % COLORS.length],
+        isLocked: s.is_locked,
+        tasks: s.tasks,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+      setTemplates(seeded);
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase
       .from("work_item_templates")
       .select("*")
@@ -147,9 +170,10 @@ export default function TemplateSettings() {
       setTemplates(data.map(mapRow));
     }
     setLoading(false);
-  }, [userId]);
+  }, [userId, isDemoMode]);
 
   useEffect(() => { reload(); }, [reload]);
+
 
   // ── Helper: persist tasks for a template ──────────────────────────────────
   const persistTasks = async (templateId: number, tasks: TemplateTask[]) => {
