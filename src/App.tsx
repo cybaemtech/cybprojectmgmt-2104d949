@@ -49,7 +49,7 @@ function AppRoutes() {
         navigate("/login");
       }
     } else if (isAuthenticated && location.pathname === "/") {
-      navigate("/dashboard");
+      navigate("/login");
     }
   }, [location.pathname, navigate, isAuthenticated, isUnauthenticated, isLoading, isDemoMode]);
 
