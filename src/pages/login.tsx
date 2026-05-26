@@ -88,7 +88,7 @@ export default function LoginPage() {
 
         <img src={cybaemLogo} alt="Cybaem Tech" className="w-72 mb-10 relative z-10" />
         <h1 className="text-3xl font-bold text-white mb-4 relative z-10 text-center">
-          Project Management
+          Project Management, Reimagined!
         </h1>
         <p className="text-[hsl(210,20%,70%)] text-center max-w-sm relative z-10 leading-relaxed">
           Plan smarter, align teams faster, and deliver projects with complete visibility — all from one intelligent workspace!
