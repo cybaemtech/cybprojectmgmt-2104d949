@@ -91,7 +91,7 @@ export default function LoginPage() {
           Project Management
         </h1>
         <p className="text-[hsl(210,20%,70%)] text-center max-w-sm relative z-10 leading-relaxed">
-          Plan, strategize, track progress and deliver projects with a strong value based-approach before time with your team!
+          Plan smarter, align teams faster, and deliver projects with complete visibility — all from one intelligent workspace!
         </p>
 
         <div className="mt-16 grid grid-cols-3 gap-8 relative z-10">
