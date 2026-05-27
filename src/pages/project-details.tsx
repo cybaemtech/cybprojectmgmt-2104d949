@@ -1496,7 +1496,7 @@ export default function ProjectDetails() {
                 
               </div>
               {/* Only show Create Item button on specific tabs */}
-              {projectView !== 'overview' && projectView !== 'settings' && projectView !== 'documentation' && (
+              {projectView !== 'overview' && projectView !== 'settings' && projectView !== 'documentation' && projectView !== 'roadmap' && (
                 <div className="flex space-x-3">
                   <Button variant="outline" onClick={handleWorkItemsUpdate}>
                     <RefreshCw className="mr-2 h-4 w-4" />
