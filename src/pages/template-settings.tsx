@@ -261,7 +261,7 @@ export default function TemplateSettings() {
     // Duplicates are always private copies owned by the current user.
     const { data, error } = await supabase
       .from("work_item_templates")
-      .insert({ name: `${tpl.name} (Copy)`, description: tpl.description, created_by: userId, tasks: newTasks, is_locked: false })
+      .insert({ name: `${tpl.name} (Copy)`, description: tpl.description, created_by: userId, tasks: newTasks, is_locked: false, scope: 'PRIVATE' })
       .select("*")
       .single();
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
