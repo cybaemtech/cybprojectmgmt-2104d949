@@ -322,6 +322,21 @@ export const RoadmapEditor = ({ template, onUpdate, onBack }: {
   const [formData, setFormData] = useState({ name: '', startDate: '', endDate: '', stream: template.streams[0] || '', actionPoints: [''] });
   const [dragStreamIdx, setDragStreamIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [descFaded, setDescFaded] = useState(false);
+  const descClearedRef = useRef(false);
+
+  const markEdited = () => {
+    if (descClearedRef.current) return;
+    if (!template.description) return;
+    if (descFaded) return;
+    setDescFaded(true);
+    descClearedRef.current = true;
+    // After fade-out transition, clear the description in persisted template
+    setTimeout(() => {
+      onUpdate({ ...template, description: '', streams, projects });
+    }, 750);
+  };
+
 
   const getStreamColor = (s: string) => colorPalette[streams.indexOf(s) % colorPalette.length];
 
@@ -333,7 +348,9 @@ export const RoadmapEditor = ({ template, onUpdate, onBack }: {
       setFormData({ ...formData, stream: t });
       setNewStreamName('');
       setShowStreamInput(false);
+      markEdited();
       onUpdate({ ...template, streams: newStreams, projects });
+
     }
   };
 
@@ -349,7 +366,9 @@ export const RoadmapEditor = ({ template, onUpdate, onBack }: {
       clearSelection();
     }
     if (formData.stream === s) setFormData({ ...formData, stream: updated[0] || '' });
+    markEdited();
     onUpdate({ ...template, streams: updated, projects: filteredProjects });
+
   };
 
   const handleStreamDragStart = (idx: number) => {
@@ -371,7 +390,9 @@ export const RoadmapEditor = ({ template, onUpdate, onBack }: {
     const [moved] = reordered.splice(dragStreamIdx, 1);
     reordered.splice(idx, 0, moved);
     setStreams(reordered);
+    markEdited();
     onUpdate({ ...template, streams: reordered, projects });
+
     setDragStreamIdx(null);
     setDragOverIdx(null);
   };
@@ -381,7 +402,7 @@ export const RoadmapEditor = ({ template, onUpdate, onBack }: {
     setDragOverIdx(null);
   };
 
-  const persistTemplate = (p: RoadmapProject[]) => onUpdate({ ...template, streams, projects: p });
+  const persistTemplate = (p: RoadmapProject[]) => { markEdited(); onUpdate({ ...template, streams, projects: p }); };
 
   const addProject = () => {
     if (formData.name && formData.startDate && formData.endDate && formData.stream) {
@@ -487,10 +508,19 @@ export const RoadmapEditor = ({ template, onUpdate, onBack }: {
   return (
     <div className="flex h-full bg-gray-50">
       <div className="w-80 bg-white border-r border-gray-200 p-6 overflow-y-auto flex flex-col flex-shrink-0">
-        <div className="flex items-center gap-2 mb-1">
-          <h2 className="text-lg font-bold text-gray-900 truncate">{template.name}</h2>
+        <div className="relative h-7 mb-1 flex items-center">
+          <h2 className="text-xl font-bold text-gray-900 truncate leading-none">{template.name}</h2>
         </div>
-        <p className="text-xs text-gray-400 mb-5 ml-7">{template.description}</p>
+        <div className="h-4 mb-5 overflow-hidden">
+          {template.description && (
+            <p
+              className={`text-xs text-gray-400 transition-opacity duration-700 ${descFaded ? 'opacity-0' : 'opacity-100'}`}
+            >
+              {template.description}
+            </p>
+          )}
+        </div>
+
 
         {selectedProject && (
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
@@ -612,10 +642,11 @@ export const RoadmapEditor = ({ template, onUpdate, onBack }: {
       </div>
 
       <div className="flex-1 p-6 overflow-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Timelines </h2>
-          
+        <div className="relative h-7 mb-1 flex items-center">
+          <h2 className="text-xl font-bold text-gray-900 leading-none">Timelines</h2>
         </div>
+        <div className="h-4 mb-5" />
+
 
         <div className="bg-white border border-gray-200 rounded-lg p-4">
             <div className="flex mb-4">
