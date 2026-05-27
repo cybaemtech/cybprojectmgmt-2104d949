@@ -346,7 +346,8 @@ export default function LoginPage() {
                     </FormItem>
                   )} />
 
-                  <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium" disabled={isLoading}>
+                  <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium" disabled={isLoading || (!!inviteToken && inviteExpired)}>
+
                     {isLoading ? (
                       <span className="flex items-center gap-2">
                         <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
