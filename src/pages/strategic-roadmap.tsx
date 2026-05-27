@@ -396,7 +396,7 @@ export const RoadmapEditor = ({ template, onUpdate, onBack }: {
     setDragOverIdx(null);
   };
 
-  const persistTemplate = (p: RoadmapProject[]) => onUpdate({ ...template, streams, projects: p });
+  const persistTemplate = (p: RoadmapProject[]) => { markEdited(); onUpdate({ ...template, streams, projects: p }); };
 
   const addProject = () => {
     if (formData.name && formData.startDate && formData.endDate && formData.stream) {
