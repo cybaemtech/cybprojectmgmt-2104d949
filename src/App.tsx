@@ -37,9 +37,23 @@ function AppRoutes() {
   const effectivelyAuthenticated = isAuthenticated || isDemoMode;
 
   useEffect(() => {
-    // Initialize the Supabase-backed store
-    initStore();
-  }, []);
+    // In demo mode, init immediately (uses static demo data)
+    if (isDemoMode) {
+      initStore();
+      return;
+    }
+    // Otherwise, wait for a real auth session before hitting Supabase,
+    // so RLS-protected reads use the authenticated role (not anon → 0 rows).
+    let cancelled = false;
+    supabaseCustom.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
+      if (session) refreshStore();
+    });
+    const { data: { subscription } } = supabaseCustom.auth.onAuthStateChange((_event, session) => {
+      if (session) refreshStore();
+    });
+    return () => { cancelled = true; subscription.unsubscribe(); };
+  }, [isDemoMode]);
 
   useEffect(() => {
     if (isDemoMode) return;
