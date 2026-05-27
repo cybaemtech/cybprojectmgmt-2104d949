@@ -441,27 +441,25 @@ export default function TemplateSettings() {
     const readOnly = isGlobal && !isAdmin;
     return (
       <Card className="h-full flex flex-col overflow-hidden">
-        <CardHeader className={`rounded-t-lg pb-3 ${template.color}`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 min-w-0">
-              <LayoutTemplate className="h-5 w-5 flex-shrink-0" />
-              <CardTitle className="text-base truncate">{template.name}</CardTitle>
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Badge
-                variant={isGlobal ? "default" : "outline"}
-                className={isGlobal ? "bg-blue-600 hover:bg-blue-600 text-white text-[10px] px-1.5 py-0" : "text-[10px] px-1.5 py-0"}
-                title={isGlobal ? "Visible to everyone" : "Only you can see this template"}
-              >
-                {isGlobal ? "Global" : "Private"}
-              </Badge>
-              <Badge variant="secondary">{activeTasks.length} active</Badge>
-              <Badge variant="outline" className="ml-1 font-mono tabular-nums">{totalHours}h total</Badge>
-            </div>
+        <CardHeader className={`rounded-t-lg pb-3 ${template.color} space-y-2`}>
+          <div className="flex items-start gap-2 min-w-0">
+            <LayoutTemplate className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <CardTitle className="text-base leading-snug break-words flex-1 min-w-0">{template.name}</CardTitle>
           </div>
-          <div className="flex items-center justify-between mt-1">
-            <div className="flex items-center gap-1.5">
-              <CardDescription className="text-inherit opacity-80 text-xs">{template.description || "No description"}</CardDescription>
+          <div className="flex items-center gap-1 flex-wrap">
+            <Badge
+              variant={isGlobal ? "default" : "outline"}
+              className={isGlobal ? "bg-blue-600 hover:bg-blue-600 text-white text-[10px] px-1.5 py-0" : "text-[10px] px-1.5 py-0"}
+              title={isGlobal ? "Visible to everyone" : "Only you can see this template"}
+            >
+              {isGlobal ? "Global" : "Private"}
+            </Badge>
+            <Badge variant="secondary">{activeTasks.length} active</Badge>
+            <Badge variant="outline" className="ml-1 font-mono tabular-nums">{totalHours}h total</Badge>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <CardDescription className="text-inherit opacity-80 text-xs truncate">{template.description || "No description"}</CardDescription>
               {readOnly && (
                 <span title="Read-only — managed by an administrator">
                   <Lock className="h-3.5 w-3.5 text-amber-700 opacity-80" />
