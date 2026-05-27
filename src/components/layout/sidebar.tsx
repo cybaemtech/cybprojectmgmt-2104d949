@@ -128,8 +128,10 @@ export function Sidebar({
               const Icon = item.icon;
               const isActive = item.isActive(location.pathname);
               
-              // Only show Daily Standup and Template Settings for ADMIN and SCRUM_MASTER
-              if (["Daily Standup", "Template Settings"].includes(item.label) && user) {
+              // Restrict portfolio-level pages to ADMIN and SCRUM_MASTER.
+              // Template Settings is open to all users (page enforces private-only
+              // creation and read-only globals for non-admins).
+              if (["Daily Standup", "Strategic Roadmap"].includes(item.label) && user) {
                 if (user.role !== "ADMIN" && user.role !== "SCRUM_MASTER") {
                   return null;
                 }
