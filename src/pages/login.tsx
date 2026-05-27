@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,11 +7,12 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Shield, Lock, AtSign, Play, Eye, EyeOff, User, ArrowLeft } from "lucide-react";
+import { Shield, Lock, AtSign, Play, Eye, EyeOff, User, ArrowLeft, AlertTriangle } from "lucide-react";
 import { login, signup } from "@/hooks/useAuth";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import { refreshStore } from "@/lib/local-store";
 import { ForgotPasswordModal } from "@/components/modals/forgot-password-modal";
+import { parseInviteToken, isInviteExpired } from "@/lib/invite-token";
 import cybaemLogo from "@/assets/cybaem-logo-full.png";
 
 const loginSchema = z.object({
