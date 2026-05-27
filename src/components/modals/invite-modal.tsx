@@ -21,6 +21,7 @@ import {
 import { Team } from "@/types/schema";
 import { useToast } from "@/hooks/use-toast";
 import { validateCorporateEmails } from "@/lib/email-validation";
+import { buildInviteUrl } from "@/lib/invite-token";
 
 // Define the form schema with validation
 const inviteFormSchema = z.object({
