@@ -19,6 +19,7 @@ import { Plus, Pencil, Trash2, GripVertical, LayoutTemplate, Info, Download, Cop
 import { useToast } from "@/hooks/use-toast";
 import { supabaseCustom as supabase } from "@/lib/supabase-custom";
 import { useDemoMode } from "@/hooks/useDemoMode";
+import { useAuth } from "@/hooks/useAuth";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface TemplateTask {
@@ -29,12 +30,16 @@ interface TemplateTask {
   estimatedHours?: number;
 }
 
+type TemplateScope = 'GLOBAL' | 'PRIVATE';
+
 interface Template {
   id: number;          // DB id
   name: string;
   description: string;
   color: string;
   isLocked: boolean;
+  scope: TemplateScope;
+  createdBy: string | null;
   tasks: TemplateTask[];
   createdAt: string;
   updatedAt: string;
@@ -54,12 +59,15 @@ const COLORS = [
 // ─── DB row → app model ─────────────────────────────────────────────────────
 function mapRow(row: any, index: number): Template {
   const tasks: TemplateTask[] = Array.isArray(row.tasks) ? row.tasks : [];
+  const scope: TemplateScope = row.scope === 'GLOBAL' ? 'GLOBAL' : 'PRIVATE';
   return {
     id: row.id,
     name: row.name,
     description: row.description ?? "",
     color: COLORS[index % COLORS.length],
     isLocked: row.is_locked ?? false,
+    scope,
+    createdBy: row.created_by ?? null,
     tasks,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -104,9 +112,12 @@ function buildSamples(userId: string) {
 export default function TemplateSettings() {
   const { toast } = useToast();
   const { isDemoMode } = useDemoMode();
+  const { user } = useAuth();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+
+  const isAdmin = (user?.role ?? "USER") === "ADMIN" || isDemoMode;
 
   // Get current user id (skipped in demo mode)
   useEffect(() => {
@@ -132,6 +143,8 @@ export default function TemplateSettings() {
         description: s.description,
         color: COLORS[i % COLORS.length],
         isLocked: s.is_locked,
+        scope: 'GLOBAL',
+        createdBy: userId,
         tasks: s.tasks,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -141,10 +154,11 @@ export default function TemplateSettings() {
       return;
     }
 
+    // RLS filters: returns GLOBAL rows for everyone + the caller's own PRIVATE rows.
     const { data, error } = await supabase
       .from("work_item_templates")
       .select("*")
-      .eq("created_by", userId)
+      .order("scope", { ascending: true })   // GLOBAL before PRIVATE
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -153,22 +167,7 @@ export default function TemplateSettings() {
       return;
     }
 
-    if (!data || data.length === 0) {
-      // Seed samples
-      const samples = buildSamples(userId);
-      const { data: inserted, error: insertErr } = await supabase
-        .from("work_item_templates")
-        .insert(samples)
-        .select("*");
-      if (insertErr) {
-        console.error("Failed to seed samples:", insertErr);
-        setLoading(false);
-        return;
-      }
-      setTemplates((inserted || []).map(mapRow));
-    } else {
-      setTemplates(data.map(mapRow));
-    }
+    setTemplates((data || []).map(mapRow));
     setLoading(false);
   }, [userId, isDemoMode]);
 
@@ -193,13 +192,14 @@ export default function TemplateSettings() {
       const now = new Date().toISOString();
       setTemplates(prev => [...prev, {
         id: nextId, name, description, color: COLORS[prev.length % COLORS.length],
-        isLocked: false, tasks: [], createdAt: now, updatedAt: now,
+        isLocked: false, scope: 'PRIVATE', createdBy: userId, tasks: [], createdAt: now, updatedAt: now,
       }]);
       return;
     }
+    // User-created templates are ALWAYS private and owned by the caller.
     const { data, error } = await supabase
       .from("work_item_templates")
-      .insert({ name, description, created_by: userId, tasks: [], is_locked: false })
+      .insert({ name, description, created_by: userId, tasks: [], is_locked: false, scope: 'PRIVATE' })
       .select("*")
       .single();
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
@@ -208,6 +208,10 @@ export default function TemplateSettings() {
 
   const updateTemplate = async (id: number, updates: { name?: string; description?: string }) => {
     const tpl = templates.find(t => t.id === id);
+    if (tpl?.scope === 'GLOBAL' && !isAdmin) {
+      toast({ title: "Read-only", description: "Global templates can only be edited by admins.", variant: "destructive" });
+      return;
+    }
     if (tpl?.isLocked && updates.name && updates.name !== tpl.name) {
       toast({ title: "Locked", description: `"${tpl.name}" is a mandatory template and cannot be renamed.`, variant: "destructive" });
       return;
@@ -224,6 +228,10 @@ export default function TemplateSettings() {
 
   const deleteTemplate = async (id: number) => {
     const tpl = templates.find(t => t.id === id);
+    if (tpl?.scope === 'GLOBAL') {
+      toast({ title: "Locked", description: "Global templates cannot be deleted.", variant: "destructive" });
+      return;
+    }
     if (tpl?.isLocked) {
       toast({ title: "Locked", description: `"${tpl.name}" is a mandatory template and cannot be deleted.`, variant: "destructive" });
       return;
@@ -243,15 +251,17 @@ export default function TemplateSettings() {
       const now = new Date().toISOString();
       setTemplates(prev => [...prev, {
         id: nextId, name: `${tpl.name} (Copy)`, description: tpl.description,
-        color: COLORS[prev.length % COLORS.length], isLocked: false, tasks: newTasks,
+        color: COLORS[prev.length % COLORS.length], isLocked: false,
+        scope: 'PRIVATE', createdBy: userId, tasks: newTasks,
         createdAt: now, updatedAt: now,
       }]);
-      toast({ title: "Duplicated", description: `"${tpl.name}" has been duplicated.` });
+      toast({ title: "Duplicated", description: `"${tpl.name}" copied as a private template.` });
       return;
     }
+    // Duplicates are always private copies owned by the current user.
     const { data, error } = await supabase
       .from("work_item_templates")
-      .insert({ name: `${tpl.name} (Copy)`, description: tpl.description, created_by: userId, tasks: newTasks, is_locked: false })
+      .insert({ name: `${tpl.name} (Copy)`, description: tpl.description, created_by: userId, tasks: newTasks, is_locked: false, scope: 'PRIVATE' })
       .select("*")
       .single();
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
@@ -359,37 +369,28 @@ export default function TemplateSettings() {
   };
 
   const handleResetSamples = async () => {
-    if (!userId) return;
-    if (isDemoMode) {
-      const samples = buildSamples(userId);
-      const now = new Date().toISOString();
-      setTemplates(samples.map((s, i) => ({
-        id: i + 1, name: s.name, description: s.description,
-        color: COLORS[i % COLORS.length], isLocked: s.is_locked,
-        tasks: s.tasks, createdAt: now, updatedAt: now,
-      })));
-      toast({ title: "Reset", description: "Templates reset to samples." });
-      return;
-    }
-    // Delete all user templates
-    await supabase.from("work_item_templates").delete().eq("created_by", userId);
-    // Re-seed
+    if (!userId || !isDemoMode) return;
     const samples = buildSamples(userId);
-    const { data } = await supabase.from("work_item_templates").insert(samples).select("*");
-    setTemplates((data || []).map(mapRow));
+    const now = new Date().toISOString();
+    setTemplates(samples.map((s, i) => ({
+      id: i + 1, name: s.name, description: s.description,
+      color: COLORS[i % COLORS.length], isLocked: s.is_locked,
+      scope: 'GLOBAL', createdBy: userId,
+      tasks: s.tasks, createdAt: now, updatedAt: now,
+    })));
     toast({ title: "Reset", description: "Templates reset to samples." });
   };
 
   // ── Task Row ──────────────────────────────────────────────────────────────
-  const TaskRow = ({ task, index, templateId }: { task: TemplateTask; index: number; templateId: number }) => (
-    <Draggable draggableId={`task-${templateId}-${task.id}`} index={index}>
+  const TaskRow = ({ task, index, templateId, readOnly }: { task: TemplateTask; index: number; templateId: number; readOnly: boolean }) => (
+    <Draggable draggableId={`task-${templateId}-${task.id}`} index={index} isDragDisabled={readOnly}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
           className={`grid grid-cols-[32px_1fr_90px_56px_72px] items-center border-b border-border/50 transition-colors ${task.isActive ? 'hover:bg-muted/30' : 'bg-muted/20 opacity-60'} ${snapshot.isDragging ? 'shadow-lg ring-1 ring-primary/20 bg-background' : ''}`}
         >
-          <div {...provided.dragHandleProps} className="flex items-center justify-center h-full cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100 transition-opacity">
+          <div {...provided.dragHandleProps} className={`flex items-center justify-center h-full ${readOnly ? 'opacity-20 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100'} transition-opacity`}>
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
           <div className="py-3 pr-4">
@@ -401,6 +402,7 @@ export default function TemplateSettings() {
               min="0"
               step="0.5"
               value={task.estimatedHours ?? ""}
+              disabled={readOnly}
               onChange={(e) => {
                 const val = e.target.value ? parseFloat(e.target.value) : undefined;
                 updateTask(templateId, task.id, { estimatedHours: val });
@@ -411,15 +413,19 @@ export default function TemplateSettings() {
             <span className="text-[10px] text-muted-foreground uppercase tracking-tight">hr</span>
           </div>
           <div className="flex justify-center">
-            <Switch checked={task.isActive} onCheckedChange={() => updateTask(templateId, task.id, { isActive: !task.isActive })} className="scale-90" />
+            <Switch checked={task.isActive} disabled={readOnly} onCheckedChange={() => updateTask(templateId, task.id, { isActive: !task.isActive })} className="scale-90" />
           </div>
           <div className="flex justify-end gap-0.5 pr-2">
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditTaskTitle(task.title); setEditTaskDialog({ task, templateId }); }}>
-              <Pencil className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteTaskDialog({ task, templateId })}>
-              <Trash2 className="h-3 w-3" />
-            </Button>
+            {!readOnly && (
+              <>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditTaskTitle(task.title); setEditTaskDialog({ task, templateId }); }}>
+                  <Pencil className="h-3 w-3" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteTaskDialog({ task, templateId })}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -431,6 +437,8 @@ export default function TemplateSettings() {
     const tplTasks = [...template.tasks].sort((a, b) => a.itemOrder - b.itemOrder);
     const activeTasks = tplTasks.filter(t => t.isActive);
     const totalHours = activeTasks.reduce((sum, t) => sum + (t.estimatedHours || 0), 0);
+    const isGlobal = template.scope === 'GLOBAL';
+    const readOnly = isGlobal && !isAdmin;
     return (
       <Card className="h-full flex flex-col overflow-hidden">
         <CardHeader className={`rounded-t-lg pb-3 ${template.color}`}>
@@ -440,6 +448,13 @@ export default function TemplateSettings() {
               <CardTitle className="text-base truncate">{template.name}</CardTitle>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
+              <Badge
+                variant={isGlobal ? "default" : "outline"}
+                className={isGlobal ? "bg-blue-600 hover:bg-blue-600 text-white text-[10px] px-1.5 py-0" : "text-[10px] px-1.5 py-0"}
+                title={isGlobal ? "Visible to everyone" : "Only you can see this template"}
+              >
+                {isGlobal ? "Global" : "Private"}
+              </Badge>
               <Badge variant="secondary">{activeTasks.length} active</Badge>
               <Badge variant="outline" className="ml-1 font-mono tabular-nums">{totalHours}h total</Badge>
             </div>
@@ -447,22 +462,22 @@ export default function TemplateSettings() {
           <div className="flex items-center justify-between mt-1">
             <div className="flex items-center gap-1.5">
               <CardDescription className="text-inherit opacity-80 text-xs">{template.description || "No description"}</CardDescription>
-              {template.isLocked && (
-                <span title="Mandatory template — cannot be renamed or deleted">
+              {readOnly && (
+                <span title="Read-only — managed by an administrator">
                   <Lock className="h-3.5 w-3.5 text-amber-700 opacity-80" />
                 </span>
               )}
             </div>
             <div className="flex gap-1 flex-shrink-0">
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => duplicateTemplate(template)} title="Duplicate">
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => duplicateTemplate(template)} title="Duplicate as private">
                 <Copy className="h-3.5 w-3.5" />
               </Button>
-              {!template.isLocked && (
+              {!readOnly && !template.isLocked && (
                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setTplName(template.name); setTplDesc(template.description); setEditTplDialog(template); }} title="Edit">
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
               )}
-              {!template.isLocked && (
+              {!readOnly && !isGlobal && !template.isLocked && (
                 <Button variant="ghost" size="icon" className="h-6 w-6 hover:text-destructive" onClick={() => setDeleteTplDialog(template)} title="Delete">
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
@@ -473,7 +488,7 @@ export default function TemplateSettings() {
         <CardContent className="p-0 flex-1 flex flex-col">
           {tplTasks.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm px-4">
-              No tasks yet. <span className="text-xs">Click "Add Task" to start.</span>
+              No tasks yet. {!readOnly && <span className="text-xs">Click "Add Task" to start.</span>}
             </div>
           ) : (
             <>
@@ -485,13 +500,14 @@ export default function TemplateSettings() {
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right pr-2">Ops</div>
               </div>
               <DragDropContext onDragEnd={(result: DropResult) => {
+                if (readOnly) return;
                 if (!result.destination || result.source.index === result.destination.index) return;
                 reorderTasks(template.id, result.source.index, result.destination.index);
               }}>
-                <Droppable droppableId={`template-${template.id}`}>
+                <Droppable droppableId={`template-${template.id}`} isDropDisabled={readOnly}>
                   {(provided) => (
                     <div ref={provided.innerRef} {...provided.droppableProps}>
-                      {tplTasks.map((task, index) => <TaskRow key={task.id} task={task} index={index} templateId={template.id} />)}
+                      {tplTasks.map((task, index) => <TaskRow key={task.id} task={task} index={index} templateId={template.id} readOnly={readOnly} />)}
                       {provided.placeholder}
                     </div>
                   )}
@@ -500,9 +516,13 @@ export default function TemplateSettings() {
             </>
           )}
           <div className="mt-auto flex items-center justify-between px-3 py-2.5 border-t border-border bg-muted/10">
-            <Button variant="ghost" size="sm" className="text-xs text-primary font-semibold hover:text-primary" onClick={() => { setNewTaskTitle(""); setAddTaskDialog({ open: true, templateId: template.id }); }}>
-              <Plus className="h-3.5 w-3.5 mr-1" /> Add Task
-            </Button>
+            {readOnly ? (
+              <span className="text-xs text-muted-foreground italic">Read-only template</span>
+            ) : (
+              <Button variant="ghost" size="sm" className="text-xs text-primary font-semibold hover:text-primary" onClick={() => { setNewTaskTitle(""); setAddTaskDialog({ open: true, templateId: template.id }); }}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Add Task
+              </Button>
+            )}
             <div className="text-right">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider mr-1.5">Total</span>
               <span className="text-sm font-semibold font-mono tabular-nums">{totalHours}h</span>
@@ -529,13 +549,15 @@ export default function TemplateSettings() {
           <div>
             <h1 className="text-2xl font-bold">Work Item Templates</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Your personal task templates — visible only to you. Create as many as you need.
+              Shared global templates plus your own private ones. Private templates are visible only to you.
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleResetSamples}>
-              <Download className="h-4 w-4 mr-1" /> Reset to Samples
-            </Button>
+            {isDemoMode && (
+              <Button variant="outline" size="sm" onClick={handleResetSamples}>
+                <Download className="h-4 w-4 mr-1" /> Reset to Samples
+              </Button>
+            )}
             <Button size="sm" onClick={() => { setTplName(""); setTplDesc(""); setCreateTplDialog(true); }}>
               <Plus className="h-4 w-4 mr-1" /> New Template
             </Button>
@@ -547,13 +569,13 @@ export default function TemplateSettings() {
           <div className="text-sm text-amber-800">
             <p className="font-semibold mb-1">How templates work</p>
             <ul className="list-disc list-inside space-y-0.5 text-xs">
-              <li>Create multiple templates for different workflows (requirements, development, QA, etc.).</li>
-              <li>Each template contains a reusable checklist of tasks.</li>
-              <li>Templates are private — only you can see and manage them.</li>
-              <li>Duplicate a template to quickly create variations.</li>
+              <li><strong>Global</strong> templates (Requirement Gathering, Developer Checklist, QA &amp; Testing) are shared with everyone and managed by admins.</li>
+              <li><strong>Private</strong> templates you create are visible only to you — peers and admins cannot see them.</li>
+              <li>Duplicating any template creates a private copy you fully own.</li>
             </ul>
           </div>
         </div>
+
 
         {templates.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
