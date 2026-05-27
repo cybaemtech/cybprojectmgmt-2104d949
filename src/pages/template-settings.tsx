@@ -19,6 +19,7 @@ import { Plus, Pencil, Trash2, GripVertical, LayoutTemplate, Info, Download, Cop
 import { useToast } from "@/hooks/use-toast";
 import { supabaseCustom as supabase } from "@/lib/supabase-custom";
 import { useDemoMode } from "@/hooks/useDemoMode";
+import { useAuth } from "@/hooks/useAuth";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface TemplateTask {
