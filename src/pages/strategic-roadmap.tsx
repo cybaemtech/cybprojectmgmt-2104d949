@@ -307,7 +307,7 @@ export const NewTemplateModal = ({ onConfirm, onCancel }: {
   );
 };
 
-const RoadmapEditor = ({ template, onUpdate, onBack }: {
+export const RoadmapEditor = ({ template, onUpdate, onBack }: {
   template: Template;
   onUpdate: (t: Template) => void;
   onBack: () => void;
