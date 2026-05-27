@@ -488,7 +488,6 @@ export const RoadmapEditor = ({ template, onUpdate, onBack }: {
     <div className="flex h-full bg-gray-50">
       <div className="w-80 bg-white border-r border-gray-200 p-6 overflow-y-auto flex flex-col flex-shrink-0">
         <div className="flex items-center gap-2 mb-1">
-          <button onClick={onBack} className="text-gray-400 hover:text-gray-700 transition-colors"><ArrowLeft size={20} /></button>
           <h2 className="text-lg font-bold text-gray-900 truncate">{template.name}</h2>
         </div>
         <p className="text-xs text-gray-400 mb-5 ml-7">{template.description}</p>
