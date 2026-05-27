@@ -49,8 +49,12 @@ function AppRoutes() {
       if (cancelled) return;
       if (session) refreshStore();
     });
-    const { data: { subscription } } = supabaseCustom.auth.onAuthStateChange((_event, session) => {
-      if (session) refreshStore();
+    const { data: { subscription } } = supabaseCustom.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || !session) {
+        clearStore();
+      } else {
+        refreshStore();
+      }
     });
     return () => { cancelled = true; subscription.unsubscribe(); };
   }, [isDemoMode]);
