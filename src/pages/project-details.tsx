@@ -1447,6 +1447,16 @@ export default function ProjectDetails() {
                 </a>
                 <a
                   href="#"
+                  onClick={(e) => { e.preventDefault(); setProjectView('roadmap'); }}
+                  className={`border-b-2 ${projectView === 'roadmap'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-neutral-600 hover:text-neutral-900'
+                    } font-medium py-3`}
+                >
+                  Project Roadmap
+                </a>
+                <a
+                  href="#"
                   onClick={(e) => { e.preventDefault(); setProjectView('documentation'); }}
                   className={`border-b-2 ${projectView === 'documentation'
                     ? 'border-primary text-primary'
