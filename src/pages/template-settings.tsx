@@ -369,24 +369,15 @@ export default function TemplateSettings() {
   };
 
   const handleResetSamples = async () => {
-    if (!userId) return;
-    if (isDemoMode) {
-      const samples = buildSamples(userId);
-      const now = new Date().toISOString();
-      setTemplates(samples.map((s, i) => ({
-        id: i + 1, name: s.name, description: s.description,
-        color: COLORS[i % COLORS.length], isLocked: s.is_locked,
-        tasks: s.tasks, createdAt: now, updatedAt: now,
-      })));
-      toast({ title: "Reset", description: "Templates reset to samples." });
-      return;
-    }
-    // Delete all user templates
-    await supabase.from("work_item_templates").delete().eq("created_by", userId);
-    // Re-seed
+    if (!userId || !isDemoMode) return;
     const samples = buildSamples(userId);
-    const { data } = await supabase.from("work_item_templates").insert(samples).select("*");
-    setTemplates((data || []).map(mapRow));
+    const now = new Date().toISOString();
+    setTemplates(samples.map((s, i) => ({
+      id: i + 1, name: s.name, description: s.description,
+      color: COLORS[i % COLORS.length], isLocked: s.is_locked,
+      scope: 'GLOBAL', createdBy: userId,
+      tasks: s.tasks, createdAt: now, updatedAt: now,
+    })));
     toast({ title: "Reset", description: "Templates reset to samples." });
   };
 
