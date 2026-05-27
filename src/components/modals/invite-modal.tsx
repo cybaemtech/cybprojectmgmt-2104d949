@@ -167,7 +167,7 @@ export function InviteModal({
         MANAGER: "Project Manager",
         ADMIN: "Administrator",
       };
-      const loginUrl = `${window.location.origin}/login`;
+      
 
       const { data: { session: extSession } } = await supabaseCustom.auth.getSession();
       const extToken = extSession?.access_token;
