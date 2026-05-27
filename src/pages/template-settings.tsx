@@ -437,6 +437,8 @@ export default function TemplateSettings() {
     const tplTasks = [...template.tasks].sort((a, b) => a.itemOrder - b.itemOrder);
     const activeTasks = tplTasks.filter(t => t.isActive);
     const totalHours = activeTasks.reduce((sum, t) => sum + (t.estimatedHours || 0), 0);
+    const isGlobal = template.scope === 'GLOBAL';
+    const readOnly = isGlobal && !isAdmin;
     return (
       <Card className="h-full flex flex-col overflow-hidden">
         <CardHeader className={`rounded-t-lg pb-3 ${template.color}`}>
@@ -446,6 +448,13 @@ export default function TemplateSettings() {
               <CardTitle className="text-base truncate">{template.name}</CardTitle>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
+              <Badge
+                variant={isGlobal ? "default" : "outline"}
+                className={isGlobal ? "bg-blue-600 hover:bg-blue-600 text-white text-[10px] px-1.5 py-0" : "text-[10px] px-1.5 py-0"}
+                title={isGlobal ? "Visible to everyone" : "Only you can see this template"}
+              >
+                {isGlobal ? "Global" : "Private"}
+              </Badge>
               <Badge variant="secondary">{activeTasks.length} active</Badge>
               <Badge variant="outline" className="ml-1 font-mono tabular-nums">{totalHours}h total</Badge>
             </div>
@@ -453,22 +462,22 @@ export default function TemplateSettings() {
           <div className="flex items-center justify-between mt-1">
             <div className="flex items-center gap-1.5">
               <CardDescription className="text-inherit opacity-80 text-xs">{template.description || "No description"}</CardDescription>
-              {template.isLocked && (
-                <span title="Mandatory template — cannot be renamed or deleted">
+              {readOnly && (
+                <span title="Read-only — managed by an administrator">
                   <Lock className="h-3.5 w-3.5 text-amber-700 opacity-80" />
                 </span>
               )}
             </div>
             <div className="flex gap-1 flex-shrink-0">
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => duplicateTemplate(template)} title="Duplicate">
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => duplicateTemplate(template)} title="Duplicate as private">
                 <Copy className="h-3.5 w-3.5" />
               </Button>
-              {!template.isLocked && (
+              {!readOnly && !template.isLocked && (
                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setTplName(template.name); setTplDesc(template.description); setEditTplDialog(template); }} title="Edit">
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
               )}
-              {!template.isLocked && (
+              {!readOnly && !isGlobal && !template.isLocked && (
                 <Button variant="ghost" size="icon" className="h-6 w-6 hover:text-destructive" onClick={() => setDeleteTplDialog(template)} title="Delete">
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
@@ -479,7 +488,7 @@ export default function TemplateSettings() {
         <CardContent className="p-0 flex-1 flex flex-col">
           {tplTasks.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm px-4">
-              No tasks yet. <span className="text-xs">Click "Add Task" to start.</span>
+              No tasks yet. {!readOnly && <span className="text-xs">Click "Add Task" to start.</span>}
             </div>
           ) : (
             <>
@@ -491,13 +500,14 @@ export default function TemplateSettings() {
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right pr-2">Ops</div>
               </div>
               <DragDropContext onDragEnd={(result: DropResult) => {
+                if (readOnly) return;
                 if (!result.destination || result.source.index === result.destination.index) return;
                 reorderTasks(template.id, result.source.index, result.destination.index);
               }}>
-                <Droppable droppableId={`template-${template.id}`}>
+                <Droppable droppableId={`template-${template.id}`} isDropDisabled={readOnly}>
                   {(provided) => (
                     <div ref={provided.innerRef} {...provided.droppableProps}>
-                      {tplTasks.map((task, index) => <TaskRow key={task.id} task={task} index={index} templateId={template.id} />)}
+                      {tplTasks.map((task, index) => <TaskRow key={task.id} task={task} index={index} templateId={template.id} readOnly={readOnly} />)}
                       {provided.placeholder}
                     </div>
                   )}
@@ -506,9 +516,13 @@ export default function TemplateSettings() {
             </>
           )}
           <div className="mt-auto flex items-center justify-between px-3 py-2.5 border-t border-border bg-muted/10">
-            <Button variant="ghost" size="sm" className="text-xs text-primary font-semibold hover:text-primary" onClick={() => { setNewTaskTitle(""); setAddTaskDialog({ open: true, templateId: template.id }); }}>
-              <Plus className="h-3.5 w-3.5 mr-1" /> Add Task
-            </Button>
+            {readOnly ? (
+              <span className="text-xs text-muted-foreground italic">Read-only template</span>
+            ) : (
+              <Button variant="ghost" size="sm" className="text-xs text-primary font-semibold hover:text-primary" onClick={() => { setNewTaskTitle(""); setAddTaskDialog({ open: true, templateId: template.id }); }}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Add Task
+              </Button>
+            )}
             <div className="text-right">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider mr-1.5">Total</span>
               <span className="text-sm font-semibold font-mono tabular-nums">{totalHours}h</span>
