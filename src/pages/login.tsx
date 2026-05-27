@@ -37,12 +37,18 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { enableDemoMode } = useDemoMode();
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [mode, setMode] = useState<"login" | "signup" | "confirm">("login");
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState("");
+
+  const inviteToken = searchParams.get("invite");
+  const invitePayload = useMemo(() => (inviteToken ? parseInviteToken(inviteToken) : null), [inviteToken]);
+  const inviteExpired = !!invitePayload && isInviteExpired(invitePayload);
+  const inviteValid = !!invitePayload && !inviteExpired;
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -53,6 +59,22 @@ export default function LoginPage() {
     resolver: zodResolver(signupSchema),
     defaultValues: { fullName: "", email: "", password: "", confirmPassword: "" },
   });
+
+  // If an invite link is present, switch to signup mode and prefill email
+  useEffect(() => {
+    if (!invitePayload) return;
+    if (inviteExpired) {
+      toast({
+        variant: "destructive",
+        title: "Invitation link expired",
+        description: "This invite is older than 30 minutes. Ask your admin to resend it.",
+      });
+      return;
+    }
+    setMode("signup");
+    signupForm.setValue("email", invitePayload.email);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inviteToken]);
 
   const onLogin = async (data: LoginFormValues) => {
     setIsLoading(true);
