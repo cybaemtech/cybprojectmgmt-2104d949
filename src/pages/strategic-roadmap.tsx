@@ -307,10 +307,11 @@ export const NewTemplateModal = ({ onConfirm, onCancel }: {
   );
 };
 
-export const RoadmapEditor = ({ template, onUpdate, onBack }: {
+export const RoadmapEditor = ({ template, onUpdate, onBack, hideTitle }: {
   template: Template;
   onUpdate: (t: Template) => void;
   onBack: () => void;
+  hideTitle?: boolean;
 }) => {
   const [streams, setStreams] = useState(template.streams);
   const [projects, setProjects] = useState(template.projects);
