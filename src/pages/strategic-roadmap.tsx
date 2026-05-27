@@ -348,7 +348,9 @@ export const RoadmapEditor = ({ template, onUpdate, onBack }: {
       setFormData({ ...formData, stream: t });
       setNewStreamName('');
       setShowStreamInput(false);
+      markEdited();
       onUpdate({ ...template, streams: newStreams, projects });
+
     }
   };
 
