@@ -174,6 +174,7 @@ export function InviteModal({
 
       for (const result of successful) {
         try {
+          const loginUrl = buildInviteUrl(window.location.origin, result.email);
           await supabase.functions.invoke("send-email", {
             body: {
               templateName: "invitation",
@@ -183,6 +184,7 @@ export function InviteModal({
                 teamName: selectedTeam?.name || "the team",
                 role: roleLabels[role] || role,
                 loginUrl,
+                expiryMinutes: 30,
               },
             },
           });
