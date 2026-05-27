@@ -642,10 +642,11 @@ export const RoadmapEditor = ({ template, onUpdate, onBack }: {
       </div>
 
       <div className="flex-1 p-6 overflow-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Timelines </h2>
-          
+        <div className="relative h-7 mb-1 flex items-center">
+          <h2 className="text-xl font-bold text-gray-900 leading-none">Timelines</h2>
         </div>
+        <div className="h-4 mb-5" />
+
 
         <div className="bg-white border border-gray-200 rounded-lg p-4">
             <div className="flex mb-4">
