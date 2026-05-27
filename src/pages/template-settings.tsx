@@ -549,13 +549,15 @@ export default function TemplateSettings() {
           <div>
             <h1 className="text-2xl font-bold">Work Item Templates</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Your personal task templates — visible only to you. Create as many as you need.
+              Shared global templates plus your own private ones. Private templates are visible only to you.
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleResetSamples}>
-              <Download className="h-4 w-4 mr-1" /> Reset to Samples
-            </Button>
+            {isDemoMode && (
+              <Button variant="outline" size="sm" onClick={handleResetSamples}>
+                <Download className="h-4 w-4 mr-1" /> Reset to Samples
+              </Button>
+            )}
             <Button size="sm" onClick={() => { setTplName(""); setTplDesc(""); setCreateTplDialog(true); }}>
               <Plus className="h-4 w-4 mr-1" /> New Template
             </Button>
@@ -567,13 +569,13 @@ export default function TemplateSettings() {
           <div className="text-sm text-amber-800">
             <p className="font-semibold mb-1">How templates work</p>
             <ul className="list-disc list-inside space-y-0.5 text-xs">
-              <li>Create multiple templates for different workflows (requirements, development, QA, etc.).</li>
-              <li>Each template contains a reusable checklist of tasks.</li>
-              <li>Templates are private — only you can see and manage them.</li>
-              <li>Duplicate a template to quickly create variations.</li>
+              <li><strong>Global</strong> templates (Requirement Gathering, Developer Checklist, QA &amp; Testing) are shared with everyone and managed by admins.</li>
+              <li><strong>Private</strong> templates you create are visible only to you — peers and admins cannot see them.</li>
+              <li>Duplicating any template creates a private copy you fully own.</li>
             </ul>
           </div>
         </div>
+
 
         {templates.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
