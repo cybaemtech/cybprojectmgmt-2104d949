@@ -605,6 +605,29 @@ export default function TemplateSettings() {
               <Label htmlFor="tpl-desc">Description (optional)</Label>
               <Textarea id="tpl-desc" placeholder="Describe the purpose of this template..." value={tplDesc} onChange={e => setTplDesc(e.target.value)} rows={2} />
             </div>
+            {isAdmin && (
+              <div>
+                <Label>Visibility</Label>
+                <div className="mt-1.5 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTplScope('PRIVATE')}
+                    className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${tplScope === 'PRIVATE' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:bg-muted'}`}
+                  >
+                    <div className="font-medium">Private</div>
+                    <div className="text-xs text-muted-foreground">Only you can see it</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTplScope('GLOBAL')}
+                    className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${tplScope === 'GLOBAL' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:bg-muted'}`}
+                  >
+                    <div className="font-medium">Global</div>
+                    <div className="text-xs text-muted-foreground">Shared with everyone</div>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateTplDialog(false)}>Cancel</Button>
