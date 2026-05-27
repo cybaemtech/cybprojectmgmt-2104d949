@@ -390,7 +390,9 @@ export const RoadmapEditor = ({ template, onUpdate, onBack }: {
     const [moved] = reordered.splice(dragStreamIdx, 1);
     reordered.splice(idx, 0, moved);
     setStreams(reordered);
+    markEdited();
     onUpdate({ ...template, streams: reordered, projects });
+
     setDragStreamIdx(null);
     setDragOverIdx(null);
   };
