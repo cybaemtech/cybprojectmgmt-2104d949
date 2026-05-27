@@ -270,6 +270,22 @@ export default function LoginPage() {
                 <p className="text-sm text-muted-foreground">Sign up to get started with your team</p>
               </div>
 
+              {inviteToken && inviteExpired && (
+                <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">This invitation link has expired.</p>
+                    <p className="text-xs opacity-80">Invite links are valid for 30 minutes. Ask your admin to resend the invitation.</p>
+                  </div>
+                </div>
+              )}
+              {inviteValid && invitePayload && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm text-foreground">
+                  You've been invited as <strong>{invitePayload.email}</strong>. Complete sign up below — this link is valid for 30 minutes.
+                </div>
+              )}
+
+
               <Form {...signupForm}>
                 <form onSubmit={signupForm.handleSubmit(onSignup)} className="space-y-5">
                   <FormField control={signupForm.control} name="fullName" render={({ field }) => (
