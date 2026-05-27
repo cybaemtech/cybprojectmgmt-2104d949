@@ -615,7 +615,7 @@ export const RoadmapEditor = ({ template, onUpdate, onBack }: {
       <div className="flex-1 p-6 overflow-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">Portfolio Roadmap</h2>
-          <span className="text-sm text-gray-400 flex items-center gap-1"><LayoutTemplate size={16} />{template.name}</span>
+          
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4">
