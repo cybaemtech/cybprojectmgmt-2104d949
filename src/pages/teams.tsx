@@ -91,6 +91,60 @@ export default function Teams() {
     if (isAdminOrScrum) fetchInvitations();
   }, [isAdminOrScrum, refreshKey, fetchInvitations]);
 
+  const [resendingId, setResendingId] = useState<number | null>(null);
+
+  const resendInvitation = async (inv: Invitation) => {
+    setResendingId(inv.id);
+    try {
+      const team = teams.find(t => t.id === inv.team_id);
+      const roleLabels: Record<string, string> = {
+        MEMBER: "Team Member",
+        LEAD: "Team Lead",
+        MANAGER: "Project Manager",
+        ADMIN: "Administrator",
+      };
+      const loginUrl = buildInviteUrl(window.location.origin, inv.email);
+      const { data: { session: extSession } } = await supabaseCustom.auth.getSession();
+      const extToken = extSession?.access_token;
+
+      const { error: emailError } = await supabase.functions.invoke("send-email", {
+        body: {
+          templateName: "invitation",
+          recipientEmail: inv.email,
+          externalAuthToken: extToken,
+          templateData: {
+            teamName: team?.name || "the team",
+            role: roleLabels[inv.team_role || "MEMBER"] || inv.team_role || "Team Member",
+            loginUrl,
+            expiryMinutes: 30,
+          },
+        },
+      });
+      if (emailError) throw emailError;
+
+      // Bump updated_at so the list reflects the resend
+      await supabaseCustom
+        .from("invitations")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", inv.id);
+
+      toast({
+        title: "Invitation resent",
+        description: `A fresh 30-minute invite link was sent to ${inv.email}.`,
+      });
+      fetchInvitations();
+    } catch (e: any) {
+      console.error("Resend failed:", e);
+      toast({
+        title: "Could not resend invitation",
+        description: e?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setResendingId(null);
+    }
+  };
+
   const filteredTeams = teams.filter(team => 
     team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     team.description?.toLowerCase().includes(searchQuery.toLowerCase())
