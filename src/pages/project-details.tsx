@@ -2698,6 +2698,17 @@ export default function ProjectDetails() {
               </div>
             )}
 
+            {/* Project Roadmap Tab Content */}
+            {projectView === 'roadmap' && project && (
+              <ProjectRoadmap
+                projectId={project.id}
+                projectName={project.name}
+                projectStartDate={project.startDate ? String(project.startDate) : null}
+                projectEndDate={project.endDate ? String(project.endDate) : null}
+                canEdit={currentUser?.role === 'ADMIN' || currentUser?.role === 'SCRUM_MASTER'}
+              />
+            )}
+
             {/* Documentation Tab Content */}
             {projectView === 'documentation' && (() => {
               // Aggregate all documents from work items
