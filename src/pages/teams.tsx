@@ -16,6 +16,7 @@ import {
   UserRound,
   RefreshCw,
   Mail,
+  Send,
 } from "lucide-react";
 import { Team, User, Project } from "@/types/schema";
 import { queryClient } from "@/lib/queryClient";
