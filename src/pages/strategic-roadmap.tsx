@@ -366,7 +366,9 @@ export const RoadmapEditor = ({ template, onUpdate, onBack }: {
       clearSelection();
     }
     if (formData.stream === s) setFormData({ ...formData, stream: updated[0] || '' });
+    markEdited();
     onUpdate({ ...template, streams: updated, projects: filteredProjects });
+
   };
 
   const handleStreamDragStart = (idx: number) => {
