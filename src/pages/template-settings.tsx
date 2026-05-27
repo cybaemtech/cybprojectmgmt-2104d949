@@ -557,7 +557,7 @@ export default function TemplateSettings() {
                 <Download className="h-4 w-4 mr-1" /> Reset to Samples
               </Button>
             )}
-            <Button size="sm" onClick={() => { setTplName(""); setTplDesc(""); setCreateTplDialog(true); }}>
+            <Button size="sm" onClick={() => { setTplName(""); setTplDesc(""); setTplScope("PRIVATE"); setCreateTplDialog(true); }}>
               <Plus className="h-4 w-4 mr-1" /> New Template
             </Button>
           </div>
@@ -581,7 +581,7 @@ export default function TemplateSettings() {
             <LayoutTemplate className="h-12 w-12 mx-auto mb-3 opacity-40" />
             <p className="text-lg font-medium">No templates yet</p>
             <p className="text-sm mt-1">Create your first template to get started.</p>
-            <Button className="mt-4" onClick={() => { setTplName(""); setTplDesc(""); setCreateTplDialog(true); }}>
+            <Button className="mt-4" onClick={() => { setTplName(""); setTplDesc(""); setTplScope("PRIVATE"); setCreateTplDialog(true); }}>
               <Plus className="h-4 w-4 mr-1" /> Create Template
             </Button>
           </div>
