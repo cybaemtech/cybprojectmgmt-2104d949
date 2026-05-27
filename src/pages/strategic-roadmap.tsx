@@ -251,7 +251,7 @@ const TemplateGallery = ({ templates, onSelect, onCreate, onDelete, onDuplicate,
   );
 };
 
-const NewTemplateModal = ({ onConfirm, onCancel }: {
+export const NewTemplateModal = ({ onConfirm, onCancel }: {
   onConfirm: (data: { name: string; description: string; streams: string[] }) => void;
   onCancel: () => void;
 }) => {
