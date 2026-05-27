@@ -323,14 +323,15 @@ export default function TemplateSettings() {
 
   const [tplName, setTplName] = useState("");
   const [tplDesc, setTplDesc] = useState("");
+  const [tplScope, setTplScope] = useState<TemplateScope>('PRIVATE');
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [editTaskTitle, setEditTaskTitle] = useState("");
 
   const handleCreateTemplate = async () => {
     if (!tplName.trim()) return;
-    await createTemplate(tplName.trim(), tplDesc.trim());
+    await createTemplate(tplName.trim(), tplDesc.trim(), isAdmin ? tplScope : 'PRIVATE');
     toast({ title: "Template Created", description: `"${tplName.trim()}" has been created.` });
-    setTplName(""); setTplDesc(""); setCreateTplDialog(false);
+    setTplName(""); setTplDesc(""); setTplScope('PRIVATE'); setCreateTplDialog(false);
   };
 
   const handleEditTemplate = async () => {
