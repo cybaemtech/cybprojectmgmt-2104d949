@@ -112,9 +112,12 @@ function buildSamples(userId: string) {
 export default function TemplateSettings() {
   const { toast } = useToast();
   const { isDemoMode } = useDemoMode();
+  const { user } = useAuth();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+
+  const isAdmin = (user?.role ?? "USER") === "ADMIN" || isDemoMode;
 
   // Get current user id (skipped in demo mode)
   useEffect(() => {
@@ -140,6 +143,8 @@ export default function TemplateSettings() {
         description: s.description,
         color: COLORS[i % COLORS.length],
         isLocked: s.is_locked,
+        scope: 'GLOBAL',
+        createdBy: userId,
         tasks: s.tasks,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -149,10 +154,11 @@ export default function TemplateSettings() {
       return;
     }
 
+    // RLS filters: returns GLOBAL rows for everyone + the caller's own PRIVATE rows.
     const { data, error } = await supabase
       .from("work_item_templates")
       .select("*")
-      .eq("created_by", userId)
+      .order("scope", { ascending: true })   // GLOBAL before PRIVATE
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -161,22 +167,7 @@ export default function TemplateSettings() {
       return;
     }
 
-    if (!data || data.length === 0) {
-      // Seed samples
-      const samples = buildSamples(userId);
-      const { data: inserted, error: insertErr } = await supabase
-        .from("work_item_templates")
-        .insert(samples)
-        .select("*");
-      if (insertErr) {
-        console.error("Failed to seed samples:", insertErr);
-        setLoading(false);
-        return;
-      }
-      setTemplates((inserted || []).map(mapRow));
-    } else {
-      setTemplates(data.map(mapRow));
-    }
+    setTemplates((data || []).map(mapRow));
     setLoading(false);
   }, [userId, isDemoMode]);
 
@@ -201,13 +192,14 @@ export default function TemplateSettings() {
       const now = new Date().toISOString();
       setTemplates(prev => [...prev, {
         id: nextId, name, description, color: COLORS[prev.length % COLORS.length],
-        isLocked: false, tasks: [], createdAt: now, updatedAt: now,
+        isLocked: false, scope: 'PRIVATE', createdBy: userId, tasks: [], createdAt: now, updatedAt: now,
       }]);
       return;
     }
+    // User-created templates are ALWAYS private and owned by the caller.
     const { data, error } = await supabase
       .from("work_item_templates")
-      .insert({ name, description, created_by: userId, tasks: [], is_locked: false })
+      .insert({ name, description, created_by: userId, tasks: [], is_locked: false, scope: 'PRIVATE' })
       .select("*")
       .single();
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
@@ -216,6 +208,10 @@ export default function TemplateSettings() {
 
   const updateTemplate = async (id: number, updates: { name?: string; description?: string }) => {
     const tpl = templates.find(t => t.id === id);
+    if (tpl?.scope === 'GLOBAL' && !isAdmin) {
+      toast({ title: "Read-only", description: "Global templates can only be edited by admins.", variant: "destructive" });
+      return;
+    }
     if (tpl?.isLocked && updates.name && updates.name !== tpl.name) {
       toast({ title: "Locked", description: `"${tpl.name}" is a mandatory template and cannot be renamed.`, variant: "destructive" });
       return;
@@ -232,6 +228,10 @@ export default function TemplateSettings() {
 
   const deleteTemplate = async (id: number) => {
     const tpl = templates.find(t => t.id === id);
+    if (tpl?.scope === 'GLOBAL') {
+      toast({ title: "Locked", description: "Global templates cannot be deleted.", variant: "destructive" });
+      return;
+    }
     if (tpl?.isLocked) {
       toast({ title: "Locked", description: `"${tpl.name}" is a mandatory template and cannot be deleted.`, variant: "destructive" });
       return;
@@ -251,12 +251,14 @@ export default function TemplateSettings() {
       const now = new Date().toISOString();
       setTemplates(prev => [...prev, {
         id: nextId, name: `${tpl.name} (Copy)`, description: tpl.description,
-        color: COLORS[prev.length % COLORS.length], isLocked: false, tasks: newTasks,
+        color: COLORS[prev.length % COLORS.length], isLocked: false,
+        scope: 'PRIVATE', createdBy: userId, tasks: newTasks,
         createdAt: now, updatedAt: now,
       }]);
-      toast({ title: "Duplicated", description: `"${tpl.name}" has been duplicated.` });
+      toast({ title: "Duplicated", description: `"${tpl.name}" copied as a private template.` });
       return;
     }
+    // Duplicates are always private copies owned by the current user.
     const { data, error } = await supabase
       .from("work_item_templates")
       .insert({ name: `${tpl.name} (Copy)`, description: tpl.description, created_by: userId, tasks: newTasks, is_locked: false })
