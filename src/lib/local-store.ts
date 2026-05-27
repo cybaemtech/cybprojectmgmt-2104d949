@@ -254,6 +254,19 @@ export async function refreshStore(): Promise<void> {
   return initStore();
 }
 
+// Clear in-memory caches (call on logout)
+export function clearStore(): void {
+  _projects = [];
+  _teams = [];
+  _users = [];
+  _teamMembers = [];
+  _workItems = [];
+  _initialised = false;
+  _bootPromise = null;
+  notifyChange();
+}
+
+
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  Stores (synchronous API, async Supabase writes)                ║
 // ╚══════════════════════════════════════════════════════════════════╝

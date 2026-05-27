@@ -7,7 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { DemoModeProvider, useDemoMode } from "@/hooks/useDemoMode";
 import { useEffect } from "react";
 import { AuthenticatedLayout } from "@/components/layout/authenticated-layout";
-import { initStore } from "@/lib/local-store";
+import { initStore, refreshStore, clearStore } from "@/lib/local-store";
+import { supabaseCustom } from "@/lib/supabase-custom";
 
 import LoginPage from "@/pages/login";
 
@@ -36,9 +37,27 @@ function AppRoutes() {
   const effectivelyAuthenticated = isAuthenticated || isDemoMode;
 
   useEffect(() => {
-    // Initialize the Supabase-backed store
-    initStore();
-  }, []);
+    // In demo mode, init immediately (uses static demo data)
+    if (isDemoMode) {
+      initStore();
+      return;
+    }
+    // Otherwise, wait for a real auth session before hitting Supabase,
+    // so RLS-protected reads use the authenticated role (not anon → 0 rows).
+    let cancelled = false;
+    supabaseCustom.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
+      if (session) refreshStore();
+    });
+    const { data: { subscription } } = supabaseCustom.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || !session) {
+        clearStore();
+      } else {
+        refreshStore();
+      }
+    });
+    return () => { cancelled = true; subscription.unsubscribe(); };
+  }, [isDemoMode]);
 
   useEffect(() => {
     if (isDemoMode) return;
