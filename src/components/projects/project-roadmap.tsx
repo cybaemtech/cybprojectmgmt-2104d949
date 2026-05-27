@@ -319,7 +319,7 @@ export function ProjectRoadmap({
           </button>
         </div>
       )}
-      <RoadmapEditor template={template} onUpdate={handleUpdate} onBack={() => { /* no-op: lives inside tab */ }} hideTitle />
+      <RoadmapEditor template={template} onUpdate={handleUpdate} onBack={() => { /* no-op: lives inside tab */ }} />
     </div>
   );
 }
