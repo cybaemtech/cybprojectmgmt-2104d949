@@ -322,6 +322,21 @@ export const RoadmapEditor = ({ template, onUpdate, onBack }: {
   const [formData, setFormData] = useState({ name: '', startDate: '', endDate: '', stream: template.streams[0] || '', actionPoints: [''] });
   const [dragStreamIdx, setDragStreamIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [descFaded, setDescFaded] = useState(false);
+  const descClearedRef = useRef(false);
+
+  const markEdited = () => {
+    if (descClearedRef.current) return;
+    if (!template.description) return;
+    if (descFaded) return;
+    setDescFaded(true);
+    descClearedRef.current = true;
+    // After fade-out transition, clear the description in persisted template
+    setTimeout(() => {
+      onUpdate({ ...template, description: '', streams, projects });
+    }, 750);
+  };
+
 
   const getStreamColor = (s: string) => colorPalette[streams.indexOf(s) % colorPalette.length];
 
