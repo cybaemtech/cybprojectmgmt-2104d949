@@ -21,6 +21,7 @@ import {
 import { Team } from "@/types/schema";
 import { useToast } from "@/hooks/use-toast";
 import { validateCorporateEmails } from "@/lib/email-validation";
+import { buildInviteUrl } from "@/lib/invite-token";
 
 // Define the form schema with validation
 const inviteFormSchema = z.object({
@@ -166,13 +167,14 @@ export function InviteModal({
         MANAGER: "Project Manager",
         ADMIN: "Administrator",
       };
-      const loginUrl = `${window.location.origin}/login`;
+      
 
       const { data: { session: extSession } } = await supabaseCustom.auth.getSession();
       const extToken = extSession?.access_token;
 
       for (const result of successful) {
         try {
+          const loginUrl = buildInviteUrl(window.location.origin, result.email);
           await supabase.functions.invoke("send-email", {
             body: {
               templateName: "invitation",
@@ -182,6 +184,7 @@ export function InviteModal({
                 teamName: selectedTeam?.name || "the team",
                 role: roleLabels[role] || role,
                 loginUrl,
+                expiryMinutes: 30,
               },
             },
           });

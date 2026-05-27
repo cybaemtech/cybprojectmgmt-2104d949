@@ -16,6 +16,7 @@ import {
   UserRound,
   RefreshCw,
   Mail,
+  Send,
 } from "lucide-react";
 import { Team, User, Project } from "@/types/schema";
 import { queryClient } from "@/lib/queryClient";
@@ -27,6 +28,8 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { projectStore, teamStore, userStore, teamMemberStore, getLocalUser } from "@/lib/local-store";
 import { supabaseCustom } from "@/lib/supabase-custom";
+import { supabase } from "@/integrations/supabase/client";
+import { buildInviteUrl } from "@/lib/invite-token";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import { DEMO_INVITATIONS } from "@/lib/demo-data";
 
@@ -87,6 +90,60 @@ export default function Teams() {
   useEffect(() => {
     if (isAdminOrScrum) fetchInvitations();
   }, [isAdminOrScrum, refreshKey, fetchInvitations]);
+
+  const [resendingId, setResendingId] = useState<number | null>(null);
+
+  const resendInvitation = async (inv: Invitation) => {
+    setResendingId(inv.id);
+    try {
+      const team = teams.find(t => t.id === inv.team_id);
+      const roleLabels: Record<string, string> = {
+        MEMBER: "Team Member",
+        LEAD: "Team Lead",
+        MANAGER: "Project Manager",
+        ADMIN: "Administrator",
+      };
+      const loginUrl = buildInviteUrl(window.location.origin, inv.email);
+      const { data: { session: extSession } } = await supabaseCustom.auth.getSession();
+      const extToken = extSession?.access_token;
+
+      const { error: emailError } = await supabase.functions.invoke("send-email", {
+        body: {
+          templateName: "invitation",
+          recipientEmail: inv.email,
+          externalAuthToken: extToken,
+          templateData: {
+            teamName: team?.name || "the team",
+            role: roleLabels[inv.team_role || "MEMBER"] || inv.team_role || "Team Member",
+            loginUrl,
+            expiryMinutes: 30,
+          },
+        },
+      });
+      if (emailError) throw emailError;
+
+      // Bump updated_at so the list reflects the resend
+      await supabaseCustom
+        .from("invitations")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", inv.id);
+
+      toast({
+        title: "Invitation resent",
+        description: `A fresh 30-minute invite link was sent to ${inv.email}.`,
+      });
+      fetchInvitations();
+    } catch (e: any) {
+      console.error("Resend failed:", e);
+      toast({
+        title: "Could not resend invitation",
+        description: e?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setResendingId(null);
+    }
+  };
 
   const filteredTeams = teams.filter(team => 
     team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -351,13 +408,25 @@ export default function Teams() {
                             <div className="flex flex-col">
                               <span className="font-semibold">{inv.email}</span>
                               <span className="text-xs text-muted-foreground">
-                                Invited on {new Date(inv.created_at).toLocaleDateString()} · Team Role: {inv.team_role || 'MEMBER'}
+                                Invited on {new Date(inv.created_at).toLocaleString()} · Team Role: {inv.team_role || 'MEMBER'}
                                 {inv.team_id ? ` · Team: ${teams.find(t => t.id === inv.team_id)?.name || inv.team_id}` : ''}
                               </span>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
                             {getStatusBadge(inv.status)}
+                            {inv.status === 'PENDING' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => resendInvitation(inv)}
+                                disabled={resendingId === inv.id}
+                                title="Send a new invitation link (valid for 30 minutes)"
+                              >
+                                <Send className={cn("h-3.5 w-3.5 mr-1", resendingId === inv.id && "animate-pulse")} />
+                                {resendingId === inv.id ? 'Sending…' : 'Resend'}
+                              </Button>
+                            )}
                           </div>
                         </CardContent>
                       </Card>

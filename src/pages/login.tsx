@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,11 +7,12 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Shield, Lock, AtSign, Play, Eye, EyeOff, User, ArrowLeft } from "lucide-react";
+import { Shield, Lock, AtSign, Play, Eye, EyeOff, User, ArrowLeft, AlertTriangle } from "lucide-react";
 import { login, signup } from "@/hooks/useAuth";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import { refreshStore } from "@/lib/local-store";
 import { ForgotPasswordModal } from "@/components/modals/forgot-password-modal";
+import { parseInviteToken, isInviteExpired } from "@/lib/invite-token";
 import cybaemLogo from "@/assets/cybaem-logo-full.png";
 
 const loginSchema = z.object({
@@ -36,12 +37,18 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { enableDemoMode } = useDemoMode();
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [mode, setMode] = useState<"login" | "signup" | "confirm">("login");
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState("");
+
+  const inviteToken = searchParams.get("invite");
+  const invitePayload = useMemo(() => (inviteToken ? parseInviteToken(inviteToken) : null), [inviteToken]);
+  const inviteExpired = !!invitePayload && isInviteExpired(invitePayload);
+  const inviteValid = !!invitePayload && !inviteExpired;
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -52,6 +59,22 @@ export default function LoginPage() {
     resolver: zodResolver(signupSchema),
     defaultValues: { fullName: "", email: "", password: "", confirmPassword: "" },
   });
+
+  // If an invite link is present, switch to signup mode and prefill email
+  useEffect(() => {
+    if (!invitePayload) return;
+    if (inviteExpired) {
+      toast({
+        variant: "destructive",
+        title: "Invitation link expired",
+        description: "This invite is older than 30 minutes. Ask your admin to resend it.",
+      });
+      return;
+    }
+    setMode("signup");
+    signupForm.setValue("email", invitePayload.email);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inviteToken]);
 
   const onLogin = async (data: LoginFormValues) => {
     setIsLoading(true);
@@ -66,6 +89,22 @@ export default function LoginPage() {
   };
 
   const onSignup = async (data: SignupFormValues) => {
+    if (inviteToken && inviteExpired) {
+      toast({
+        variant: "destructive",
+        title: "Invitation link expired",
+        description: "This invite link is no longer valid. Please request a new one.",
+      });
+      return;
+    }
+    if (inviteValid && invitePayload && data.email.toLowerCase() !== invitePayload.email) {
+      toast({
+        variant: "destructive",
+        title: "Email does not match invitation",
+        description: `This invite was sent to ${invitePayload.email}.`,
+      });
+      return;
+    }
     setIsLoading(true);
     const result = await signup(data.email, data.password, data.fullName);
     if (result.success) {
@@ -231,6 +270,22 @@ export default function LoginPage() {
                 <p className="text-sm text-muted-foreground">Sign up to get started with your team</p>
               </div>
 
+              {inviteToken && inviteExpired && (
+                <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">This invitation link has expired.</p>
+                    <p className="text-xs opacity-80">Invite links are valid for 30 minutes. Ask your admin to resend the invitation.</p>
+                  </div>
+                </div>
+              )}
+              {inviteValid && invitePayload && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm text-foreground">
+                  You've been invited as <strong>{invitePayload.email}</strong>. Complete sign up below — this link is valid for 30 minutes.
+                </div>
+              )}
+
+
               <Form {...signupForm}>
                 <form onSubmit={signupForm.handleSubmit(onSignup)} className="space-y-5">
                   <FormField control={signupForm.control} name="fullName" render={({ field }) => (
@@ -291,7 +346,8 @@ export default function LoginPage() {
                     </FormItem>
                   )} />
 
-                  <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium" disabled={isLoading}>
+                  <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium" disabled={isLoading || (!!inviteToken && inviteExpired)}>
+
                     {isLoading ? (
                       <span className="flex items-center gap-2">
                         <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
