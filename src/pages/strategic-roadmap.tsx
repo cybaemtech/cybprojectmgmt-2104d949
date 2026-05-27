@@ -10,7 +10,7 @@ const colorPalette = [
   '#14b8a6','#f43f5e','#22c55e','#eab308','#6366f1'
 ];
 
-interface RoadmapProject {
+export interface RoadmapProject {
   id: number;
   name: string;
   startDate: string;
@@ -19,7 +19,7 @@ interface RoadmapProject {
   actionPoints: string[];
 }
 
-interface Template {
+export interface Template {
   id: number;
   name: string;
   description: string;
@@ -251,7 +251,7 @@ const TemplateGallery = ({ templates, onSelect, onCreate, onDelete, onDuplicate,
   );
 };
 
-const NewTemplateModal = ({ onConfirm, onCancel }: {
+export const NewTemplateModal = ({ onConfirm, onCancel }: {
   onConfirm: (data: { name: string; description: string; streams: string[] }) => void;
   onCancel: () => void;
 }) => {
@@ -307,7 +307,7 @@ const NewTemplateModal = ({ onConfirm, onCancel }: {
   );
 };
 
-const RoadmapEditor = ({ template, onUpdate, onBack }: {
+export const RoadmapEditor = ({ template, onUpdate, onBack }: {
   template: Template;
   onUpdate: (t: Template) => void;
   onBack: () => void;

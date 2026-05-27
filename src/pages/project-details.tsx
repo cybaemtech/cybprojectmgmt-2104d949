@@ -14,6 +14,7 @@ import { KanbanBoard } from "@/components/ui/kanban-board";
 import { TimelineView } from "@/components/ui/timeline-view";
 import { DeadlinesView } from "@/components/ui/deadlines-view";
 import { ProjectCalendar } from "@/components/ui/project-calendar";
+import { ProjectRoadmap } from "@/components/projects/project-roadmap";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
@@ -192,7 +193,7 @@ export default function ProjectDetails() {
 
 
   // New project view tab state
-  const [projectView, setProjectView] = useState<'overview' | 'board' | 'backlog' | 'documentation' | 'settings'>('overview');
+  const [projectView, setProjectView] = useState<'overview' | 'board' | 'backlog' | 'roadmap' | 'documentation' | 'settings'>('overview');
   const [docSearchTerm, setDocSearchTerm] = useState('');
 
   // Client info visibility toggle (persisted per project in localStorage)
@@ -1447,6 +1448,16 @@ export default function ProjectDetails() {
                 </a>
                 <a
                   href="#"
+                  onClick={(e) => { e.preventDefault(); setProjectView('roadmap'); }}
+                  className={`border-b-2 ${projectView === 'roadmap'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-neutral-600 hover:text-neutral-900'
+                    } font-medium py-3`}
+                >
+                  Project Roadmap
+                </a>
+                <a
+                  href="#"
                   onClick={(e) => { e.preventDefault(); setProjectView('documentation'); }}
                   className={`border-b-2 ${projectView === 'documentation'
                     ? 'border-primary text-primary'
@@ -1485,7 +1496,7 @@ export default function ProjectDetails() {
                 
               </div>
               {/* Only show Create Item button on specific tabs */}
-              {projectView !== 'overview' && projectView !== 'settings' && projectView !== 'documentation' && (
+              {projectView !== 'overview' && projectView !== 'settings' && projectView !== 'documentation' && projectView !== 'roadmap' && (
                 <div className="flex space-x-3">
                   <Button variant="outline" onClick={handleWorkItemsUpdate}>
                     <RefreshCw className="mr-2 h-4 w-4" />
@@ -2685,6 +2696,17 @@ export default function ProjectDetails() {
                   </table>
                 </div>
               </div>
+            )}
+
+            {/* Project Roadmap Tab Content */}
+            {projectView === 'roadmap' && project && (
+              <ProjectRoadmap
+                projectId={project.id}
+                projectName={project.name}
+                projectStartDate={project.startDate ? String(project.startDate) : null}
+                projectEndDate={project.targetDate ? String(project.targetDate) : null}
+                canEdit={currentUser?.role === 'ADMIN' || currentUser?.role === 'SCRUM_MASTER'}
+              />
             )}
 
             {/* Documentation Tab Content */}
