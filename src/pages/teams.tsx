@@ -408,13 +408,25 @@ export default function Teams() {
                             <div className="flex flex-col">
                               <span className="font-semibold">{inv.email}</span>
                               <span className="text-xs text-muted-foreground">
-                                Invited on {new Date(inv.created_at).toLocaleDateString()} · Team Role: {inv.team_role || 'MEMBER'}
+                                Invited on {new Date(inv.created_at).toLocaleString()} · Team Role: {inv.team_role || 'MEMBER'}
                                 {inv.team_id ? ` · Team: ${teams.find(t => t.id === inv.team_id)?.name || inv.team_id}` : ''}
                               </span>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
                             {getStatusBadge(inv.status)}
+                            {inv.status === 'PENDING' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => resendInvitation(inv)}
+                                disabled={resendingId === inv.id}
+                                title="Send a new invitation link (valid for 30 minutes)"
+                              >
+                                <Send className={cn("h-3.5 w-3.5 mr-1", resendingId === inv.id && "animate-pulse")} />
+                                {resendingId === inv.id ? 'Sending…' : 'Resend'}
+                              </Button>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
