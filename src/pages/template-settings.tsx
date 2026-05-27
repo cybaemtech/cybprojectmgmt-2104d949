@@ -30,12 +30,16 @@ interface TemplateTask {
   estimatedHours?: number;
 }
 
+type TemplateScope = 'GLOBAL' | 'PRIVATE';
+
 interface Template {
   id: number;          // DB id
   name: string;
   description: string;
   color: string;
   isLocked: boolean;
+  scope: TemplateScope;
+  createdBy: string | null;
   tasks: TemplateTask[];
   createdAt: string;
   updatedAt: string;
