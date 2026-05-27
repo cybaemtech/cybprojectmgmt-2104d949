@@ -59,12 +59,15 @@ const COLORS = [
 // ─── DB row → app model ─────────────────────────────────────────────────────
 function mapRow(row: any, index: number): Template {
   const tasks: TemplateTask[] = Array.isArray(row.tasks) ? row.tasks : [];
+  const scope: TemplateScope = row.scope === 'GLOBAL' ? 'GLOBAL' : 'PRIVATE';
   return {
     id: row.id,
     name: row.name,
     description: row.description ?? "",
     color: COLORS[index % COLORS.length],
     isLocked: row.is_locked ?? false,
+    scope,
+    createdBy: row.created_by ?? null,
     tasks,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
