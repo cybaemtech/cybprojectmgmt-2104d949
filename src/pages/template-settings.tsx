@@ -185,21 +185,21 @@ export default function TemplateSettings() {
   };
 
   // ── Template CRUD ─────────────────────────────────────────────────────────
-  const createTemplate = async (name: string, description: string) => {
+  const createTemplate = async (name: string, description: string, scope: TemplateScope = 'PRIVATE') => {
     if (!userId) return;
+    const finalScope: TemplateScope = scope === 'GLOBAL' && isAdmin ? 'GLOBAL' : 'PRIVATE';
     if (isDemoMode) {
       const nextId = templates.reduce((m, t) => Math.max(m, t.id), 0) + 1;
       const now = new Date().toISOString();
       setTemplates(prev => [...prev, {
         id: nextId, name, description, color: COLORS[prev.length % COLORS.length],
-        isLocked: false, scope: 'PRIVATE', createdBy: userId, tasks: [], createdAt: now, updatedAt: now,
+        isLocked: false, scope: finalScope, createdBy: userId, tasks: [], createdAt: now, updatedAt: now,
       }]);
       return;
     }
-    // User-created templates are ALWAYS private and owned by the caller.
     const { data, error } = await supabase
       .from("work_item_templates")
-      .insert({ name, description, created_by: userId, tasks: [], is_locked: false, scope: 'PRIVATE' })
+      .insert({ name, description, created_by: userId, tasks: [], is_locked: false, scope: finalScope })
       .select("*")
       .single();
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
