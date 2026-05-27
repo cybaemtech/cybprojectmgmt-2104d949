@@ -185,21 +185,21 @@ export default function TemplateSettings() {
   };
 
   // ── Template CRUD ─────────────────────────────────────────────────────────
-  const createTemplate = async (name: string, description: string) => {
+  const createTemplate = async (name: string, description: string, scope: TemplateScope = 'PRIVATE') => {
     if (!userId) return;
+    const finalScope: TemplateScope = scope === 'GLOBAL' && isAdmin ? 'GLOBAL' : 'PRIVATE';
     if (isDemoMode) {
       const nextId = templates.reduce((m, t) => Math.max(m, t.id), 0) + 1;
       const now = new Date().toISOString();
       setTemplates(prev => [...prev, {
         id: nextId, name, description, color: COLORS[prev.length % COLORS.length],
-        isLocked: false, scope: 'PRIVATE', createdBy: userId, tasks: [], createdAt: now, updatedAt: now,
+        isLocked: false, scope: finalScope, createdBy: userId, tasks: [], createdAt: now, updatedAt: now,
       }]);
       return;
     }
-    // User-created templates are ALWAYS private and owned by the caller.
     const { data, error } = await supabase
       .from("work_item_templates")
-      .insert({ name, description, created_by: userId, tasks: [], is_locked: false, scope: 'PRIVATE' })
+      .insert({ name, description, created_by: userId, tasks: [], is_locked: false, scope: finalScope })
       .select("*")
       .single();
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
@@ -323,14 +323,15 @@ export default function TemplateSettings() {
 
   const [tplName, setTplName] = useState("");
   const [tplDesc, setTplDesc] = useState("");
+  const [tplScope, setTplScope] = useState<TemplateScope>('PRIVATE');
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [editTaskTitle, setEditTaskTitle] = useState("");
 
   const handleCreateTemplate = async () => {
     if (!tplName.trim()) return;
-    await createTemplate(tplName.trim(), tplDesc.trim());
+    await createTemplate(tplName.trim(), tplDesc.trim(), isAdmin ? tplScope : 'PRIVATE');
     toast({ title: "Template Created", description: `"${tplName.trim()}" has been created.` });
-    setTplName(""); setTplDesc(""); setCreateTplDialog(false);
+    setTplName(""); setTplDesc(""); setTplScope('PRIVATE'); setCreateTplDialog(false);
   };
 
   const handleEditTemplate = async () => {
@@ -556,7 +557,7 @@ export default function TemplateSettings() {
                 <Download className="h-4 w-4 mr-1" /> Reset to Samples
               </Button>
             )}
-            <Button size="sm" onClick={() => { setTplName(""); setTplDesc(""); setCreateTplDialog(true); }}>
+            <Button size="sm" onClick={() => { setTplName(""); setTplDesc(""); setTplScope("PRIVATE"); setCreateTplDialog(true); }}>
               <Plus className="h-4 w-4 mr-1" /> New Template
             </Button>
           </div>
@@ -580,7 +581,7 @@ export default function TemplateSettings() {
             <LayoutTemplate className="h-12 w-12 mx-auto mb-3 opacity-40" />
             <p className="text-lg font-medium">No templates yet</p>
             <p className="text-sm mt-1">Create your first template to get started.</p>
-            <Button className="mt-4" onClick={() => { setTplName(""); setTplDesc(""); setCreateTplDialog(true); }}>
+            <Button className="mt-4" onClick={() => { setTplName(""); setTplDesc(""); setTplScope("PRIVATE"); setCreateTplDialog(true); }}>
               <Plus className="h-4 w-4 mr-1" /> Create Template
             </Button>
           </div>
@@ -604,6 +605,29 @@ export default function TemplateSettings() {
               <Label htmlFor="tpl-desc">Description (optional)</Label>
               <Textarea id="tpl-desc" placeholder="Describe the purpose of this template..." value={tplDesc} onChange={e => setTplDesc(e.target.value)} rows={2} />
             </div>
+            {isAdmin && (
+              <div>
+                <Label>Visibility</Label>
+                <div className="mt-1.5 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTplScope('PRIVATE')}
+                    className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${tplScope === 'PRIVATE' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:bg-muted'}`}
+                  >
+                    <div className="font-medium">Private</div>
+                    <div className="text-xs text-muted-foreground">Only you can see it</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTplScope('GLOBAL')}
+                    className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${tplScope === 'GLOBAL' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:bg-muted'}`}
+                  >
+                    <div className="font-medium">Global</div>
+                    <div className="text-xs text-muted-foreground">Shared with everyone</div>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateTplDialog(false)}>Cancel</Button>
