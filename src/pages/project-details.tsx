@@ -14,6 +14,7 @@ import { KanbanBoard } from "@/components/ui/kanban-board";
 import { TimelineView } from "@/components/ui/timeline-view";
 import { DeadlinesView } from "@/components/ui/deadlines-view";
 import { ProjectCalendar } from "@/components/ui/project-calendar";
+import { ProjectRoadmap } from "@/components/projects/project-roadmap";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
