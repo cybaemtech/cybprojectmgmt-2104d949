@@ -382,15 +382,15 @@ export default function TemplateSettings() {
   };
 
   // ── Task Row ──────────────────────────────────────────────────────────────
-  const TaskRow = ({ task, index, templateId }: { task: TemplateTask; index: number; templateId: number }) => (
-    <Draggable draggableId={`task-${templateId}-${task.id}`} index={index}>
+  const TaskRow = ({ task, index, templateId, readOnly }: { task: TemplateTask; index: number; templateId: number; readOnly: boolean }) => (
+    <Draggable draggableId={`task-${templateId}-${task.id}`} index={index} isDragDisabled={readOnly}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
           className={`grid grid-cols-[32px_1fr_90px_56px_72px] items-center border-b border-border/50 transition-colors ${task.isActive ? 'hover:bg-muted/30' : 'bg-muted/20 opacity-60'} ${snapshot.isDragging ? 'shadow-lg ring-1 ring-primary/20 bg-background' : ''}`}
         >
-          <div {...provided.dragHandleProps} className="flex items-center justify-center h-full cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100 transition-opacity">
+          <div {...provided.dragHandleProps} className={`flex items-center justify-center h-full ${readOnly ? 'opacity-20 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100'} transition-opacity`}>
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
           <div className="py-3 pr-4">
@@ -402,6 +402,7 @@ export default function TemplateSettings() {
               min="0"
               step="0.5"
               value={task.estimatedHours ?? ""}
+              disabled={readOnly}
               onChange={(e) => {
                 const val = e.target.value ? parseFloat(e.target.value) : undefined;
                 updateTask(templateId, task.id, { estimatedHours: val });
@@ -412,15 +413,19 @@ export default function TemplateSettings() {
             <span className="text-[10px] text-muted-foreground uppercase tracking-tight">hr</span>
           </div>
           <div className="flex justify-center">
-            <Switch checked={task.isActive} onCheckedChange={() => updateTask(templateId, task.id, { isActive: !task.isActive })} className="scale-90" />
+            <Switch checked={task.isActive} disabled={readOnly} onCheckedChange={() => updateTask(templateId, task.id, { isActive: !task.isActive })} className="scale-90" />
           </div>
           <div className="flex justify-end gap-0.5 pr-2">
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditTaskTitle(task.title); setEditTaskDialog({ task, templateId }); }}>
-              <Pencil className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteTaskDialog({ task, templateId })}>
-              <Trash2 className="h-3 w-3" />
-            </Button>
+            {!readOnly && (
+              <>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditTaskTitle(task.title); setEditTaskDialog({ task, templateId }); }}>
+                  <Pencil className="h-3 w-3" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteTaskDialog({ task, templateId })}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}
