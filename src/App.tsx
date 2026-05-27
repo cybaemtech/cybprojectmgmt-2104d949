@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { DemoModeProvider, useDemoMode } from "@/hooks/useDemoMode";
 import { useEffect } from "react";
 import { AuthenticatedLayout } from "@/components/layout/authenticated-layout";
-import { initStore, refreshStore } from "@/lib/local-store";
+import { initStore, refreshStore, clearStore } from "@/lib/local-store";
 import { supabaseCustom } from "@/lib/supabase-custom";
 
 import LoginPage from "@/pages/login";
