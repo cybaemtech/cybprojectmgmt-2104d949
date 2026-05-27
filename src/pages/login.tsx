@@ -89,6 +89,22 @@ export default function LoginPage() {
   };
 
   const onSignup = async (data: SignupFormValues) => {
+    if (inviteToken && inviteExpired) {
+      toast({
+        variant: "destructive",
+        title: "Invitation link expired",
+        description: "This invite link is no longer valid. Please request a new one.",
+      });
+      return;
+    }
+    if (inviteValid && invitePayload && data.email.toLowerCase() !== invitePayload.email) {
+      toast({
+        variant: "destructive",
+        title: "Email does not match invitation",
+        description: `This invite was sent to ${invitePayload.email}.`,
+      });
+      return;
+    }
     setIsLoading(true);
     const result = await signup(data.email, data.password, data.fullName);
     if (result.success) {
