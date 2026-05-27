@@ -2704,7 +2704,7 @@ export default function ProjectDetails() {
                 projectId={project.id}
                 projectName={project.name}
                 projectStartDate={project.startDate ? String(project.startDate) : null}
-                projectEndDate={project.endDate ? String(project.endDate) : null}
+                projectEndDate={project.targetDate ? String(project.targetDate) : null}
                 canEdit={currentUser?.role === 'ADMIN' || currentUser?.role === 'SCRUM_MASTER'}
               />
             )}
