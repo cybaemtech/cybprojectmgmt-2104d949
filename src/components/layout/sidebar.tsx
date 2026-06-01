@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useRolePermissions } from "@/hooks/use-permissions";
+import { DEFAULT_PERMISSIONS, type PageKey } from "@/lib/permissions";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -140,14 +142,19 @@ export function Sidebar({
               const Icon = item.icon;
               const isActive = item.isActive(location.pathname);
               
-              // Restrict portfolio-level pages to ADMIN and SCRUM_MASTER.
-              // Template Settings is open to all users (page enforces private-only
-              // creation and read-only globals for non-admins).
-              if (["Daily Standup", "Strategic Roadmap"].includes(item.label) && user) {
-                if (user.role !== "ADMIN" && user.role !== "SCRUM_MASTER") {
-                  return null;
+              // Configuration is admin-only and not subject to override.
+              if (item.label === "Configuration") {
+                if (!user || user.role !== "ADMIN") return null;
+              } else if (user) {
+                const key = PAGE_KEY_BY_LABEL[item.label] as PageKey | undefined;
+                if (key) {
+                  const role = user.role as keyof typeof DEFAULT_PERMISSIONS;
+                  const map = permsMap ?? DEFAULT_PERMISSIONS;
+                  const entry = map[role] ?? DEFAULT_PERMISSIONS.USER;
+                  if (role !== "ADMIN" && !entry.pages.has(key)) return null;
                 }
               }
+
 
               return (
                 <li key={item.href}>
