@@ -53,7 +53,8 @@ function AppRoutes() {
     const { data: { subscription } } = supabaseCustom.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT" || !session) {
         clearStore();
-      } else {
+      } else if (event === "SIGNED_IN") {
+        // Only refresh on actual sign-in, not on TOKEN_REFRESHED / USER_UPDATED / INITIAL_SESSION
         refreshStore();
       }
     });

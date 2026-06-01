@@ -247,11 +247,17 @@ export function initStore(): Promise<void> {
   return _bootPromise;
 }
 
-// Force refresh from Supabase
+// Force refresh from Supabase (dedupes concurrent calls within a short window)
+let _lastRefreshAt = 0;
 export async function refreshStore(): Promise<void> {
-  _bootPromise = null;
+  // If a refresh is already in-flight, reuse it
+  if (_bootPromise) return _bootPromise;
+  // Throttle: skip if we just refreshed within 2s
+  if (_initialised && Date.now() - _lastRefreshAt < 2000) return;
   _initialised = false;
-  return initStore();
+  const p = initStore();
+  p.finally(() => { _lastRefreshAt = Date.now(); });
+  return p;
 }
 
 // Clear in-memory caches (call on logout)
