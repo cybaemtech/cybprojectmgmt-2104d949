@@ -239,6 +239,26 @@ export function TeamMembersModal({ isOpen, onClose, team, onMembersChange, onTea
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary">{tm?.role || 'MEMBER'}</Badge>
+                        {isScrumMasterOrAdmin && user.role !== 'ADMIN' && user.id !== currentUser?.id ? (
+                          <Select
+                            value={user.role}
+                            onValueChange={(newRole) => {
+                              userStore.update(user.id, { role: newRole as any });
+                              setRefreshKey(k => k + 1);
+                              toast({ title: "Role updated", description: `${user.fullName} is now ${newRole === 'SCRUM_MASTER' ? 'Project Manager' : 'Team Member'}.` });
+                            }}
+                          >
+                            <SelectTrigger className="w-[150px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="SCRUM_MASTER">Project Manager</SelectItem>
+                              <SelectItem value="USER">Team Member</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">
+                            {user.role === 'ADMIN' ? 'Administrator' : user.role === 'SCRUM_MASTER' ? 'Project Manager' : 'Team Member'}
+                          </Badge>
+                        )}
                         {isScrumMasterOrAdmin && (
                           <Button variant="ghost" size="icon" onClick={() => handleRemoveMember(user.id)} title="Remove member">
                             <UserMinus className="h-4 w-4 text-destructive" />

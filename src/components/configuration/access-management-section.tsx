@@ -1,14 +1,11 @@
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabaseCustom } from "@/lib/supabase-custom";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Save, Shield, Users as UsersIcon, Search, Lock } from "lucide-react";
+import { Loader2, Save, Shield, Lock } from "lucide-react";
 import {
   PAGES,
   FEATURES,
@@ -20,14 +17,6 @@ import {
   type RolePermissionRow,
 } from "@/lib/permissions";
 import type { UserRole } from "@/types/schema";
-
-interface ProfileRow {
-  id: string;
-  email: string;
-  full_name: string | null;
-  role: UserRole;
-  is_active: boolean | null;
-}
 
 type DraftMap = Record<UserRole, { pages: Set<PageKey>; features: Set<FeatureKey> }>;
 
@@ -43,7 +32,6 @@ export default function AccessManagementSection() {
   const qc = useQueryClient();
   const { toast } = useToast();
 
-  // Load saved permissions
   const { data: serverMap, isLoading } = useQuery({
     queryKey: ["role-permissions"],
     queryFn: async () => {
@@ -97,40 +85,6 @@ export default function AccessManagementSection() {
     onError: (e: any) => toast({ variant: "destructive", title: "Save failed", description: e.message }),
   });
 
-  // Users list for role assignment
-  const [search, setSearch] = useState("");
-  const { data: users = [], isLoading: usersLoading } = useQuery({
-    queryKey: ["all-profiles-for-access"],
-    queryFn: async () => {
-      const { data, error } = await supabaseCustom
-        .from("profiles")
-        .select("id, email, full_name, role, is_active")
-        .order("full_name", { ascending: true });
-      if (error) throw error;
-      return (data || []) as ProfileRow[];
-    },
-  });
-
-  const filteredUsers = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter((u) =>
-      (u.full_name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q),
-    );
-  }, [users, search]);
-
-  const updateRole = useMutation({
-    mutationFn: async ({ id, role }: { id: string; role: UserRole }) => {
-      const { error } = await supabaseCustom.from("profiles").update({ role }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({ title: "Role updated" });
-      qc.invalidateQueries({ queryKey: ["all-profiles-for-access"] });
-    },
-    onError: (e: any) => toast({ variant: "destructive", title: "Update failed", description: e.message }),
-  });
-
   if (isLoading) {
     return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
@@ -145,7 +99,7 @@ export default function AccessManagementSection() {
             Page Visibility by Role
           </CardTitle>
           <CardDescription>
-            Decide which sidebar pages each role can access. Admins always have full access.
+            Decide which sidebar pages each role can access. Admins always have full access. User role assignment is managed from <strong>Manage Team</strong>.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -241,70 +195,6 @@ export default function AccessManagementSection() {
               {savePerms.isPending ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</>) : (<><Save className="h-4 w-4 mr-2" />Save Access Settings</>)}
             </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* User role assignment */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <UsersIcon className="h-4 w-4 text-emerald-500" />
-            User Role Assignment
-          </CardTitle>
-          <CardDescription>Promote or demote any user. Their effective permissions follow their role.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="relative max-w-sm">
-            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-9" placeholder="Search by name or email" value={search} onChange={(e) => setSearch(e.target.value)} />
-          </div>
-          {usersLoading ? (
-            <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="pb-2 pr-4">Name</th>
-                    <th className="pb-2 pr-4">Email</th>
-                    <th className="pb-2 pr-4">Status</th>
-                    <th className="pb-2 pr-4">Role</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map((u) => (
-                    <tr key={u.id} className="border-b last:border-0 hover:bg-muted/30">
-                      <td className="py-2 pr-4 font-medium">{u.full_name || "—"}</td>
-                      <td className="py-2 pr-4 font-mono text-xs">{u.email}</td>
-                      <td className="py-2 pr-4">
-                        {u.is_active ? (
-                          <Badge variant="outline" className="text-emerald-600 border-emerald-300">Active</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>
-                        )}
-                      </td>
-                      <td className="py-2 pr-4">
-                        <Select
-                          value={u.role}
-                          onValueChange={(v) => updateRole.mutate({ id: u.id, role: v as UserRole })}
-                        >
-                          <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {ROLES.map((r) => (
-                              <SelectItem key={r.key} value={r.key}>{r.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredUsers.length === 0 && (
-                    <tr><td colSpan={4} className="py-6 text-center text-muted-foreground">No users found</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
