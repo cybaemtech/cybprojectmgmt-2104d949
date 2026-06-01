@@ -37,9 +37,21 @@ const menuItems = [
   { href: "/timeline", icon: Calendar, label: "Timeline", isActive: (loc: string) => loc === "/timeline" || loc === "/calendar" },
   { href: "/templates", icon: Settings, label: "Template Settings", isActive: (loc: string) => loc === "/templates" },
   { href: "/reports", icon: BarChart, label: "Reports", isActive: (loc: string) => loc === "/reports" },
-  { href: "/email-settings", icon: Mail, label: "Email Settings", isActive: (loc: string) => loc === "/email-settings" },
+  { href: "/configuration", icon: Settings, label: "Configuration", isActive: (loc: string) => loc === "/configuration" },
   { href: "/project-bug-reports", icon: Bug, label: "Raise Ticket", isActive: (loc: string) => loc === "/project-bug-reports" },
 ];
+
+const PAGE_KEY_BY_LABEL: Record<string, string> = {
+  "Dashboard": "dashboard",
+  "Strategic Roadmap": "strategic_roadmap",
+  "Team Management": "team_management",
+  "Project Management": "project_management",
+  "Daily Standup": "daily_standup",
+  "Timeline": "timeline",
+  "Template Settings": "template_settings",
+  "Reports": "reports",
+  "Raise Ticket": "raise_ticket",
+};
 
 // Initialize sidebar state from localStorage
 const getInitialSidebarState = () => {

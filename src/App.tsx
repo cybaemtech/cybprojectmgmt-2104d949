@@ -24,7 +24,8 @@ import ProjectBugReports from "@/pages/project-bug-reports";
 import DailyStandup from "@/pages/standup";
 import StrategicRoadmap from "@/pages/strategic-roadmap";
 import TemplateSettings from "@/pages/template-settings";
-import EmailSettings from "@/pages/email-settings";
+import ConfigurationPage from "@/pages/configuration";
+import { Navigate } from "react-router-dom";
 
 import NotFound from "@/pages/NotFound";
 
@@ -103,7 +104,8 @@ function AppRoutes() {
         <Route path="/standup" element={<DailyStandup />} />
         <Route path="/roadmap" element={<StrategicRoadmap />} />
         <Route path="/templates" element={<TemplateSettings />} />
-        <Route path="/email-settings" element={<EmailSettings />} />
+        <Route path="/configuration" element={<ConfigurationPage />} />
+        <Route path="/email-settings" element={<Navigate to="/configuration?tab=email" replace />} />
         
       </Route>
       
