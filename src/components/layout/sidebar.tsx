@@ -73,6 +73,7 @@ export function Sidebar({
 }: SidebarProps) {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(getInitialSidebarState);
+  const { data: permsMap } = useRolePermissions();
 
   // Save sidebar state to localStorage whenever it changes
   useEffect(() => {
