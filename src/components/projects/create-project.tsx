@@ -128,7 +128,7 @@ export function CreateProject({
         clientContactName: data.clientContactName || null,
         clientContactEmail: data.clientContactEmail || null,
         clientContactPhone: data.clientContactPhone || null,
-        clientAccountManager: data.clientAccountManager && data.clientAccountManager !== "none" ? parseInt(data.clientAccountManager) : null,
+        clientAccountManager: data.clientAccountManager && data.clientAccountManager !== "none" ? data.clientAccountManager : null,
         clientStatus: data.clientStatus || null,
         clientNotes: data.clientNotes || null,
       };
