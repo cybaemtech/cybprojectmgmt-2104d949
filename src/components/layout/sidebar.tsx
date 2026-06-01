@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useRolePermissions } from "@/hooks/use-permissions";
+import { DEFAULT_PERMISSIONS, type PageKey } from "@/lib/permissions";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -37,9 +39,21 @@ const menuItems = [
   { href: "/timeline", icon: Calendar, label: "Timeline", isActive: (loc: string) => loc === "/timeline" || loc === "/calendar" },
   { href: "/templates", icon: Settings, label: "Template Settings", isActive: (loc: string) => loc === "/templates" },
   { href: "/reports", icon: BarChart, label: "Reports", isActive: (loc: string) => loc === "/reports" },
-  { href: "/email-settings", icon: Mail, label: "Email Settings", isActive: (loc: string) => loc === "/email-settings" },
+  { href: "/configuration", icon: Settings, label: "Configuration", isActive: (loc: string) => loc === "/configuration" },
   { href: "/project-bug-reports", icon: Bug, label: "Raise Ticket", isActive: (loc: string) => loc === "/project-bug-reports" },
 ];
+
+const PAGE_KEY_BY_LABEL: Record<string, string> = {
+  "Dashboard": "dashboard",
+  "Strategic Roadmap": "strategic_roadmap",
+  "Team Management": "team_management",
+  "Project Management": "project_management",
+  "Daily Standup": "daily_standup",
+  "Timeline": "timeline",
+  "Template Settings": "template_settings",
+  "Reports": "reports",
+  "Raise Ticket": "raise_ticket",
+};
 
 // Initialize sidebar state from localStorage
 const getInitialSidebarState = () => {
@@ -59,6 +73,7 @@ export function Sidebar({
 }: SidebarProps) {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(getInitialSidebarState);
+  const { data: permsMap } = useRolePermissions();
 
   // Save sidebar state to localStorage whenever it changes
   useEffect(() => {
@@ -128,14 +143,19 @@ export function Sidebar({
               const Icon = item.icon;
               const isActive = item.isActive(location.pathname);
               
-              // Restrict portfolio-level pages to ADMIN and SCRUM_MASTER.
-              // Template Settings is open to all users (page enforces private-only
-              // creation and read-only globals for non-admins).
-              if (["Daily Standup", "Strategic Roadmap"].includes(item.label) && user) {
-                if (user.role !== "ADMIN" && user.role !== "SCRUM_MASTER") {
-                  return null;
+              // Configuration is admin-only and not subject to override.
+              if (item.label === "Configuration") {
+                if (!user || user.role !== "ADMIN") return null;
+              } else if (user) {
+                const key = PAGE_KEY_BY_LABEL[item.label] as PageKey | undefined;
+                if (key) {
+                  const role = user.role as keyof typeof DEFAULT_PERMISSIONS;
+                  const map = permsMap ?? DEFAULT_PERMISSIONS;
+                  const entry = map[role] ?? DEFAULT_PERMISSIONS.USER;
+                  if (role !== "ADMIN" && !entry.pages.has(key)) return null;
                 }
               }
+
 
               return (
                 <li key={item.href}>

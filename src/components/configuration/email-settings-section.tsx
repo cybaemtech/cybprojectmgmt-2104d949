@@ -2,18 +2,15 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabaseCustom } from "@/lib/supabase-custom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, RefreshCw, Shield, Clock, AlertTriangle, CheckCircle, XCircle, Loader2, Save, Plug, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
-
 
 interface EmailLog {
   id: string;
@@ -37,8 +34,11 @@ interface SmtpConfig {
   from_name: string;
 }
 
-export default function EmailSettings() {
-  const { user } = useAuth();
+/**
+ * Email Settings section — rendered as the "Email" tab inside the
+ * Configuration page. Admin-only (the parent page already gates access).
+ */
+export default function EmailSettingsSection() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
@@ -53,23 +53,6 @@ export default function EmailSettings() {
     from_name: "CYB Project Management",
   });
 
-  // Check admin
-  const { data: profile } = useQuery({
-    queryKey: ["profile", user?.id],
-    queryFn: async () => {
-      const { data } = await supabaseCustom
-        .from("profiles")
-        .select("role")
-        .eq("id", user!.id)
-        .single();
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  const isAdmin = profile?.role === "ADMIN";
-
-  // Fetch SMTP config from external DB
   const { data: smtpConfig, isLoading: configLoading } = useQuery({
     queryKey: ["smtp-config"],
     queryFn: async () => {
@@ -82,7 +65,6 @@ export default function EmailSettings() {
       if (error) throw error;
       return data as SmtpConfig & { id: number };
     },
-    enabled: isAdmin,
   });
 
   useEffect(() => {
@@ -101,10 +83,8 @@ export default function EmailSettings() {
 
   const isConfigured = !!(smtpForm.username && smtpForm.password && smtpForm.host);
 
-  // Save SMTP config to external DB
   const saveConfig = useMutation({
     mutationFn: async (config: SmtpConfig) => {
-      // Check if unchanged
       if (smtpConfig) {
         const unchanged =
           smtpConfig.host === config.host &&
@@ -120,13 +100,7 @@ export default function EmailSettings() {
         .from("smtp_config")
         .upsert({
           id: 1,
-          host: config.host,
-          port: config.port,
-          username: config.username,
-          password: config.password,
-          security: config.security,
-          from_email: config.from_email,
-          from_name: config.from_name,
+          ...config,
           updated_at: new Date().toISOString(),
         });
       if (error) throw error;
@@ -134,7 +108,7 @@ export default function EmailSettings() {
     },
     onSuccess: (data: any) => {
       if (data?.unchanged) {
-        toast({ title: "No Changes", description: "Configuration is already saved. No changes detected." });
+        toast({ title: "No Changes", description: "Configuration is already saved." });
       } else {
         toast({ title: "Configuration Saved", description: "SMTP settings have been saved successfully." });
       }
@@ -145,12 +119,9 @@ export default function EmailSettings() {
     },
   });
 
-  // Test connection
   const testConnection = useMutation({
     mutationFn: async (config: SmtpConfig) => {
-      const { data, error } = await supabase.functions.invoke("test-smtp-connection", {
-        body: config,
-      });
+      const { data, error } = await supabase.functions.invoke("test-smtp-connection", { body: config });
       if (error) throw error;
       return data;
     },
@@ -166,7 +137,6 @@ export default function EmailSettings() {
     },
   });
 
-  // Fetch email logs from external DB
   const { data: emailLogs = [], isLoading: logsLoading, refetch: refetchLogs } = useQuery({
     queryKey: ["email-logs"],
     queryFn: async () => {
@@ -178,7 +148,6 @@ export default function EmailSettings() {
       if (error) throw error;
       return (data || []) as EmailLog[];
     },
-    enabled: isAdmin,
   });
 
   const statusBadge = (status: string) => {
@@ -196,29 +165,15 @@ export default function EmailSettings() {
     }
   };
 
-  if (!isAdmin) {
-    return (
-      <div className="p-6 flex items-center justify-center min-h-[60vh]">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <Shield className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Admin Access Required</h2>
-            <p className="text-muted-foreground">Email settings are only available to administrators.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Mail className="h-6 w-6" />
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Mail className="h-5 w-5" />
             Email Service Configuration
-          </h1>
-          <p className="text-muted-foreground mt-1">Send and manage transactional emails via SMTP</p>
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">Send and manage transactional emails via SMTP</p>
         </div>
         <Badge variant="outline" className={cn(
           isConfigured ? "text-emerald-600 border-emerald-300" : "text-amber-600 border-amber-300"
@@ -231,7 +186,6 @@ export default function EmailSettings() {
         </Badge>
       </div>
 
-      {/* SMTP Configuration - Editable */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
@@ -250,53 +204,24 @@ export default function EmailSettings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="smtp-host">SMTP Host</Label>
-                  <Input
-                    id="smtp-host"
-                    placeholder="smtp.gmail.com"
-                    value={smtpForm.host}
-                    onChange={(e) => setSmtpForm(prev => ({ ...prev, host: e.target.value }))}
-                  />
+                  <Input id="smtp-host" value={smtpForm.host} onChange={(e) => setSmtpForm(p => ({ ...p, host: e.target.value }))} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="smtp-port">Port</Label>
-                  <Input
-                    id="smtp-port"
-                    type="number"
-                    placeholder="587"
-                    value={smtpForm.port}
-                    onChange={(e) => setSmtpForm(prev => ({ ...prev, port: parseInt(e.target.value) || 587 }))}
-                  />
+                  <Input id="smtp-port" type="number" value={smtpForm.port} onChange={(e) => setSmtpForm(p => ({ ...p, port: parseInt(e.target.value) || 587 }))} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="smtp-user">SMTP Username / Email</Label>
-                  <Input
-                    id="smtp-user"
-                    type="email"
-                    placeholder="your-email@gmail.com"
-                    value={smtpForm.username}
-                    onChange={(e) => setSmtpForm(prev => ({ ...prev, username: e.target.value }))}
-                  />
+                  <Input id="smtp-user" type="email" value={smtpForm.username} onChange={(e) => setSmtpForm(p => ({ ...p, username: e.target.value }))} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="smtp-pass">SMTP Password / App Password</Label>
                   <div className="relative">
-                    <Input
-                      id="smtp-pass"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="••••••••••••••••"
-                      value={smtpForm.password}
-                      onChange={(e) => setSmtpForm(prev => ({ ...prev, password: e.target.value }))}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
+                    <Input id="smtp-pass" type={showPassword ? "text" : "password"} value={smtpForm.password} onChange={(e) => setSmtpForm(p => ({ ...p, password: e.target.value }))} />
+                    <Button type="button" variant="ghost" size="sm" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
@@ -306,13 +231,8 @@ export default function EmailSettings() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="smtp-security">Security</Label>
-                  <Select
-                    value={smtpForm.security}
-                    onValueChange={(v) => setSmtpForm(prev => ({ ...prev, security: v }))}
-                  >
-                    <SelectTrigger id="smtp-security">
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={smtpForm.security} onValueChange={(v) => setSmtpForm(p => ({ ...p, security: v }))}>
+                    <SelectTrigger id="smtp-security"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="TLS">TLS (Port 587)</SelectItem>
                       <SelectItem value="SSL">SSL (Port 465)</SelectItem>
@@ -322,46 +242,20 @@ export default function EmailSettings() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="from-email">From Email</Label>
-                  <Input
-                    id="from-email"
-                    type="email"
-                    placeholder="noreply@yourdomain.com"
-                    value={smtpForm.from_email}
-                    onChange={(e) => setSmtpForm(prev => ({ ...prev, from_email: e.target.value }))}
-                  />
+                  <Input id="from-email" type="email" value={smtpForm.from_email} onChange={(e) => setSmtpForm(p => ({ ...p, from_email: e.target.value }))} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="from-name">From Name</Label>
-                  <Input
-                    id="from-name"
-                    placeholder="CYB Project Management"
-                    value={smtpForm.from_name}
-                    onChange={(e) => setSmtpForm(prev => ({ ...prev, from_name: e.target.value }))}
-                  />
+                  <Input id="from-name" value={smtpForm.from_name} onChange={(e) => setSmtpForm(p => ({ ...p, from_name: e.target.value }))} />
                 </div>
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button
-                  onClick={() => saveConfig.mutate(smtpForm)}
-                  disabled={saveConfig.isPending}
-                >
-                  {saveConfig.isPending ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</>
-                  ) : (
-                    <><Save className="h-4 w-4 mr-2" />Save Configuration</>
-                  )}
+                <Button onClick={() => saveConfig.mutate(smtpForm)} disabled={saveConfig.isPending}>
+                  {saveConfig.isPending ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</>) : (<><Save className="h-4 w-4 mr-2" />Save Configuration</>)}
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => testConnection.mutate(smtpForm)}
-                  disabled={testConnection.isPending || !smtpForm.host || !smtpForm.username || !smtpForm.password}
-                >
-                  {testConnection.isPending ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Testing...</>
-                  ) : (
-                    <><Plug className="h-4 w-4 mr-2" />Test Connection</>
-                  )}
+                <Button variant="outline" onClick={() => testConnection.mutate(smtpForm)} disabled={testConnection.isPending || !smtpForm.host || !smtpForm.username || !smtpForm.password}>
+                  {testConnection.isPending ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" />Testing...</>) : (<><Plug className="h-4 w-4 mr-2" />Test Connection</>)}
                 </Button>
               </div>
             </>
@@ -369,9 +263,6 @@ export default function EmailSettings() {
         </CardContent>
       </Card>
 
-
-
-      {/* Email Logs */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -407,15 +298,11 @@ export default function EmailSettings() {
                   {emailLogs.map((log) => (
                     <tr key={log.id} className="border-b last:border-0 hover:bg-muted/30">
                       <td className="py-2 pr-4 font-mono text-xs">{log.recipient_email}</td>
-                      <td className="py-2 pr-4">
-                        <Badge variant="outline" className="text-xs">{log.template_name}</Badge>
-                      </td>
+                      <td className="py-2 pr-4"><Badge variant="outline" className="text-xs">{log.template_name}</Badge></td>
                       <td className="py-2 pr-4 max-w-[200px] truncate">{log.subject}</td>
                       <td className="py-2 pr-4">{statusBadge(log.status)}</td>
                       <td className="py-2 pr-4 text-center">{log.attempts}</td>
-                      <td className="py-2 text-xs text-muted-foreground">
-                        {new Date(log.created_at).toLocaleString()}
-                      </td>
+                      <td className="py-2 text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
