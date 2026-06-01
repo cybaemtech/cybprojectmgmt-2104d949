@@ -26,6 +26,7 @@ import { Project, User, WorkItem } from "@/types/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { workItemStore } from "@/lib/local-store";
 import { apiGet } from "@/lib/api-config";
+import { getCachedUser } from "@/lib/supabase-store";
 
 // Template types
 interface TemplateTask {
@@ -261,10 +262,7 @@ export function CreateItemModal({
     },
   });
 
-  const { data: currentUser } = useQuery<User>({
-    queryKey: ['/auth/user'],
-    queryFn: () => apiGet('/auth/user'),
-  });
+  const currentUser = getCachedUser();
 
   const isAdminOrScrum = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'SCRUM_MASTER');
 
