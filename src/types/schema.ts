@@ -77,7 +77,7 @@ export interface Project {
   clientContactName: string | null;
   clientContactEmail: string | null;
   clientContactPhone: string | null;
-  clientAccountManager: string | null;
+  clientAccountManager: any | null;
   clientStatus: ClientStatus | null;
   clientNotes: string | null;
 }
@@ -93,8 +93,8 @@ export interface WorkItem {
   priority: Priority | null;
   projectId: number;
   parentId: number | null;
-  assigneeId: string | null;
-  reporterId: string | null;
+  assigneeId: any | null;
+  reporterId: any | null;
   createdByName: string | null;
   createdByEmail: string | null;
   updatedBy: number | null;
