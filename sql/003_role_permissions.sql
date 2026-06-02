@@ -30,14 +30,31 @@ create policy "role_permissions writable by admins"
 insert into public.role_permissions (role, allowed_pages, allowed_features) values
   ('ADMIN',
    array['dashboard','strategic_roadmap','team_management','project_management','daily_standup','timeline','template_settings','reports','raise_ticket'],
-   array['create_project','delete_project','create_team','delete_team','create_global_template','delete_epic_feature','manage_strategic_roadmap','edit_client_details','manage_team_members','configure_smtp','assign_user_roles']
+   array['create_project','delete_project','create_team','delete_team','create_global_template','delete_epic_feature','manage_strategic_roadmap','edit_client_details','manage_team_members','configure_smtp','assign_user_roles','change_assignee_epic_feature_story','change_assignee_task_bug']
   ),
   ('SCRUM_MASTER',
    array['dashboard','strategic_roadmap','team_management','project_management','daily_standup','timeline','template_settings','reports','raise_ticket'],
-   array['create_project','create_team','manage_strategic_roadmap','edit_client_details','manage_team_members']
+   array['create_project','create_team','manage_strategic_roadmap','edit_client_details','manage_team_members','change_assignee_epic_feature_story','change_assignee_task_bug']
   ),
   ('USER',
    array['dashboard','team_management','project_management','timeline','template_settings','reports','raise_ticket'],
-   array[]::text[]
+   array['change_assignee_task_bug']
   )
 on conflict (role) do nothing;
+
+-- Patch existing rows to include assignee-change features (idempotent)
+update public.role_permissions
+  set allowed_features = (
+    select array_agg(distinct f)
+    from unnest(allowed_features || array['change_assignee_epic_feature_story','change_assignee_task_bug']) as f
+  ),
+  updated_at = now()
+  where role in ('ADMIN','SCRUM_MASTER');
+
+update public.role_permissions
+  set allowed_features = (
+    select array_agg(distinct f)
+    from unnest(allowed_features || array['change_assignee_task_bug']) as f
+  ),
+  updated_at = now()
+  where role = 'USER';

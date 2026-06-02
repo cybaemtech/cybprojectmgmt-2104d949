@@ -28,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { TagsInput } from "@/components/ui/tags-input";
 import { Trash2 } from "lucide-react";
 import { getScreenshotUrl } from "@/lib/screenshot-utils";
+import { usePermissions } from "@/hooks/use-permissions";
 import { queryClient } from "@/lib/queryClient";
 
 // Create a schema specifically for the form - matching CreateItemModal
@@ -250,6 +251,13 @@ export function EditItemModal({
   });
 
   const isAdminOrScrum = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'SCRUM_MASTER');
+  const { hasFeature } = usePermissions();
+  const itemType = workItem?.type;
+  const canChangeAssignee = itemType
+    ? (['TASK', 'BUG'].includes(itemType)
+        ? hasFeature('change_assignee_task_bug')
+        : hasFeature('change_assignee_epic_feature_story'))
+    : false;
 
   const { data: projectTeamMembers = [] } = useQuery<User[]>({
     queryKey: [`/projects/${selectedProjectId}/team-members`],
@@ -754,7 +762,7 @@ export function EditItemModal({
                           options={[{ value: "unassigned", label: "Unassigned" }, ...projectTeamMembers.map(u => ({ value: u.id.toString(), label: u.fullName || u.username }))]}
                           value={field.value?.toString() || "unassigned"}
                           onValueChange={(v) => field.onChange(v && v !== "unassigned" ? parseInt(v) : null)}
-                          disabled={!isAdminOrScrum}
+                          disabled={!canChangeAssignee}
                         />
                       </FormControl>
                     </FormItem>

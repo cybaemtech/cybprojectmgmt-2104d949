@@ -27,6 +27,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { workItemStore } from "@/lib/local-store";
 import { apiGet } from "@/lib/api-config";
 import { getCachedUser } from "@/lib/supabase-store";
+import { usePermissions } from "@/hooks/use-permissions";
 
 // Template types
 interface TemplateTask {
@@ -265,6 +266,7 @@ export function CreateItemModal({
   const currentUser = getCachedUser();
 
   const isAdminOrScrum = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'SCRUM_MASTER');
+  const { hasFeature } = usePermissions();
 
   const { data: projectTeamMembers = [] } = useQuery<User[]>({
     queryKey: [`/projects/${selectedProjectId}/team-members`],
@@ -1190,7 +1192,7 @@ export function CreateItemModal({
                               options={[{ value: "unassigned", label: "Unassigned" }, ...projectTeamMembers.map(u => ({ value: u.id.toString(), label: u.fullName || u.username }))]}
                               value={field.value?.toString() || "unassigned"}
                               onValueChange={v => field.onChange(v === "unassigned" ? null : parseInt(v))}
-                              disabled={!isAdminOrScrum}
+                              disabled={!(['TASK','BUG'].includes(watchedType) ? hasFeature('change_assignee_task_bug') : hasFeature('change_assignee_epic_feature_story'))}
                             />
                           </FormControl>
                         </FormItem>
