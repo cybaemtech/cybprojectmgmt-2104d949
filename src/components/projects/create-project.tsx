@@ -18,10 +18,12 @@ import {
 } from "@/components/ui/form";
 import { Team, User } from "@/types/schema";
 import { useToast } from "@/hooks/use-toast";
-import { projectStore, userStore, categoryStore } from "@/lib/local-store";
+import { projectStore, userStore, categoryStore, workItemStore } from "@/lib/local-store";
+import { supabaseCustom as supabase } from "@/lib/supabase-custom";
 import { Combobox } from "@/components/ui/combobox";
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Users, Plus } from "lucide-react";
+import { KickoffProgressModal } from "@/components/modals/kickoff-progress-modal";
 
 // Define the form schema
 function generateProjectKey(name: string): string {
