@@ -990,8 +990,11 @@ export default function ProjectDetails() {
 
   const handleQuickActionSuccess = () => {
     closeQuickAction();
-    // Refresh work items after creating new task/bug
-    queryClient.invalidateQueries({ queryKey: [`/projects/${projectId}/work-items`] });
+    // Auto-refresh work items after creating new task/bug (slight delay so the DB write settles)
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: [`/projects/${projectId}/work-items`] });
+      refetchWorkItems();
+    }, 1000);
   };
 
   // Show loading state
@@ -1039,7 +1042,9 @@ export default function ProjectDetails() {
   const features = Array.isArray(workItems) ? workItems.filter(item => item.type === 'FEATURE') : [];
 
   const handleWorkItemsUpdate = () => {
-    refetchWorkItems();
+    setTimeout(() => {
+      refetchWorkItems();
+    }, 1000);
   };
 
   // Quick action handlers for creating items under parent work items
@@ -1495,15 +1500,7 @@ export default function ProjectDetails() {
                 <h1 className="text-2xl font-semibold mb-1">{project?.name || 'Loading project...'}</h1>
                 
               </div>
-              {/* Only show Create Item button on specific tabs */}
-              {projectView !== 'overview' && projectView !== 'settings' && projectView !== 'documentation' && projectView !== 'roadmap' && (
-                <div className="flex space-x-3">
-                  <Button variant="outline" onClick={handleWorkItemsUpdate}>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    <span>Refresh</span>
-                  </Button>
-                </div>
-              )}
+              {/* Refresh button removed — work items auto-refresh after Create */}
             </div>
 
             {/* Overview Tab Content */}
