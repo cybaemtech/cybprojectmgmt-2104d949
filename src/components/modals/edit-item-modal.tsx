@@ -762,7 +762,7 @@ export function EditItemModal({
                           options={[{ value: "unassigned", label: "Unassigned" }, ...projectTeamMembers.map(u => ({ value: u.id.toString(), label: u.fullName || u.username }))]}
                           value={field.value?.toString() || "unassigned"}
                           onValueChange={(v) => field.onChange(v && v !== "unassigned" ? parseInt(v) : null)}
-                          disabled={!isAdminOrScrum}
+                          disabled={!canChangeAssignee}
                         />
                       </FormControl>
                     </FormItem>
