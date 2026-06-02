@@ -180,6 +180,7 @@ interface CreateItemModalProps {
   currentProject?: Project;
   preselectedParent?: WorkItem;
   preselectedType?: string;
+  allowedTypes?: string[];
 }
 
 export function CreateItemModal({
@@ -191,6 +192,7 @@ export function CreateItemModal({
   currentProject,
   preselectedParent,
   preselectedType,
+  allowedTypes,
 }: CreateItemModalProps) {
   const { toast } = useToast();
   const [selectedProjectId, setSelectedProjectId] = useState<number>(currentProject?.id || (projects.length > 0 ? projects[0].id : 0));
