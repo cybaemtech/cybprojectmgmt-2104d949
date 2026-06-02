@@ -573,7 +573,7 @@ export function CreateItemModal({
               const firstMsg = firstKey ? (errors as any)[firstKey]?.message : "Please review the form";
               toast({
                 title: "Cannot create work item",
-                description: String(firstMsg || "Please review the form for missing fields"),
+                description: `${firstKey ? firstKey + ": " : ""}${String(firstMsg || "Please review the form for missing fields")}`,
                 variant: "destructive",
               });
             })} className="space-y-4 pb-4">
