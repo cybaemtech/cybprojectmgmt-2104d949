@@ -112,6 +112,84 @@ export function CreateProject({
     },
   });
   
+  const runKickoffAutomation = async (newProject: any) => {
+    const creatorId = currentUser?.id || null;
+    // 1) EPIC (Client Details)
+    const epic = await workItemStore.saveAsync({
+      title: newProject.name,
+      type: 'EPIC',
+      projectId: newProject.id,
+      status: 'TODO',
+      priority: 'MEDIUM',
+      assigneeId: creatorId,
+      tags: newProject.clientIndustry || null,
+      githubUrl: newProject.clientWebsite || null,
+      currentBehavior: newProject.clientContactName || null,
+      expectedBehavior: newProject.clientContactEmail || null,
+      referenceUrl: newProject.clientContactPhone || null,
+    });
+
+    // 2) FEATURE
+    const feature = await workItemStore.saveAsync({
+      title: "Project Kick-Off",
+      type: 'FEATURE',
+      projectId: newProject.id,
+      status: 'TODO',
+      priority: 'MEDIUM',
+      parentId: epic.id,
+      assigneeId: creatorId,
+    });
+
+    // 3) STORY
+    const story = await workItemStore.saveAsync({
+      title: "Project Kick-Off",
+      type: 'STORY',
+      projectId: newProject.id,
+      status: 'TODO',
+      priority: 'MEDIUM',
+      parentId: feature.id,
+      assigneeId: creatorId,
+      description: `Kick-off activities for "${newProject.name}"`,
+    });
+
+    // 4) TASKs from the Project Kick-Off template
+    let templateRow: any = null;
+    try {
+      const { data } = await supabase
+        .from("work_item_templates")
+        .select("*")
+        .eq("scope", "GLOBAL")
+        .eq("name", "Project Kick-Off")
+        .maybeSingle();
+      templateRow = data;
+    } catch (e) {
+      console.warn("[kickoff] template lookup failed", e);
+    }
+
+    let taskCount = 0;
+    if (templateRow && Array.isArray(templateRow.tasks)) {
+      const tasks = [...templateRow.tasks]
+        .filter((t: any) => t.isActive !== false)
+        .sort((a: any, b: any) => (a.itemOrder || 0) - (b.itemOrder || 0));
+      for (const t of tasks) {
+        await workItemStore.saveAsync({
+          title: t.title,
+          type: 'TASK',
+          projectId: newProject.id,
+          status: 'TODO',
+          priority: 'MEDIUM',
+          parentId: story.id,
+          assigneeId: creatorId,
+          estimate: t.estimatedHours ? String(t.estimatedHours) : undefined,
+        });
+        taskCount++;
+      }
+    } else {
+      console.warn("[kickoff] 'Project Kick-Off' template not found — created shell only");
+    }
+    return taskCount;
+  };
+
   const onSubmit = async (data: ProjectFormValues) => {
     try {
       const autoKey = generateProjectKey(data.name);
@@ -143,17 +221,33 @@ export function CreateProject({
         projectData.key = generateProjectKey(data.name);
       }
 
-      projectStore.save(projectData as any);
-      
-      toast({
-        title: "Project created",
-        description: "The project has been created successfully.",
-      });
-      
-      onSuccess();
-      onClose();
+      // Open kick-off progress modal immediately for fluid UX
+      setKickoffComplete(false);
+      setKickoffOpen(true);
+
+      // Persist project (awaits real DB id) then run automation chain
+      const newProject = await projectStore.saveAsync(projectData as any);
+      let taskCount = 0;
+      try {
+        taskCount = await runKickoffAutomation(newProject);
+      } catch (autoErr) {
+        console.error("[kickoff] automation error", autoErr);
+        toast({
+          title: "Project created, kick-off incomplete",
+          description: "Some kick-off items could not be created. You can add them manually from the Backlog.",
+          variant: "destructive",
+        });
+      }
+
+      // Mark progress complete; modal will snap to 100% and call onKickoffDone
+      setKickoffComplete(true);
+
+      // Stash success info on a ref so the toast fires when modal finishes
+      pendingSuccessRef.current = { taskCount };
     } catch (error: any) {
       console.error("Error creating project:", error);
+      setKickoffOpen(false);
+      setKickoffComplete(false);
       toast({
         title: "Error",
         description: "Could not create the project. Please try again.",
@@ -161,6 +255,27 @@ export function CreateProject({
       });
     }
   };
+
+  const pendingSuccessRef = (function () {
+    // tiny inline ref via useState fallback
+    return { current: null as null | { taskCount: number } };
+  })();
+
+  const handleKickoffDone = () => {
+    setKickoffOpen(false);
+    setKickoffComplete(false);
+    const info = pendingSuccessRef.current;
+    pendingSuccessRef.current = null;
+    toast({
+      title: "Project ready",
+      description: info
+        ? `Created Project Kick-Off chain${info.taskCount ? ` with ${info.taskCount} task${info.taskCount !== 1 ? "s" : ""}` : " (template empty — shell only)"}.`
+        : "Project has been created.",
+    });
+    onSuccess();
+    onClose();
+  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
