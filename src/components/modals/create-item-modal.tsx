@@ -582,7 +582,7 @@ export function CreateItemModal({
                         value={field.value}
                         className="grid grid-cols-2 md:grid-cols-5 gap-3"
                       >
-                        {['EPIC', 'FEATURE', 'STORY', 'TASK', 'BUG'].map((type) => (
+                        {(allowedTypes && allowedTypes.length > 0 ? allowedTypes : ['EPIC', 'FEATURE', 'STORY', 'TASK', 'BUG']).map((type) => (
                           <div key={type} className="flex items-center space-x-2 border rounded-md p-2 hover:bg-neutral-50 cursor-pointer">
                             <RadioGroupItem value={type} id={`type-${type}`} />
                             <Label htmlFor={`type-${type}`} className="text-sm font-medium cursor-pointer flex-1">
