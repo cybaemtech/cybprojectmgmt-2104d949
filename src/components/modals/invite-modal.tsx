@@ -382,12 +382,6 @@ export function InviteModal({
                           <span className="text-xs text-muted-foreground font-normal">Can view and create Stories, Tasks & Bugs</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="LEAD">
-                        <div className="flex flex-col">
-                          <span>Team Lead</span>
-                          <span className="text-xs text-muted-foreground font-normal">Full access to project features & team oversight</span>
-                        </div>
-                      </SelectItem>
                       <SelectItem value="MANAGER">
                         <div className="flex flex-col">
                           <span>Project Manager</span>
