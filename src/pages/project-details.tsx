@@ -1504,7 +1504,7 @@ export default function ProjectDetails() {
                   </Button>
                   <Button onClick={() => openModal("createItem")}>
                     <Plus className="mr-2 h-4 w-4" />
-                    <span>Add Task | Bug</span>
+                    <span>Create Item</span>
                   </Button>
                 </div>
               )}
@@ -3318,7 +3318,6 @@ export default function ProjectDetails() {
           projects={projects}
           workItems={workItems}
           currentProject={project}
-          allowedTypes={projectView === 'board' ? ['TASK', 'BUG'] : undefined}
         />
       )}
 
