@@ -1500,15 +1500,7 @@ export default function ProjectDetails() {
                 <h1 className="text-2xl font-semibold mb-1">{project?.name || 'Loading project...'}</h1>
                 
               </div>
-              {/* Only show Create Item button on specific tabs */}
-              {projectView !== 'overview' && projectView !== 'settings' && projectView !== 'documentation' && projectView !== 'roadmap' && (
-                <div className="flex space-x-3">
-                  <Button variant="outline" onClick={handleWorkItemsUpdate}>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    <span>Refresh</span>
-                  </Button>
-                </div>
-              )}
+              {/* Refresh button removed — work items auto-refresh after Create */}
             </div>
 
             {/* Overview Tab Content */}
