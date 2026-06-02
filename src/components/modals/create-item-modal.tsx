@@ -243,7 +243,7 @@ export function CreateItemModal({
       title: "",
       description: "",
       tags: "",
-      type: preselectedType || "FEATURE",
+      type: preselectedType || (allowedTypes && allowedTypes.length > 0 ? allowedTypes[0] : "FEATURE"),
       status: "TODO",
       priority: "MEDIUM",
       projectId: currentProject?.id || (projects.length > 0 ? projects[0].id : 0),
