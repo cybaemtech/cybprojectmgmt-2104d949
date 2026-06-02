@@ -73,9 +73,9 @@ const workItemFormSchema = z.object({
   type: z.string(),
   status: z.string(),
   priority: z.string().optional(),
-  projectId: z.number(),
-  parentId: z.number().optional().nullable(),
-  assigneeId: z.number().optional().nullable(),
+  projectId: z.union([z.number(), z.string()]),
+  parentId: z.union([z.number(), z.string()]).optional().nullable(),
+  assigneeId: z.union([z.number(), z.string()]).optional().nullable(),
   estimate: z.string().optional(),
   actualHours: z.string().optional(),
   startDate: z.string().optional().nullable(),
@@ -134,7 +134,7 @@ const workItemFormSchema = z.object({
   // Skip for BUG – will auto-attach to first available STORY if no parent selected
   if (data.type === 'BUG') return true;
   if (['FEATURE', 'STORY', 'TASK'].includes(data.type)) {
-    return data.parentId && data.parentId > 0;
+    return !!data.parentId && Number(data.parentId) > 0;
   }
   return true;
 }, {
@@ -573,7 +573,7 @@ export function CreateItemModal({
               const firstMsg = firstKey ? (errors as any)[firstKey]?.message : "Please review the form";
               toast({
                 title: "Cannot create work item",
-                description: String(firstMsg || "Please review the form for missing fields"),
+                description: `${firstKey ? firstKey + ": " : ""}${String(firstMsg || "Please review the form for missing fields")}`,
                 variant: "destructive",
               });
             })} className="space-y-4 pb-4">
