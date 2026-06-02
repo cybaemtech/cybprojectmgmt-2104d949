@@ -356,6 +356,32 @@ export const projectStore = {
     }
   },
 
+  /** Async save that awaits the Supabase insert and returns the project with the real DB ID */
+  saveAsync: async (project: Partial<Project> & { name: string; key: string }): Promise<Project> => {
+    const authUser = getLocalUser();
+    const now = new Date().toISOString();
+    const row = projectToRow(project);
+    row.created_by_name = row.created_by_name ?? authUser.fullName;
+    row.created_by_email = row.created_by_email ?? authUser.email;
+
+    if (project.id) {
+      const { data, error } = await supabase.from("projects").update({ ...row, updated_at: now }).eq("id", project.id).select().single();
+      if (error) { console.error("[projectStore.saveAsync] update error:", error); throw error; }
+      const mapped = mapProject(data);
+      const idx = _projects.findIndex((p) => p.id === project.id);
+      if (idx >= 0) _projects[idx] = mapped;
+      notifyChange();
+      return mapped;
+    } else {
+      const { data, error } = await supabase.from("projects").insert(row).select().single();
+      if (error) { console.error("[projectStore.saveAsync] insert error:", error); throw error; }
+      const mapped = mapProject(data);
+      _projects.unshift(mapped);
+      notifyChange();
+      return mapped;
+    }
+  },
+
   delete: (id: number) => {
     _projects = _projects.filter((p) => p.id !== id);
     _workItems = _workItems.filter((w) => w.projectId !== id);
