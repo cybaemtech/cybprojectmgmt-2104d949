@@ -1192,7 +1192,7 @@ export function CreateItemModal({
                               options={[{ value: "unassigned", label: "Unassigned" }, ...projectTeamMembers.map(u => ({ value: u.id.toString(), label: u.fullName || u.username }))]}
                               value={field.value?.toString() || "unassigned"}
                               onValueChange={v => field.onChange(v === "unassigned" ? null : parseInt(v))}
-                              disabled={!isAdminOrScrum}
+                              disabled={!(['TASK','BUG'].includes(watchedType) ? hasFeature('change_assignee_task_bug') : hasFeature('change_assignee_epic_feature_story'))}
                             />
                           </FormControl>
                         </FormItem>
