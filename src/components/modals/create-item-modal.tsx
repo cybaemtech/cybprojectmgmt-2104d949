@@ -266,6 +266,7 @@ export function CreateItemModal({
   const currentUser = getCachedUser();
 
   const isAdminOrScrum = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'SCRUM_MASTER');
+  const { hasFeature } = usePermissions();
 
   const { data: projectTeamMembers = [] } = useQuery<User[]>({
     queryKey: [`/projects/${selectedProjectId}/team-members`],
