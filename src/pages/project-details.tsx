@@ -990,8 +990,11 @@ export default function ProjectDetails() {
 
   const handleQuickActionSuccess = () => {
     closeQuickAction();
-    // Refresh work items after creating new task/bug
-    queryClient.invalidateQueries({ queryKey: [`/projects/${projectId}/work-items`] });
+    // Auto-refresh work items after creating new task/bug (slight delay so the DB write settles)
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: [`/projects/${projectId}/work-items`] });
+      refetchWorkItems();
+    }, 1000);
   };
 
   // Show loading state
