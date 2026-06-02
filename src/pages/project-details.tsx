@@ -3318,6 +3318,7 @@ export default function ProjectDetails() {
           projects={projects}
           workItems={workItems}
           currentProject={project}
+          allowedTypes={projectView === 'board' ? ['TASK', 'BUG'] : undefined}
         />
       )}
 
