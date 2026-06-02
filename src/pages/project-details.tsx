@@ -1042,7 +1042,9 @@ export default function ProjectDetails() {
   const features = Array.isArray(workItems) ? workItems.filter(item => item.type === 'FEATURE') : [];
 
   const handleWorkItemsUpdate = () => {
-    refetchWorkItems();
+    setTimeout(() => {
+      refetchWorkItems();
+    }, 1000);
   };
 
   // Quick action handlers for creating items under parent work items
