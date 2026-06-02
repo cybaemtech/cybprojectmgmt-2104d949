@@ -669,5 +669,11 @@ export function CreateProject({
         </Form>
       </DialogContent>
     </Dialog>
+    <KickoffProgressModal
+      open={kickoffOpen}
+      complete={kickoffComplete}
+      onDone={handleKickoffDone}
+    />
+    </>
   );
 }
