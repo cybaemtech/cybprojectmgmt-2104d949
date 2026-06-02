@@ -567,7 +567,16 @@ export function CreateItemModal({
 
         <ScrollArea className="max-h-[80vh] px-6 py-4">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pb-4">
+            <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+              console.error("[create-item] validation errors", errors);
+              const firstKey = Object.keys(errors)[0];
+              const firstMsg = firstKey ? (errors as any)[firstKey]?.message : "Please review the form";
+              toast({
+                title: "Cannot create work item",
+                description: String(firstMsg || "Please review the form for missing fields"),
+                variant: "destructive",
+              });
+            })} className="space-y-4 pb-4">
 
               {/* Item Type Selection */}
               <FormField
