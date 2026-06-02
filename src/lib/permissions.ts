@@ -25,7 +25,9 @@ export type FeatureKey =
   | "edit_client_details"
   | "manage_team_members"
   | "configure_smtp"
-  | "assign_user_roles";
+  | "assign_user_roles"
+  | "change_assignee_epic_feature_story"
+  | "change_assignee_task_bug";
 
 export const PAGES: { key: PageKey; label: string; description: string }[] = [
   { key: "dashboard", label: "Dashboard", description: "Workspace overview" },
