@@ -257,10 +257,6 @@ export function CreateProject({
     }
   };
 
-  const pendingSuccessRef = (function () {
-    // tiny inline ref via useState fallback
-    return { current: null as null | { taskCount: number } };
-  })();
 
   const handleKickoffDone = () => {
     setKickoffOpen(false);
