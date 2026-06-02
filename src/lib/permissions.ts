@@ -53,6 +53,8 @@ export const FEATURES: { key: FeatureKey; label: string; description: string }[]
   { key: "manage_team_members", label: "Manage Team Members", description: "Add or remove team members" },
   { key: "configure_smtp", label: "Configure SMTP", description: "Change email service credentials" },
   { key: "assign_user_roles", label: "Assign User Roles", description: "Promote / demote users" },
+  { key: "change_assignee_epic_feature_story", label: "Change Assignee on Epic / Feature / Story", description: "Reassign Epic, Feature, or Story work items" },
+  { key: "change_assignee_task_bug", label: "Change Assignee on Task / Bug", description: "Reassign Task or Bug work items" },
 ];
 
 export const ROLES: { key: UserRole; label: string; locked?: boolean }[] = [
