@@ -95,6 +95,8 @@ export const DEFAULT_PERMISSIONS: PermissionMap = {
       "manage_strategic_roadmap",
       "edit_client_details",
       "manage_team_members",
+      "change_assignee_epic_feature_story",
+      "change_assignee_task_bug",
     ]),
   },
   USER: {
@@ -107,7 +109,7 @@ export const DEFAULT_PERMISSIONS: PermissionMap = {
       "reports",
       "raise_ticket",
     ]),
-    features: new Set<FeatureKey>([]),
+    features: new Set<FeatureKey>(["change_assignee_task_bug"]),
   },
 };
 
