@@ -76,11 +76,20 @@ function mapRow(row: any, index: number): Template {
 
 // ─── Sample data ────────────────────────────────────────────────────────────
 function buildSamples(userId: string) {
+  const kickoffHours = [2, 4, 3, 4, 2, 2];
   const reqGatheringHours = [4, 8, 6, 8, 4, 2];
   const devChecklistHours = [2, 8, 16, 16, 8, 4, 2];
   const qaTestingHours = [4, 8, 8, 6, 4, 4, 2];
 
   return [
+    {
+      name: "Project Kick-Off",
+      description: "Activities triggered automatically when a new project is created.",
+      is_locked: true,
+      created_by: userId,
+      tasks: ["Kick-off Call with Client", "Project Charter & Scope Document", "Team Onboarding & Role Assignment", "Tools & Repository Setup", "Stakeholder Map & Comms Plan", "Initial Status Report to Client"]
+        .map((title, i) => ({ id: i + 1, title, itemOrder: i + 1, isActive: true, estimatedHours: kickoffHours[i] })),
+    },
     {
       name: "Requirement Gathering",
       description: "Tasks for initial requirement analysis and client sign-off.",
