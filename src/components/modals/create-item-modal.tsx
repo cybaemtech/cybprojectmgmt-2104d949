@@ -356,14 +356,21 @@ export function CreateItemModal({
 
   const onSubmit = async (data: WorkItemFormValues) => {
     try {
+      const todayStr = (() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      })();
+      // For TASK: auto-stamp scheduled start date to today (field hidden in UI)
+      const autoStart = data.type === 'TASK' ? todayStr : (data.startDate || null);
+      const autoEnd = data.type === 'TASK' ? null : (data.endDate || null);
       const submitData: any = {
         ...data,
         parentId: data.parentId || null,
         assigneeId: data.assigneeId || null,
         estimate: data.estimate || null,
         actualHours: data.actualHours || null,
-        startDate: data.startDate || null,
-        endDate: data.endDate || null,
+        startDate: autoStart,
+        endDate: autoEnd,
         githubUrl: data.githubUrl || null,
         referenceUrl: data.referenceUrl || null,
         prototypeLink: data.prototypeLink || null,
@@ -1274,14 +1281,16 @@ export function CreateItemModal({
                           </FormItem>
                         )} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="startDate" render={({ field }) => (
-                          <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
-                        )} />
-                        <FormField control={form.control} name="endDate" render={({ field }) => (
-                          <FormItem><FormLabel>Scheduled End Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
-                        )} />
-                      </div>
+                      {watchedType !== 'TASK' && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField control={form.control} name="startDate" render={({ field }) => (
+                            <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                          )} />
+                          <FormField control={form.control} name="endDate" render={({ field }) => (
+                            <FormItem><FormLabel>Scheduled End Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                          )} />
+                        </div>
+                      )}
                     </>
                   )}
                 </>

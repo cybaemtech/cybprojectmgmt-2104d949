@@ -342,15 +342,31 @@ export function EditItemModal({
   const onSubmit = async (data: WorkItemFormValues) => {
     if (!workItem) return;
     try {
+      const todayStr = (() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      })();
+      const actualHoursNum = data.actualHours !== undefined && data.actualHours !== null && data.actualHours !== '' ? Number(data.actualHours) : null;
+      // For TASK: hidden dates. Auto-stamp endDate to today when status flips to DONE with actual hours filled.
+      let finalStart = data.startDate || null;
+      let finalEnd = data.endDate || null;
+      if (workItem.type === 'TASK') {
+        finalStart = (workItem.startDate as any) || todayStr;
+        if (data.status === 'DONE' && actualHoursNum && actualHoursNum > 0) {
+          finalEnd = (workItem.status !== 'DONE' || !workItem.endDate) ? todayStr : (workItem.endDate as any);
+        } else {
+          finalEnd = null;
+        }
+      }
       const submitData: any = {
         ...data,
         tags: data.tags?.trim() || null,
         parentId: data.parentId || null,
         assigneeId: data.assigneeId || null,
         estimate: data.estimate || null,
-        actualHours: data.actualHours !== undefined && data.actualHours !== null && data.actualHours !== '' ? Number(data.actualHours) : null,
-        startDate: data.startDate || null,
-        endDate: data.endDate || null,
+        actualHours: actualHoursNum,
+        startDate: finalStart,
+        endDate: finalEnd,
         githubUrl: data.githubUrl || null,
         prototypeLink: data.prototypeLink || null,
         prototypeStatus: data.prototypeStatus || null,
@@ -806,9 +822,8 @@ export function EditItemModal({
                 />
               </div>
 
-              {/* Dates */}
-              {/* Dates - Show for all types */}
-              {true && (
+              {/* Dates - hidden for TASK (auto-stamped on create/complete) */}
+              {workItem?.type !== 'TASK' && (
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="startDate" render={({ field }) => (
                     <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
