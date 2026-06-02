@@ -134,7 +134,7 @@ const workItemFormSchema = z.object({
   // Skip for BUG – will auto-attach to first available STORY if no parent selected
   if (data.type === 'BUG') return true;
   if (['FEATURE', 'STORY', 'TASK'].includes(data.type)) {
-    return data.parentId && data.parentId > 0;
+    return !!data.parentId && Number(data.parentId) > 0;
   }
   return true;
 }, {
