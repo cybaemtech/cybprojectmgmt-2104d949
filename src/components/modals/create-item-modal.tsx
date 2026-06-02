@@ -1281,14 +1281,16 @@ export function CreateItemModal({
                           </FormItem>
                         )} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="startDate" render={({ field }) => (
-                          <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
-                        )} />
-                        <FormField control={form.control} name="endDate" render={({ field }) => (
-                          <FormItem><FormLabel>Scheduled End Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
-                        )} />
-                      </div>
+                      {watchedType !== 'TASK' && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField control={form.control} name="startDate" render={({ field }) => (
+                            <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                          )} />
+                          <FormField control={form.control} name="endDate" render={({ field }) => (
+                            <FormItem><FormLabel>Scheduled End Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
+                          )} />
+                        </div>
+                      )}
                     </>
                   )}
                 </>
