@@ -27,6 +27,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { workItemStore } from "@/lib/local-store";
 import { apiGet } from "@/lib/api-config";
 import { getCachedUser } from "@/lib/supabase-store";
+import { usePermissions } from "@/hooks/use-permissions";
 
 // Template types
 interface TemplateTask {
