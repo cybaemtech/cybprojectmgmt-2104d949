@@ -1504,7 +1504,7 @@ export default function ProjectDetails() {
                   </Button>
                   <Button onClick={() => openModal("createItem")}>
                     <Plus className="mr-2 h-4 w-4" />
-                    <span>Create Item</span>
+                    <span>Add Task | Bug</span>
                   </Button>
                 </div>
               )}
