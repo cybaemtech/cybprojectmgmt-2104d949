@@ -347,10 +347,10 @@ export function EditItemModal({
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       })();
       const actualHoursNum = data.actualHours !== undefined && data.actualHours !== null && data.actualHours !== '' ? Number(data.actualHours) : null;
-      // For TASK: hidden dates. Auto-stamp endDate to today when status flips to DONE with actual hours filled.
+      // For TASK/BUG: hidden dates. Auto-stamp endDate to today when status flips to DONE with actual hours filled.
       let finalStart = data.startDate || null;
       let finalEnd = data.endDate || null;
-      if (workItem.type === 'TASK') {
+      if (['TASK', 'BUG'].includes(workItem.type)) {
         finalStart = (workItem.startDate as any) || todayStr;
         if (data.status === 'DONE' && actualHoursNum && actualHoursNum > 0) {
           finalEnd = (workItem.status !== 'DONE' || !workItem.endDate) ? todayStr : (workItem.endDate as any);
@@ -822,8 +822,8 @@ export function EditItemModal({
                 />
               </div>
 
-              {/* Dates - hidden for TASK (auto-stamped on create/complete) */}
-              {workItem?.type !== 'TASK' && (
+              {/* Dates - hidden for TASK/BUG (auto-stamped on create/complete) */}
+              {!['TASK', 'BUG'].includes(workItem?.type || '') && (
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="startDate" render={({ field }) => (
                     <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
