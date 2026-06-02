@@ -251,6 +251,13 @@ export function EditItemModal({
   });
 
   const isAdminOrScrum = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'SCRUM_MASTER');
+  const { hasFeature } = usePermissions();
+  const itemType = workItem?.type;
+  const canChangeAssignee = itemType
+    ? (['TASK', 'BUG'].includes(itemType)
+        ? hasFeature('change_assignee_task_bug')
+        : hasFeature('change_assignee_epic_feature_story'))
+    : false;
 
   const { data: projectTeamMembers = [] } = useQuery<User[]>({
     queryKey: [`/projects/${selectedProjectId}/team-members`],
