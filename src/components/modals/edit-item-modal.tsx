@@ -822,9 +822,8 @@ export function EditItemModal({
                 />
               </div>
 
-              {/* Dates */}
-              {/* Dates - Show for all types */}
-              {true && (
+              {/* Dates - hidden for TASK (auto-stamped on create/complete) */}
+              {workItem?.type !== 'TASK' && (
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="startDate" render={({ field }) => (
                     <FormItem><FormLabel>Scheduled Start Date</FormLabel><FormControl><Input {...field} type="date" value={field.value || ""} /></FormControl></FormItem>
