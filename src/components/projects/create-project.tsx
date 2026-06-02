@@ -83,6 +83,8 @@ export function CreateProject({
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [categories, setCategories] = useState(categoryStore.all());
+  const [kickoffOpen, setKickoffOpen] = useState(false);
+  const [kickoffComplete, setKickoffComplete] = useState(false);
   
   const isAdmin = currentUser?.role === 'ADMIN';
   const allUsers = userStore.all();
