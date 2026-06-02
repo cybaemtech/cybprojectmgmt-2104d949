@@ -28,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { TagsInput } from "@/components/ui/tags-input";
 import { Trash2 } from "lucide-react";
 import { getScreenshotUrl } from "@/lib/screenshot-utils";
+import { usePermissions } from "@/hooks/use-permissions";
 import { queryClient } from "@/lib/queryClient";
 
 // Create a schema specifically for the form - matching CreateItemModal
