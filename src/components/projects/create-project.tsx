@@ -85,6 +85,7 @@ export function CreateProject({
   const [categories, setCategories] = useState(categoryStore.all());
   const [kickoffOpen, setKickoffOpen] = useState(false);
   const [kickoffComplete, setKickoffComplete] = useState(false);
+  const pendingSuccessRef = useRef<{ taskCount: number } | null>(null);
   
   const isAdmin = currentUser?.role === 'ADMIN';
   const allUsers = userStore.all();
