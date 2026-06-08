@@ -1,3 +1,3 @@
-# Welcome to your Lovable project
+# Cybaem Project Management
 
-TODO: Document your project here
+Project management application for Cybaem Tech.

@@ -13,6 +13,7 @@ import { useDemoMode } from "@/hooks/useDemoMode";
 import { refreshStore } from "@/lib/local-store";
 import { ForgotPasswordModal } from "@/components/modals/forgot-password-modal";
 import { parseInviteToken, isInviteExpired } from "@/lib/invite-token";
+import { supabaseCustom } from "@/lib/supabase-custom";
 import cybaemLogo from "@/assets/cybaem-logo-full.png";
 
 const loginSchema = z.object({
@@ -30,8 +31,17 @@ const signupSchema = z.object({
   path: ["confirmPassword"],
 });
 
+const resetPasswordSchema = z.object({
+  password: z.string().min(6, "Password should be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Please confirm your password"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
 type LoginFormValues = z.infer<typeof loginSchema>;
 type SignupFormValues = z.infer<typeof signupSchema>;
+type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -41,7 +51,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [mode, setMode] = useState<"login" | "signup" | "confirm">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "confirm" | "reset">("login");
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState("");
 
@@ -59,6 +69,28 @@ export default function LoginPage() {
     resolver: zodResolver(signupSchema),
     defaultValues: { fullName: "", email: "", password: "", confirmPassword: "" },
   });
+
+  const resetForm = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { password: "", confirmPassword: "" },
+  });
+
+  // Handle Supabase Auth State Changes (especially for password recovery)
+  useEffect(() => {
+    // 1. Listen for auth events
+    const { data: { subscription } } = supabaseCustom.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setMode("reset");
+      }
+    });
+
+    // 2. Also check URL hash immediately on mount (fallback for some browser/supabase versions)
+    if (window.location.hash.includes("type=recovery")) {
+      setMode("reset");
+    }
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // If an invite link is present, switch to signup mode and prefill email
   useEffect(() => {
@@ -117,6 +149,24 @@ export default function LoginPage() {
     setIsLoading(false);
   };
 
+  const onResetPassword = async (data: ResetPasswordFormValues) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabaseCustom.auth.updateUser({
+        password: data.password
+      });
+      if (error) {
+        toast({ variant: "destructive", title: "Error", description: error.message });
+      } else {
+        toast({ title: "Password updated", description: "Your password has been changed successfully. You can now login." });
+        setMode("login");
+      }
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error", description: "An unexpected error occurred." });
+    }
+    setIsLoading(false);
+  };
+
   return (
     <div className="flex min-h-screen">
       {/* Left branding panel */}
@@ -153,6 +203,60 @@ export default function LoginPage() {
           <div className="lg:hidden flex justify-center mb-6">
             <img src={cybaemLogo} alt="Cybaem Tech" className="h-10" />
           </div>
+
+          {/* ─── RESET PASSWORD VIEW ─── */}
+          {mode === "reset" && (
+            <>
+              <div className="space-y-2 text-center">
+                <h2 className="text-2xl font-bold tracking-tight text-foreground">Set new password</h2>
+                <p className="text-sm text-muted-foreground">Please enter your new password below</p>
+              </div>
+
+              <Form {...resetForm}>
+                <form onSubmit={resetForm.handleSubmit(onResetPassword)} className="space-y-5">
+                  <FormField control={resetForm.control} name="password" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground">New Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} className="pl-10 pr-10 h-11 bg-background border-input" />
+                          <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={resetForm.control} name="confirmPassword" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground">Confirm new password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" {...field} className="pl-10 pr-10 h-11 bg-background border-input" />
+                          <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowConfirmPassword(!showConfirmPassword)} tabIndex={-1}>
+                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium" disabled={isLoading}>
+                    {isLoading ? "Updating..." : "Update Password"}
+                  </Button>
+                </form>
+              </Form>
+
+              <Button variant="outline" className="w-full h-11 gap-2" onClick={() => { setMode("login"); }}>
+                <ArrowLeft className="h-4 w-4" /> Back to Sign In
+              </Button>
+            </>
+          )}
 
           {/* ─── EMAIL CONFIRMATION VIEW ─── */}
           {mode === "confirm" && (
