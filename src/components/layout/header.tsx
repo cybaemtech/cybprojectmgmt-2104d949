@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, Search, Bell, HelpCircle, ChevronDown, LogOut, Key, Settings, Trash2 } from "lucide-react";
+import { Menu, Search, Bell, HelpCircle, ChevronDown, LogOut, Key, Settings, Trash2, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -79,7 +79,7 @@ export function Header({
       }
 
       for (const table of tables) {
-        const { error } = await supabaseCustom.from(table).delete().gte('id', 0);
+        const { error } = await (supabaseCustom as any).from(table).delete().gt('id', -1);
         if (error) console.error(`Error truncating ${table}:`, error);
       }
 
@@ -238,6 +238,14 @@ export function Header({
               <span className="text-xs text-gray-500 font-normal">{user?.email}</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => navigate('/profile')}
+              className="cursor-pointer"
+              disabled={isLoggingOut}
+            >
+              <User className="mr-2 h-4 w-4" />
+              <span>My Profile</span>
+            </DropdownMenuItem>
 
             <DropdownMenuItem
               onClick={handleChangePassword}

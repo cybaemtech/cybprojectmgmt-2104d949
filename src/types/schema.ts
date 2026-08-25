@@ -9,7 +9,7 @@ export type ItemStatus = 'TODO' | 'IN_PROGRESS' | 'ON_HOLD' | 'DONE';
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
 export interface User {
-  id: number;
+  id: string;
   username: string;
   email: string;
   fullName: string;

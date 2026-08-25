@@ -120,7 +120,7 @@ export function ProjectMembersModal({
 
   // Add project member mutation
   const addMemberMutation = useMutation({
-    mutationFn: async (data: { userId: number; role: string; expiresAt: string | null }) => {
+    mutationFn: async (data: { userId: string | number; role: string; expiresAt: string | null }) => {
       return apiRequest('POST', `/projects/${projectId}/members`, data);
     },
     onSuccess: () => {
@@ -145,7 +145,7 @@ export function ProjectMembersModal({
 
   // Remove project member mutation
   const removeMemberMutation = useMutation({
-    mutationFn: async (userId: number) => {
+    mutationFn: async (userId: string | number) => {
       return apiRequest('DELETE', `/projects/${projectId}/members/${userId}`);
     },
     onSuccess: () => {
@@ -183,13 +183,13 @@ export function ProjectMembersModal({
     }
 
     addMemberMutation.mutate({
-      userId: parseInt(selectedUserId),
+      userId: selectedUserId,
       role: selectedRole,
       expiresAt,
     });
   };
 
-  const handleRemoveMember = (userId: number) => {
+  const handleRemoveMember = (userId: string | number) => {
     removeMemberMutation.mutate(userId);
   };
 

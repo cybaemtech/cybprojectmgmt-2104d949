@@ -51,13 +51,13 @@ export default function TeamDetails() {
     }
   };
 
-  const handleAddMember = (userId: number) => {
+  const handleAddMember = (userId: string | number) => {
     teamMemberStore.add(teamIdNum, userId);
     setRefreshKey(k => k + 1);
     toast({ title: "Member added", description: "Team member has been added successfully." });
   };
 
-  const handleRemoveMember = (userId: number) => {
+  const handleRemoveMember = (userId: string | number) => {
     teamMemberStore.remove(teamIdNum, userId);
     setRefreshKey(k => k + 1);
     toast({ title: "Member removed", description: "Team member has been removed successfully." });

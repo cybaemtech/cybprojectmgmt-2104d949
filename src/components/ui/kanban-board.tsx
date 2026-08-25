@@ -257,9 +257,9 @@ export function KanbanBoard({
   };
   
   // Get user by ID
-  const getUserById = (userId: number | null | undefined) => {
+  const getUserById = (userId: string | number | null | undefined) => {
     if (!userId || !users || users.length === 0) return null;
-    return users.find(user => user.id === userId);
+    return users.find(user => String(user.id) === String(userId));
   };
   
   // Get parent item for a given work item
@@ -447,7 +447,7 @@ export function KanbanBoard({
                             title={
                               canUserEditWorkItem(item, currentUser, workItems)
                                 ? 'Click to edit'
-                                : `Created by: ${users?.find(u => u.id === item.reporterId)?.email || users?.find(u => u.id === item.reporterId)?.fullName || "Unknown"} - View only`
+                                : `Created by: ${users?.find(u => String(u.id) === String(item.reporterId))?.email || users?.find(u => String(u.id) === String(item.reporterId))?.fullName || "Unknown"} - View only`
                             }
                           >
                             <CardContent className="p-4">
@@ -465,7 +465,7 @@ export function KanbanBoard({
                                 <h4 className={`font-medium flex-1 ${
                                   currentUser?.role === 'ADMIN' || 
                                   currentUser?.role === 'SCRUM_MASTER' || 
-                                  item.reporterId === currentUser?.id
+                                  String(item.reporterId) === String(currentUser?.id)
                                     ? 'hover:text-primary transition-colors'
                                     : 'text-neutral-600'
                                 }`}>

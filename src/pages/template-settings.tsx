@@ -124,20 +124,8 @@ export default function TemplateSettings() {
   const { user } = useAuth();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
-
   const isAdmin = (user?.role ?? "USER") === "ADMIN" || isDemoMode;
-
-  // Get current user id (skipped in demo mode)
-  useEffect(() => {
-    if (isDemoMode) {
-      setUserId("demo-user");
-      return;
-    }
-    supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id ?? null);
-    });
-  }, [isDemoMode]);
+  const userId = isDemoMode ? "demo-user" : user?.id ?? null;
 
   // ── Fetch from DB (or load samples in demo mode) ──────────────────────────
   const reload = useCallback(async () => {

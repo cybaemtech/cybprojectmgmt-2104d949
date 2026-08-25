@@ -9,14 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
 } from "@/components/ui/form";
 import { Team } from "@/types/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -40,15 +40,15 @@ interface InviteModalProps {
   onCreateTeam: (name: string) => Promise<Team>;
 }
 
-export function InviteModal({ 
-  isOpen, 
-  onClose, 
+export function InviteModal({
+  isOpen,
+  onClose,
   teams,
-  onCreateTeam 
+  onCreateTeam
 }: InviteModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   // Set up the form
   const form = useForm<InviteFormValues>({
     resolver: zodResolver(inviteFormSchema),
@@ -59,7 +59,7 @@ export function InviteModal({
       newTeamName: "",
     },
   });
-  
+
   const selectedTeamId = form.watch("teamId");
   const isNewTeam = selectedTeamId === "new";
 
@@ -68,19 +68,19 @@ export function InviteModal({
     mutationFn: async (inviteData: { emails: string[], teamId: string, role: string }) => {
       const results = [];
       console.log("Sending invites with data:", inviteData);
-      
+
       for (const email of inviteData.emails) {
         try {
           const trimmedEmail = email.trim().toLowerCase();
           console.log(`Inviting ${trimmedEmail} with role ${inviteData.role} to team ${inviteData.teamId}`);
-          
+
           // Check if user already exists in profiles
           const { data: existingProfile } = await supabaseCustom
             .from("profiles")
             .select("id")
             .eq("email", trimmedEmail)
             .maybeSingle();
-          
+
           if (!existingProfile) {
             // Record invitation as PENDING for users who haven't signed up yet
             await supabaseCustom.from("invitations").insert({
@@ -90,13 +90,13 @@ export function InviteModal({
               invited_by: (await supabaseCustom.auth.getUser()).data.user?.id,
               status: 'PENDING',
             });
-            results.push({ 
-              success: true, 
-              email: trimmedEmail, 
+            results.push({
+              success: true,
+              email: trimmedEmail,
             });
             continue;
           }
-          
+
           // Check if already a team member
           const { data: existingMember } = await supabaseCustom
             .from("team_members")
@@ -104,16 +104,16 @@ export function InviteModal({
             .eq("team_id", parseInt(inviteData.teamId))
             .eq("user_id", existingProfile.id)
             .maybeSingle();
-          
+
           if (existingMember) {
-            results.push({ 
-              success: false, 
-              email: trimmedEmail, 
-              error: `${trimmedEmail} is already a member of this team.` 
+            results.push({
+              success: false,
+              email: trimmedEmail,
+              error: `${trimmedEmail} is already a member of this team.`
             });
             continue;
           }
-          
+
           // Add user to the team
           const { error: insertError } = await supabaseCustom
             .from("team_members")
@@ -122,7 +122,7 @@ export function InviteModal({
               user_id: existingProfile.id,
               role: inviteData.role as any,
             });
-          
+
           if (insertError) throw insertError;
 
           // Record invitation as ACTIVE (user already exists)
@@ -133,16 +133,16 @@ export function InviteModal({
             invited_by: (await supabaseCustom.auth.getUser()).data.user?.id,
             status: 'ACTIVE',
           });
-          
-          results.push({ 
-            success: true, 
-            email: trimmedEmail, 
+
+          results.push({
+            success: true,
+            email: trimmedEmail,
           });
         } catch (error) {
           console.error(`Invite error for ${email}:`, error);
-          results.push({ 
-            success: false, 
-            email, 
+          results.push({
+            success: false,
+            email,
             error: error instanceof Error ? error.message : String(error)
           });
         }
@@ -153,7 +153,7 @@ export function InviteModal({
     onSuccess: async (results) => {
       const successful = results.filter(r => r.success);
       const failed = results.filter(r => !r.success);
-      
+
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['/users'] });
       queryClient.invalidateQueries({ queryKey: ['/teams'] });
@@ -167,14 +167,15 @@ export function InviteModal({
         MANAGER: "Project Manager",
         ADMIN: "Administrator",
       };
-      
+
 
       const { data: { session: extSession } } = await supabaseCustom.auth.getSession();
       const extToken = extSession?.access_token;
 
+      const siteUrl = import.meta.env.VITE_SITE_URL || "https://projectmanagement.cybaemtech.app:8444";
       for (const result of successful) {
         try {
-          const loginUrl = buildInviteUrl(window.location.origin, result.email);
+          const loginUrl = buildInviteUrl(siteUrl, result.email);
           await supabase.functions.invoke("send-email", {
             body: {
               templateName: "invitation",
@@ -193,7 +194,7 @@ export function InviteModal({
           console.error(`Failed to send invitation email to ${result.email}:`, emailErr);
         }
       }
-      
+
       if (successful.length > 0) {
         const emails = successful.map(r => r.email).join(', ');
         toast({
@@ -201,18 +202,18 @@ export function InviteModal({
           description: `${successful.length} invitation${successful.length > 1 ? "s" : ""} sent to: ${emails}`,
         });
       }
-      
+
       if (failed.length > 0) {
         console.error("Failed invitations:", failed);
         toast({
           title: `${failed.length} invitation${failed.length > 1 ? "s" : ""} failed`,
-          description: failed.length === 1 ? 
+          description: failed.length === 1 ?
             `${failed[0].email}: ${failed[0].error}` :
             `Multiple invitations failed. Check console for details.`,
           variant: "destructive",
         });
       }
-      
+
       // Close modal if at least one invitation was successful or if all processed
       if (successful.length > 0 || results.length > 0) {
         onClose();
@@ -226,14 +227,14 @@ export function InviteModal({
       });
     }
   });
-  
+
   // Handle form submission
   const onSubmit = async (data: InviteFormValues) => {
     try {
       // Validate email addresses
       const emails = data.emails.split(/[\s,]+/).filter(email => email.trim());
       const { valid, invalid } = validateCorporateEmails(emails);
-      
+
       if (invalid.length > 0) {
         toast({
           title: "Invalid emails",
@@ -242,7 +243,7 @@ export function InviteModal({
         });
         return;
       }
-      
+
       if (valid.length === 0) {
         toast({
           title: "No valid emails",
@@ -251,7 +252,7 @@ export function InviteModal({
         });
         return;
       }
-      
+
       // Handle new team creation if needed
       let teamId = data.teamId;
       if (isNewTeam) {
@@ -263,18 +264,18 @@ export function InviteModal({
           });
           return;
         }
-        
+
         const newTeam = await onCreateTeam(data.newTeamName);
         teamId = newTeam.id.toString();
       }
-      
+
       // Trigger the invitation mutation
       inviteMutation.mutate({
         emails: valid,
         teamId: teamId,
         role: data.role
       });
-      
+
     } catch (error) {
       console.error("Error sending invitations:", error);
       toast({
@@ -291,7 +292,7 @@ export function InviteModal({
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">Invite Team Members</DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
             <FormField
@@ -322,7 +323,7 @@ export function InviteModal({
                 </FormItem>
               )}
             />
-            
+
             {isNewTeam && (
               <FormField
                 control={form.control}
@@ -338,7 +339,7 @@ export function InviteModal({
                 )}
               />
             )}
-            
+
             <FormField
               control={form.control}
               name="emails"
@@ -346,8 +347,8 @@ export function InviteModal({
                 <FormItem>
                   <FormLabel>Email Addresses</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      {...field} 
+                    <Textarea
+                      {...field}
                       placeholder="Enter email addresses separated by commas"
                       rows={3}
                     />
@@ -359,7 +360,7 @@ export function InviteModal({
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="role"
@@ -400,7 +401,7 @@ export function InviteModal({
                 </FormItem>
               )}
             />
-            
+
             <DialogFooter className="mt-6">
               <Button variant="outline" type="button" onClick={onClose} disabled={inviteMutation.isPending}>
                 Cancel

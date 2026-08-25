@@ -1,0 +1,87 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1711 >>
+stream
+BT
+/F1 18 Tf
+1 0 0 1 50 750 Tm
+(CYBAEM TECH - SOFTWARE REQUIREMENT SPECIFICATION) Tj
+
+/F1 11 Tf
+1 0 0 1 50 720 Tm
+(Project Name: Project Management System Platform [PROJ-MGMT-2026]) Tj
+
+1 0 0 1 50 700 Tm
+(Document ID: REQ-PM-2026-V1   |   Date: August 14, 2026   |   Status: Approved) Tj
+
+/F1 13 Tf
+1 0 0 1 50 660 Tm
+(1. EXECUTIVE SUMMARY) Tj
+
+/F1 10 Tf
+1 0 0 1 50 640 Tm
+(This document defines the software requirement specifications for the CybaemTech Project) Tj
+1 0 0 1 50 625 Tm
+(Management Platform. The system organizes, tracks, and manages multi-project software) Tj
+1 0 0 1 50 610 Tm
+(development lifecycles across Client and In-House categories.) Tj
+
+/F1 13 Tf
+1 0 0 1 50 570 Tm
+(2. KEY FUNCTIONAL MODULES) Tj
+
+/F1 10 Tf
+1 0 0 1 50 550 Tm
+(- MOD-01: Work Item Hierarchy [Epic -> Feature -> Story -> Task / Bug]) Tj
+1 0 0 1 50 530 Tm
+(- MOD-02: Daily Standup Activity Matrix [Status rollups, Assignees, Bug metrics]) Tj
+1 0 0 1 50 510 Tm
+(- MOD-03: Sprints & Timeline [Visual Gantt chart with multi-filters]) Tj
+1 0 0 1 50 490 Tm
+(- MOD-04: Team & Permission Governance [Admin, Scrum Master, Developer, Client roles]) Tj
+1 0 0 1 50 470 Tm
+(- MOD-05: Automated Task Generation [Template engine auto-subtask creation]) Tj
+
+/F1 13 Tf
+1 0 0 1 50 430 Tm
+(3. TECHNICAL STACK & NON-FUNCTIONAL SPECIFICATIONS) Tj
+
+/F1 10 Tf
+1 0 0 1 50 410 Tm
+(- Frontend: React, TypeScript, Vite, Tailwind CSS, Lucide Icons) Tj
+1 0 0 1 50 395 Tm
+(- State Sync: Reactive local store with Supabase real-time sync) Tj
+1 0 0 1 50 380 Tm
+(- Security: Role-based authorization controls & mandatory PDF requirement uploads) Tj
+
+/F1 11 Tf
+1 0 0 1 50 320 Tm
+(APPROVED BY: Product Owner / Lead Architect   |   Date: 14 August 2026) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000002004 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+2074
+%%EOF

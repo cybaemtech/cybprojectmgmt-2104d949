@@ -16,22 +16,23 @@ const mapProfile = (row: any): User => ({
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 } as any);
-
-export async function signup(email: string, password: string, fullName: string): Promise<{ success: boolean; error?: string }> {
+export async function signup(email: string, password: string, fullName: string): Promise<{ success: boolean; error?: string; requireConfirmation?: boolean }> {
+  const siteUrl = import.meta.env.VITE_SITE_URL || "https://projectmanagement.cybaemtech.app:8444";
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { full_name: fullName, username: email.split("@")[0] },
-      emailRedirectTo: window.location.origin,
+      emailRedirectTo: siteUrl,
     },
   });
+
   if (error) return { success: false, error: error.message };
   // If email confirmation is required, user won't have a session yet
   if (data.user && !data.session) {
-    return { success: true };
+    return { success: true, requireConfirmation: true };
   }
-  return { success: true };
+  return { success: true, requireConfirmation: false };
 }
 
 export async function login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
@@ -40,23 +41,31 @@ export async function login(email: string, password: string): Promise<{ success:
 
   // Fetch & cache profile
   if (data.user) {
-    const { data: profile } = await supabase.from("profiles").select("*").eq("id", data.user.id).single();
+    const { data: profile, error: fetchError } = await supabase.from("profiles").select("*").eq("id", data.user.id).single();
+
     if (profile) {
       setCachedUser(mapProfile(profile));
     } else {
-      setCachedUser({
+      console.log("Profile not found for user, attempting to create one...");
+      // Profile missing - trigger might have failed or user created manually in auth.users
+      const newProfile = {
         id: data.user.id,
         username: email.split("@")[0],
-        email,
-        fullName: data.user.user_metadata?.full_name ?? email.split("@")[0],
-        password: "",
-        avatarUrl: null,
-        isActive: true,
-        role: "USER",
-        lastLogin: new Date().toISOString(),
-        createdAt: data.user.created_at,
-        updatedAt: data.user.created_at,
-      } as any);
+        email: email,
+        full_name: data.user.user_metadata?.full_name ?? email.split("@")[0],
+        role: "USER" as any,
+        is_active: true,
+      };
+
+      const { error: insertError } = await (supabase.from("profiles") as any).insert(newProfile);
+
+      if (insertError) {
+        console.error("Failed to create profile:", insertError);
+        // Fallback to cache even if DB insert fails
+        setCachedUser(mapProfile({ ...newProfile, created_at: new Date().toISOString() }));
+      } else {
+        setCachedUser(mapProfile({ ...newProfile, created_at: new Date().toISOString() }));
+      }
     }
   }
 

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { workItemStore } from "@/lib/local-store";
+import { useState, useEffect, useMemo } from "react";
+import { workItemStore, projectMemberStore, teamMemberStore, projectStore, userStore, getLocalUser } from "@/lib/local-store";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -30,6 +30,7 @@ import { Trash2 } from "lucide-react";
 import { getScreenshotUrl } from "@/lib/screenshot-utils";
 import { usePermissions } from "@/hooks/use-permissions";
 import { queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
 
 // Create a schema specifically for the form - matching CreateItemModal
 const workItemFormSchema = z.object({
@@ -40,8 +41,8 @@ const workItemFormSchema = z.object({
   tags: z.string().optional(),
   status: z.string(),
   priority: z.string().optional(),
-  parentId: z.number().optional().nullable(),
-  assigneeId: z.number().optional().nullable(),
+  parentId: z.union([z.number(), z.string()]).optional().nullable(),
+  assigneeId: z.union([z.number(), z.string()]).optional().nullable(),
   estimate: z.string().optional(),
   actualHours: z.string().optional(),
   startDate: z.string().optional().nullable(),
@@ -132,6 +133,7 @@ export function EditItemModal({
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedAttachmentFile, setSelectedAttachmentFile] = useState<File | null>(null);
+  const [selectedFeatureFilter, setSelectedFeatureFilter] = useState<string>("all");
 
   // Function to calculate total estimated hours for an item based on its children
   const calculateTotalEstimatedHours = (itemId: number, itemType: string): number => {
@@ -245,29 +247,39 @@ export function EditItemModal({
 
   const displayWorkItem = freshWorkItem || workItem;
 
-  const { data: currentUser } = useQuery<User>({
-    queryKey: ['/auth/user'],
-    queryFn: () => apiGet('/auth/user'),
-  });
+  const { user: authUser } = useAuth();
+  const localUser = getLocalUser();
+  const currentUser = authUser || localUser;
 
-  const isAdminOrScrum = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'SCRUM_MASTER');
+  const userRole = String(currentUser?.role || "").toUpperCase();
+  const isAdmin = userRole === 'ADMIN';
+  const isAdminOrScrum = userRole === 'ADMIN' || userRole === 'SCRUM_MASTER';
+  const isReadOnly = ['EPIC', 'FEATURE'].includes(workItem?.type || '') && !isAdminOrScrum;
   const { hasFeature } = usePermissions();
   const itemType = workItem?.type;
   const canChangeAssignee = itemType
     ? (['TASK', 'BUG'].includes(itemType)
-        ? hasFeature('change_assignee_task_bug')
-        : hasFeature('change_assignee_epic_feature_story'))
+      ? hasFeature('change_assignee_task_bug')
+      : hasFeature('change_assignee_epic_feature_story'))
     : false;
 
-  const { data: projectTeamMembers = [] } = useQuery<User[]>({
-    queryKey: [`/projects/${selectedProjectId}/team-members`],
-    queryFn: async () => {
-      if (!selectedProjectId) return [];
-      const members = await apiGet(`/projects/${selectedProjectId}/team-members`);
-      return members;
-    },
-    enabled: !!selectedProjectId && isOpen
-  });
+  const selectedProjectObj = projectStore.all().find(p => p.id === selectedProjectId);
+  const teamId = selectedProjectObj?.teamId;
+
+  const projectTeamMembers = useMemo(() => {
+    if (!selectedProjectId || !isOpen) return [];
+    const directMembers = projectMemberStore.usersForProject(selectedProjectId);
+    const teamMembers = teamId ? teamMemberStore.usersForTeam(teamId) : [];
+
+    const allUsers = [...directMembers];
+    for (const tu of teamMembers) {
+      if (!allUsers.find(u => String(u.id) === String(tu.id))) {
+        allUsers.push(tu);
+      }
+    }
+    return allUsers;
+  }, [selectedProjectId, teamId, isOpen]);
+
 
   const { data: allWorkItems = [] } = useQuery<WorkItem[]>({
     queryKey: [`/projects/${selectedProjectId}/work-items`],
@@ -279,28 +291,61 @@ export function EditItemModal({
     enabled: !!selectedProjectId && isOpen
   });
 
-  const getValidParents = () => {
-    if (!workItem || !allWorkItems.length) return [];
-    const projectWorkItems = allWorkItems.filter(item =>
-      item.projectId === selectedProjectId && item.id !== workItem.id
-    );
-    switch (workItem.type) {
-      case "FEATURE": return projectWorkItems.filter(item => item.type === "EPIC");
-      case "STORY": return projectWorkItems.filter(item => item.type === "FEATURE");
-      case "TASK":
-      case "BUG": return projectWorkItems.filter(item => item.type === "STORY");
-      default: return [];
+  const assigneeOptions = useMemo(() => {
+    // Restrict TASK and BUG assignment to self for all roles except ADMIN / SCRUM MASTER
+    if (['TASK', 'BUG'].includes(displayWorkItem?.type || '') && !isAdminOrScrum && currentUser) {
+      return [{ value: currentUser.id.toString(), label: currentUser.email }];
     }
-  };
+    const userList = isAdminOrScrum ? userStore.all() : projectTeamMembers;
+    return [
+      { value: "unassigned", label: "Unassigned" },
+      ...userList.map(u => ({
+        value: u.id.toString(),
+        label: u.email || u.fullName || u.username
+      }))
+    ];
+  }, [displayWorkItem?.type, currentUser, isAdminOrScrum, projectTeamMembers]);
+
+  const { availableFeatures, availableStories, getValidParents } = useMemo(() => {
+    if (!workItem) return { availableFeatures: [], availableStories: [], getValidParents: () => [] };
+    const storeItems = workItemStore.all();
+    const sourceItems = (allWorkItems && allWorkItems.length > 0)
+      ? allWorkItems
+      : (workItems && workItems.length > 0 ? workItems : storeItems);
+
+    const projectWorkItems = sourceItems.filter(item =>
+      Number(item.projectId) === Number(selectedProjectId) && Number(item.id) !== Number(workItem.id)
+    );
+
+    const features = projectWorkItems.filter(item => item.type === "FEATURE");
+    let stories = projectWorkItems.filter(item => item.type === "STORY");
+    if (selectedFeatureFilter && selectedFeatureFilter !== "all") {
+      stories = stories.filter(story => Number(story.parentId) === Number(selectedFeatureFilter));
+    }
+
+    return {
+      availableFeatures: features,
+      availableStories: stories,
+      getValidParents: () => {
+        switch (workItem.type) {
+          case "FEATURE": return projectWorkItems.filter(item => item.type === "EPIC");
+          case "STORY": return projectWorkItems.filter(item => item.type === "FEATURE");
+          case "TASK":
+          case "BUG": return projectWorkItems.filter(item => item.type === "STORY");
+          default: return [];
+        }
+      }
+    };
+  }, [workItem, allWorkItems, workItems, selectedProjectId, selectedFeatureFilter]);
 
   const getParentLabel = () => {
-    if (!workItem) return "Parent";
+    if (!workItem) return "Parent Item";
     switch (workItem.type) {
-      case "FEATURE": return "Client Details";
-      case "STORY": return "Client Requirement";
+      case "FEATURE": return "Parent Epic";
+      case "STORY": return "Parent Feature";
       case "TASK":
-      case "BUG": return "Change Request";
-      default: return "Parent";
+      case "BUG": return "Parent Story / Feature";
+      default: return "Parent Item";
     }
   };
 
@@ -343,9 +388,15 @@ export function EditItemModal({
         prototypeStatus: displayWorkItem.prototypeStatus ?? "",
         hasExistingPdf: !!(displayWorkItem as any).pdfUploadBlob || !!(displayWorkItem as any).pdfUploadPath,
       };
+
+      // For tasks/bugs, if user is not admin or scrum master and assignee is not them, force it to be them
+      if (['TASK', 'BUG'].includes(displayWorkItem.type) && currentUser && !isAdminOrScrum && formData.assigneeId !== currentUser.id) {
+        formData.assigneeId = currentUser.id;
+      }
+
       form.reset(formData);
     }
-  }, [displayWorkItem, isOpen, form]);
+  }, [displayWorkItem, isOpen, form, currentUser]);
 
   const onSubmit = async (data: WorkItemFormValues) => {
     if (!workItem) return;
@@ -448,6 +499,12 @@ export function EditItemModal({
         <ScrollArea className="max-h-[80vh] px-6 py-4 bg-white">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pb-4">
+              {/* If non-admin/non-scrum and type is EPIC or FEATURE, show a notice */}
+              {['EPIC', 'FEATURE'].includes(workItem.type) && !isAdminOrScrum && (
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded text-sm mb-4">
+                  These details are read-only for Members. Only Administrators or Scrum Masters can modify Client Details or Requirements.
+                </div>
+              )}
               <FormField
                 control={form.control}
                 name="title"
@@ -455,7 +512,7 @@ export function EditItemModal({
                   <FormItem>
                     <FormLabel>Title <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Enter title" maxLength={200} className="py-2" />
+                      <Input {...field} placeholder="Enter title" maxLength={200} className="py-2" disabled={isReadOnly} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -485,6 +542,7 @@ export function EditItemModal({
                           }
                           value={field.value || ""}
                           rows={2}
+                          disabled={isReadOnly}
                         />
                       </FormControl>
                       <FormMessage />
@@ -526,8 +584,8 @@ export function EditItemModal({
                       </div>
                     )}
                     <div
-                      className="border-2 border-dashed border-orange-200 rounded-lg p-4 text-center hover:border-orange-400 cursor-pointer bg-white transition-colors"
-                      onClick={() => document.getElementById('edit-pdf-input')?.click()}
+                      className={`border-2 border-dashed border-orange-200 rounded-lg p-4 text-center ${isReadOnly ? 'cursor-not-allowed opacity-60' : 'hover:border-orange-400 cursor-pointer'} bg-white transition-colors`}
+                      onClick={() => !isReadOnly && document.getElementById('edit-pdf-input')?.click()}
                     >
                       <input
                         id="edit-pdf-input"
@@ -536,9 +594,9 @@ export function EditItemModal({
                         className="hidden"
                         onChange={e => {
                           const file = e.target.files?.[0];
-                          if (file) { 
-                            setSelectedAttachmentFile(file); 
-                            form.setValue('attachmentFile', file); 
+                          if (file) {
+                            setSelectedAttachmentFile(file);
+                            form.setValue('attachmentFile', file);
                           }
                         }}
                       />
@@ -561,7 +619,7 @@ export function EditItemModal({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="font-semibold text-orange-900">GitHub / Prototype Link (Optional)</FormLabel>
-                        <FormControl><Input {...field} placeholder="https://..." value={field.value || ""} className="bg-white" /></FormControl>
+                        <FormControl><Input {...field} placeholder="https://..." value={field.value || ""} className="bg-white" disabled={isReadOnly} /></FormControl>
                       </FormItem>
                     )}
                   />
@@ -658,7 +716,7 @@ export function EditItemModal({
                   {/* Screenshot upload for BUG */}
                   <div className="space-y-2 mt-4">
                     <FormLabel className="font-semibold">Screenshot / Attachment (Optional)</FormLabel>
-                    
+
                     {/* Show existing screenshot if available */}
                     {(displayWorkItem as any)?.screenshot_path && (
                       <div className="mb-2 p-2 border rounded-md bg-white">
@@ -744,10 +802,28 @@ export function EditItemModal({
                   name="projectId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Project</FormLabel>
+                      <FormLabel className="flex items-center justify-between">
+                        <span>Project</span>
+                        {!isAdmin && (
+                          <span className="text-[10px] text-amber-700 font-normal">Admin only</span>
+                        )}
+                      </FormLabel>
                       <FormControl>
-                        <Combobox options={projects.map(p => ({ value: p.id.toString(), label: p.name }))} value={field.value?.toString()} onValueChange={() => { }} disabled={true} />
+                        <Combobox
+                          options={projects.map(p => ({ value: p.id.toString(), label: p.name }))}
+                          value={field.value?.toString()}
+                          onValueChange={(val) => {
+                            if (val) {
+                              const newProjId = parseInt(val);
+                              field.onChange(newProjId);
+                              form.setValue("parentId", null);
+                              setSelectedFeatureFilter("all");
+                            }
+                          }}
+                          disabled={!isAdmin || isReadOnly}
+                        />
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -759,10 +835,10 @@ export function EditItemModal({
                       <FormLabel>Assignee</FormLabel>
                       <FormControl>
                         <Combobox
-                          options={[{ value: "unassigned", label: "Unassigned" }, ...projectTeamMembers.map(u => ({ value: u.id.toString(), label: u.fullName || u.username }))]}
+                          options={assigneeOptions}
                           value={field.value?.toString() || "unassigned"}
-                          onValueChange={(v) => field.onChange(v && v !== "unassigned" ? parseInt(v) : null)}
-                          disabled={!canChangeAssignee}
+                          onValueChange={(v) => field.onChange(v && v !== "unassigned" ? v : null)}
+                          disabled={!canChangeAssignee || isReadOnly}
                         />
                       </FormControl>
                     </FormItem>
@@ -771,6 +847,87 @@ export function EditItemModal({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Separate Move Location Section for TASK and BUG - Admin & Scrum Master Only */}
+              {['TASK', 'BUG'].includes(workItem?.type || '') ? (
+                <div className="space-y-3 bg-gradient-to-r from-blue-50/80 to-indigo-50/80 p-4 rounded-xl border border-indigo-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <FormLabel className="font-semibold text-indigo-950 text-sm flex items-center gap-2">
+                      <span className="text-base">📍</span> Move Task / Bug to Another Story
+                    </FormLabel>
+                    {!isAdminOrScrum ? (
+                      <span className="text-xs text-amber-800 font-medium bg-amber-100/90 px-2.5 py-1 rounded-md border border-amber-200 flex items-center gap-1">
+                        <span>🔒</span> Only Admin & Scrum Master can move tasks
+                      </span>
+                    ) : (
+                      <span className="text-xs text-indigo-700 font-medium">Use Option 1 to filter by Feature, then select Target Story in Option 2</span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                    {/* Separate Option 1: Feature Filter */}
+                    <div>
+                      <label className="text-xs font-semibold text-indigo-900 mb-1.5 block">
+                        Option 1: Filter Feature
+                      </label>
+                      <Select value={selectedFeatureFilter} onValueChange={setSelectedFeatureFilter} disabled={!isAdminOrScrum}>
+                        <SelectTrigger className="bg-white text-sm h-10 border-indigo-200 focus:border-indigo-500">
+                          <SelectValue placeholder="All Features" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">✨ All Features (Show All Stories)</SelectItem>
+                          {availableFeatures.map(feat => (
+                            <SelectItem key={feat.id} value={feat.id.toString()}>
+                              Feature: {feat.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Separate Option 2: Target Story Selection */}
+                    <FormField
+                      control={form.control}
+                      name="parentId"
+                      render={({ field }) => {
+                        const currentVal = field.value ? field.value.toString() : "none";
+                        return (
+                          <FormItem>
+                            <FormLabel className="text-xs font-semibold text-indigo-900 mb-1.5 block">
+                              Option 2: Select Target Story *
+                            </FormLabel>
+                            <FormControl>
+                              <Select
+                                value={currentVal}
+                                onValueChange={(val) => {
+                                  field.onChange(val && val !== "none" ? Number(val) : null);
+                                }}
+                                disabled={!isAdminOrScrum || isReadOnly}
+                              >
+                                <SelectTrigger className="bg-white text-sm h-10 border-indigo-200 focus:border-indigo-500 font-medium">
+                                  <SelectValue placeholder="Select target story..." />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-64">
+                                  <SelectItem value="none">None (Unassigned Parent)</SelectItem>
+                                  {availableStories.map(story => {
+                                    const parentFeat = availableFeatures.find(f => Number(f.id) === Number(story.parentId));
+                                    return (
+                                      <SelectItem key={story.id} value={story.id.toString()}>
+                                        {parentFeat ? `${parentFeat.title} ➔ ` : ''}{story.title}
+                                      </SelectItem>
+                                    );
+                                  })}
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                /* Standard Parent selection for FEATURE / STORY */
                 <FormField
                   control={form.control}
                   name="parentId"
@@ -779,14 +936,23 @@ export function EditItemModal({
                       <FormLabel>{getParentLabel()}</FormLabel>
                       <FormControl>
                         <Combobox
-                          options={[{ value: "none", label: "None" }, ...getValidParents().map(item => ({ value: item.id.toString(), label: `${item.externalId}: ${item.title}` }))]}
+                          options={[
+                            { value: "none", label: "None (Unassigned Parent)" },
+                            ...getValidParents().map(item => ({
+                              value: item.id.toString(),
+                              label: `${item.externalId ? item.externalId + ': ' : ''}${item.title}`
+                            }))
+                          ]}
                           value={field.value?.toString() || "none"}
                           onValueChange={(v) => field.onChange(v && v !== "none" ? parseInt(v) : null)}
+                          disabled={isReadOnly}
                         />
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
+              )}
                 <FormField
                   control={form.control}
                   name="status"
@@ -841,16 +1007,27 @@ export function EditItemModal({
                   )} />
                 </div>
               )}
-
-              <div className="flex justify-between pt-4 border-t bg-white sticky bottom-0">
-                {(isAdminOrScrum || (workItem && ['TASK', 'BUG'].includes(workItem.type))) && (
-                  <Button variant="destructive" type="button" onClick={() => setShowDeleteDialog(true)} className="flex items-center gap-2">
-                    <Trash2 className="h-4 w-4" /> Delete Item
-                  </Button>
-                )}
+              {/* Footer */}
+              <div className="flex justify-between items-center gap-2 pt-4 border-t sticky bottom-0 bg-white">
+                <div>
+                  {isAdminOrScrum && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setShowDeleteDialog(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete Item
+                    </Button>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
-                  <Button type="submit">Update Item</Button>
+                  {((workItem.type !== 'EPIC' && workItem.type !== 'FEATURE') || isAdminOrScrum) && (
+                    <Button type="submit">Update Item</Button>
+                  )}
                 </div>
               </div>
             </form>

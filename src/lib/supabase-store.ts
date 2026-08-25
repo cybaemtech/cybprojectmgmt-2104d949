@@ -336,7 +336,7 @@ export const workItemStore = {
   all: async (): Promise<WorkItem[]> => {
     const { data, error } = await supabase
       .from("work_items")
-      .select("*, projects(key, name)")
+      .select("id,external_id,title,description,tags,type,status,priority,project_id,parent_id,assignee_id,reporter_id,created_by_name,created_by_email,updated_by,updated_by_name,estimate,actual_hours,start_date,end_date,completed_at,bug_type,severity,current_behavior,expected_behavior,reference_url,screenshot_path,github_url,prototype_link,prototype_status,pdf_upload_path,created_at,updated_at")
       .order("created_at", { ascending: false });
     if (error) { console.error("workItemStore.all error:", error); return []; }
     return (data || []).map(mapWorkItem);
@@ -345,7 +345,7 @@ export const workItemStore = {
   byProject: async (projectId: number): Promise<WorkItem[]> => {
     const { data, error } = await supabase
       .from("work_items")
-      .select("*, projects(key, name)")
+      .select("id,external_id,title,description,tags,type,status,priority,project_id,parent_id,assignee_id,reporter_id,created_by_name,created_by_email,updated_by,updated_by_name,estimate,actual_hours,start_date,end_date,completed_at,bug_type,severity,current_behavior,expected_behavior,reference_url,screenshot_path,github_url,prototype_link,prototype_status,pdf_upload_path,created_at,updated_at")
       .eq("project_id", projectId)
       .order("created_at", { ascending: false });
     if (error) return [];
@@ -355,7 +355,7 @@ export const workItemStore = {
   get: async (id: number): Promise<WorkItem | undefined> => {
     const { data, error } = await supabase
       .from("work_items")
-      .select("*, projects(key, name)")
+      .select("*")
       .eq("id", id)
       .single();
     if (error || !data) return undefined;
@@ -366,15 +366,15 @@ export const workItemStore = {
     const row = workItemToRow(item);
     if (item.id) {
       row.updated_at = new Date().toISOString();
-      const { data, error } = await supabase.from("work_items").update(row).eq("id", item.id).select("*, projects(key, name)").single();
+      const { data, error } = await supabase.from("work_items").update(row).eq("id", item.id).select("*").single();
       if (error) throw error;
       return mapWorkItem(data);
     } else {
-      const { data, error } = await supabase.from("work_items").insert(row).select("*, projects(key, name)").single();
+      const { data, error } = await supabase.from("work_items").insert(row).select("*").single();
       if (error) throw error;
       // Auto-generate external_id if needed
       if (!data.external_id) {
-        const extId = `${data.projects?.key || "WI"}-${data.id}`;
+        const extId = `WI-${data.id}`;
         await supabase.from("work_items").update({ external_id: extId }).eq("id", data.id);
         data.external_id = extId;
       }
@@ -385,7 +385,7 @@ export const workItemStore = {
   update: async (id: number, updates: Partial<WorkItem>): Promise<WorkItem | undefined> => {
     const row = workItemToRow(updates);
     row.updated_at = new Date().toISOString();
-    const { data, error } = await supabase.from("work_items").update(row).eq("id", id).select("*, projects(key, name)").single();
+    const { data, error } = await supabase.from("work_items").update(row).eq("id", id).select("*").single();
     if (error) return undefined;
     return mapWorkItem(data);
   },

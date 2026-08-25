@@ -59,9 +59,22 @@ export default function Dashboard() {
 
   const currentUser = authUser || getLocalUser();
 
-  const allTeams = teamStore.all();
-  const allProjects = projectStore.all();
+  const [allTeams, setAllTeams] = useState(() => teamStore.all());
+  const [allProjects, setAllProjects] = useState(() => projectStore.all());
+  const [allWorkItemsRaw, setAllWorkItemsRaw] = useState(() => workItemStore.all());
   const isLoadingProjects = false;
+
+  // Subscribe to store-change so data updates when Supabase load completes on refresh
+  useEffect(() => {
+    const refresh = () => {
+      setAllTeams(teamStore.all());
+      setAllProjects(projectStore.all());
+      setAllWorkItemsRaw(workItemStore.all());
+    };
+    refresh();
+    window.addEventListener("store-change", refresh);
+    return () => window.removeEventListener("store-change", refresh);
+  }, []);
 
   // Get user's team IDs
   const userTeamIds = useMemo(() => allTeams.map(t => t.id), [allTeams]);
@@ -77,7 +90,6 @@ export default function Dashboard() {
   // Teams: all for admin/scrum, filtered for others
   const teams = useMemo(() => isAdminOrScrum ? allTeams : allTeams.filter(team => userTeamIds.includes(team.id)), [allTeams, userTeamIds, isAdminOrScrum]);
 
-  const allWorkItemsRaw = workItemStore.all();
   const isLoadingWorkItems = false;
 
   // Work items: all for admin/scrum, filtered for others

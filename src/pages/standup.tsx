@@ -8,7 +8,7 @@ import { ListTodo, Filter, X, CheckCircle, AlertTriangle, Search, Layers, Calend
 import { User, Team, Project, WorkItem } from "@/types/schema";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { cn } from "@/lib/utils";
-import { projectStore, workItemStore, userStore, getLocalUser } from "@/lib/local-store";
+import { projectStore, workItemStore, userStore, getLocalUser, isStoreInitialized } from "@/lib/local-store";
 
 export default function DailyStandup() {
   const { toast } = useToast();
@@ -21,12 +21,9 @@ export default function DailyStandup() {
   const [standupAssigneeFilter, setStandupAssigneeFilter] = useState<string[]>([]);
   const [standupProjectFilter, setStandupProjectFilter] = useState<string[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
-  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>(() => {
-    const now = new Date();
-    return {
-      from: new Date(now.getFullYear(), now.getMonth(), 1),
-      to: new Date(now.getFullYear(), now.getMonth() + 1, 0),
-    };
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: undefined,
+    to: undefined,
   });
 
   const { openModal } = useModal();
@@ -35,6 +32,7 @@ export default function DailyStandup() {
   const [users, setUsers] = useState<User[]>(() => userStore.all());
   const [projects, setProjects] = useState<Project[]>(() => projectStore.all());
   const [allWorkItems, setAllWorkItems] = useState<WorkItem[]>(() => workItemStore.all());
+  const [storeReady, setStoreReady] = useState<boolean>(() => isStoreInitialized());
   const currentUser = getLocalUser();
 
   useEffect(() => {
@@ -42,11 +40,40 @@ export default function DailyStandup() {
       setUsers(userStore.all());
       setProjects(projectStore.all());
       setAllWorkItems(workItemStore.all());
+      setStoreReady(isStoreInitialized());
     };
+    refresh();
     window.addEventListener("store-change", refresh);
     return () => window.removeEventListener("store-change", refresh);
   }, []);
   const isAdminOrScrum = currentUser?.role === "ADMIN" || currentUser?.role === "SCRUM_MASTER";
+  // Show spinner only while store has not yet loaded AND we have no cached items
+  const isInitialLoading = !storeReady && allWorkItems.length === 0;
+
+  // Helper to walk up the parentId chain and collect ancestor names by type
+  const getAncestors = useMemo(() => {
+    const itemMap = new Map<number, WorkItem>();
+    allWorkItems.forEach(w => itemMap.set(w.id, w));
+
+    return (item: WorkItem) => {
+      let epicName: string | null = null;
+      let featureName: string | null = null;
+      let storyName: string | null = null;
+
+      let current: WorkItem | undefined = item;
+      // Walk up max 5 levels to avoid infinite loops
+      for (let i = 0; i < 5 && current?.parentId; i++) {
+        const parent = itemMap.get(current.parentId);
+        if (!parent) break;
+        if (parent.type === "STORY") storyName = parent.title;
+        if (parent.type === "FEATURE") featureName = parent.title;
+        if (parent.type === "EPIC") epicName = parent.title;
+        current = parent;
+      }
+
+      return { epicName, featureName, storyName };
+    };
+  }, [allWorkItems]);
 
   const filteredWorkItems = useMemo(() => {
     let items = allWorkItems;
@@ -84,12 +111,18 @@ export default function DailyStandup() {
       items = items.filter(i => i.assigneeId && standupAssigneeFilter.includes(i.assigneeId.toString()));
     }
 
-    // Filter by date range
+    // Filter by date range — use updatedAt so recently-worked items appear even if created long ago
     if (dateRange.from || dateRange.to) {
       items = items.filter(i => {
-        const itemDate = new Date(i.createdAt);
+        // Prefer updatedAt for standup relevance; fall back to createdAt
+        const itemDate = new Date(i.updatedAt || i.createdAt);
         if (dateRange.from && itemDate < dateRange.from) return false;
-        if (dateRange.to && itemDate > dateRange.to) return false;
+        // Extend 'to' to end of that day so items updated on the selected date are included
+        if (dateRange.to) {
+          const endOfDay = new Date(dateRange.to);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (itemDate > endOfDay) return false;
+        }
         return true;
       });
     }
@@ -125,8 +158,8 @@ export default function DailyStandup() {
     standupAssigneeFilter.length > 0 ||
     standupProjectFilter.length > 0 ||
     categoryFilter.length > 0 ||
-    dateRange.from !== undefined ||
-    dateRange.to !== undefined;
+    !!dateRange.from ||
+    !!dateRange.to;
 
   const filteredProjects = projects.filter((project: Project) => {
     const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -146,6 +179,17 @@ export default function DailyStandup() {
     setCategoryFilter([]);
     setDateRange({ from: undefined, to: undefined });
   };
+
+  if (isInitialLoading) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-[50vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-700 mx-auto mb-3"></div>
+          <p className="text-sm text-neutral-500 font-medium">Loading Daily Standup data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4">
@@ -393,13 +437,34 @@ export default function DailyStandup() {
                           <th className="px-2 py-1 text-[9px] font-bold text-neutral-500 uppercase tracking-widest text-right w-20">Est Hr</th>
                           <th className="px-2 py-1 text-[9px] font-bold text-neutral-500 uppercase tracking-widest text-right w-20">Act Hr</th>
                           <th className="px-2 py-1 text-[9px] font-bold text-neutral-500 uppercase tracking-widest text-right w-24">Status</th>
+                          <th className="px-2 py-1 text-[9px] font-bold text-neutral-500 uppercase tracking-widest text-right w-32">Assignee Name</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-neutral-50">
-                        {projectItems.length > 0 ? projectItems.map((item, index) => (
+                        {projectItems.length > 0 ? projectItems.map((item, index) => {
+                          const { epicName, featureName, storyName } = getAncestors(item);
+                          const breadcrumbs = [
+                            epicName ? <span key="epic" className="text-purple-600">{epicName}</span> : null,
+                            featureName ? <span key="feature" className="text-indigo-600">{featureName}</span> : null,
+                            storyName ? <span key="story" className="text-sky-600">{storyName}</span> : null,
+                          ].filter(Boolean);
+
+                          return (
                           <tr key={item.id} className="hover:bg-neutral-50/50 transition-colors">
                             <td className="px-2 py-1 text-xs text-neutral-500">{index + 1}</td>
-                            <td className="px-2 py-1 text-xs text-neutral-700">{item.title}</td>
+                            <td className="px-2 py-1 text-xs text-neutral-700">
+                              {breadcrumbs.length > 0 && (
+                                <div className="flex items-center gap-1 text-[10px] text-neutral-400 mb-0.5 font-medium flex-wrap">
+                                  {breadcrumbs.map((crumb, i) => (
+                                    <React.Fragment key={i}>
+                                      {i > 0 && <span className="text-neutral-300">/</span>}
+                                      {crumb}
+                                    </React.Fragment>
+                                  ))}
+                                </div>
+                              )}
+                              <span className="font-normal text-neutral-800">{item.title}</span>
+                            </td>
                             <td className="px-2 py-1 text-right">
                               <span className={cn(
                                 "text-[9px] font-bold px-2 py-0.5 rounded border uppercase inline-block",
@@ -436,10 +501,13 @@ export default function DailyStandup() {
                                 {item.status.replace("_", " ")}
                               </span>
                             </td>
+                            <td className="px-2 py-1 text-xs text-neutral-700 text-right">
+                              {item.assigneeId ? (users.find(u => u.id === item.assigneeId)?.fullName || "—") : "—"}
+                            </td>
                           </tr>
-                        )) : (
+                        )}) : (
                           <tr>
-                            <td colSpan={7} className="px-2 py-2 text-center text-xs text-neutral-500 italic">No items found for this project.</td>
+                            <td colSpan={8} className="px-2 py-2 text-center text-xs text-neutral-500 italic">No items found for this project.</td>
                           </tr>
                         )}
                       </tbody>

@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/form";
 import { Project, User, WorkItem } from "@/types/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { workItemStore } from "@/lib/local-store";
+import { workItemStore, projectMemberStore, teamMemberStore, projectStore, userStore } from "@/lib/local-store";
 import { apiGet } from "@/lib/api-config";
 import { getCachedUser } from "@/lib/supabase-store";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -268,14 +268,23 @@ export function CreateItemModal({
   const isAdminOrScrum = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'SCRUM_MASTER');
   const { hasFeature } = usePermissions();
 
-  const { data: projectTeamMembers = [] } = useQuery<User[]>({
-    queryKey: [`/projects/${selectedProjectId}/team-members`],
-    queryFn: async () => {
-      if (!selectedProjectId) return [];
-      return await apiGet(`/projects/${selectedProjectId}/team-members`);
-    },
-    enabled: isOpen && !!selectedProjectId
-  });
+  const selectedProjectObj = projectStore.all().find(p => p.id === selectedProjectId);
+  const teamId = selectedProjectObj?.teamId;
+
+  const projectTeamMembers = useMemo(() => {
+    if (!selectedProjectId || !isOpen) return [];
+    const directMembers = projectMemberStore.usersForProject(selectedProjectId);
+    const teamMembers = teamId ? teamMemberStore.usersForTeam(teamId) : [];
+
+    const allUsers = [...directMembers];
+    for (const tu of teamMembers) {
+      if (!allUsers.find(u => String(u.id) === String(tu.id))) {
+        allUsers.push(tu);
+      }
+    }
+    return allUsers;
+  }, [selectedProjectId, teamId, isOpen]);
+
 
   const watchedType = form.watch("type");
   const watchedBugType = form.watch("bugType");
@@ -284,11 +293,26 @@ export function CreateItemModal({
   const watchedEndDate = form.watch("endDate");
   const watchedAutoCreate = form.watch("autoCreateTemplateTasks");
 
+  const assigneeOptions = useMemo(() => {
+    // Restrict TASK and BUG assignment to self for non-ADMIN users
+    if (['TASK', 'BUG'].includes(watchedType) && currentUser?.role !== 'ADMIN' && currentUser) {
+      return [{ value: currentUser.id.toString(), label: currentUser.email }];
+    }
+    const userList = currentUser?.role === 'ADMIN' ? userStore.all() : projectTeamMembers;
+    return [
+      { value: "unassigned", label: "Unassigned" },
+      ...userList.map(u => ({
+        value: u.id.toString(),
+        label: u.email || u.fullName || u.username
+      }))
+    ];
+  }, [watchedType, currentUser, projectTeamMembers]);
+
   // Compute the sum of template task hours for auto-create mode
   const selectedTemplateTotalHours = selectedTemplateId
     ? availableTemplateTasks
-        .filter(t => t.templateId === selectedTemplateId && t.isActive)
-        .reduce((sum, t) => sum + (t.estimatedHours || 0), 0)
+      .filter(t => t.templateId === selectedTemplateId && t.isActive)
+      .reduce((sum, t) => sum + (t.estimatedHours || 0), 0)
     : 0;
 
   // Auto-set estimate from template hours when auto-create is on
@@ -336,10 +360,14 @@ export function CreateItemModal({
   }, [preselectedType, preselectedParent, form, isOpen]);
 
   useEffect(() => {
-    if (currentUser && isOpen && !form.getValues("assigneeId")) {
-      form.setValue("assigneeId", currentUser.id);
+    if (currentUser && isOpen) {
+      const currentAssignee = form.getValues("assigneeId");
+      // Always set if not set, OR if it's a TASK/BUG and currently not set to currentUser for non-admins
+      if (!currentAssignee || (['TASK', 'BUG'].includes(watchedType) && currentUser.role !== 'ADMIN' && currentAssignee !== currentUser.id)) {
+        form.setValue("assigneeId", currentUser.id);
+      }
     }
-  }, [currentUser, isOpen, form]);
+  }, [currentUser, isOpen, form, watchedType]);
 
   // Auto-populate EPIC (Client Details) fields from the selected project's client info
   const selectedProject = projects.find(p => p.id === selectedProjectId);
@@ -389,8 +417,8 @@ export function CreateItemModal({
           submitData.pdfUploadBlob = base64String;
           submitData.pdfUploadPath = `pdf_${new Date().getTime()}_${selectedAttachmentFile.name}`;
         } else {
-          submitData.screenshot_blob = base64String;
-          submitData.attachment_path = `attachment_${new Date().getTime()}_${selectedAttachmentFile.name}`;
+          submitData.screenshotBlob = base64String;
+          submitData.screenshotPath = `attachment_${new Date().getTime()}_${selectedAttachmentFile.name}`;
         }
       }
 
@@ -591,14 +619,21 @@ export function CreateItemModal({
                         value={field.value}
                         className="grid grid-cols-2 md:grid-cols-5 gap-3"
                       >
-                        {['EPIC', 'FEATURE', 'STORY', 'TASK', 'BUG'].map((type) => (
-                          <div key={type} className="flex items-center space-x-2 border rounded-md p-2 hover:bg-neutral-50 cursor-pointer">
-                            <RadioGroupItem value={type} id={`type-${type}`} />
-                            <Label htmlFor={`type-${type}`} className="text-sm font-medium cursor-pointer flex-1">
-                              {getTypeDisplayName(type)}
-                            </Label>
-                          </div>
-                        ))}
+                        {['EPIC', 'FEATURE', 'STORY', 'TASK', 'BUG'].map((type) => {
+                          // Only ADMIN and SCRUM_MASTER can create EPIC and FEATURE
+                          const isAdminOrScrum = currentUser?.role === 'ADMIN' || currentUser?.role === 'SCRUM_MASTER';
+                          if (['EPIC', 'FEATURE'].includes(type) && !isAdminOrScrum) {
+                            return null;
+                          }
+                          return (
+                            <div key={type} className="flex items-center space-x-2 border rounded-md p-2 hover:bg-neutral-50 cursor-pointer">
+                              <RadioGroupItem value={type} id={`type-${type}`} />
+                              <Label htmlFor={`type-${type}`} className="text-sm font-medium cursor-pointer flex-1">
+                                {getTypeDisplayName(type)}
+                              </Label>
+                            </div>
+                          );
+                        })}
                       </RadioGroup>
                     </FormControl>
                     <FormMessage />
@@ -689,7 +724,7 @@ export function CreateItemModal({
                         <FormItem>
                           <FormLabel>Primary Contact Name</FormLabel>
                           <FormControl>
-                             <Input {...field} placeholder="Name of the main point of contact" value={field.value || ""} disabled={!!selectedProject?.clientContactName} />
+                            <Input {...field} placeholder="Name of the main point of contact" value={field.value || ""} disabled={!!selectedProject?.clientContactName} />
                           </FormControl>
                           <p className="text-xs text-muted-foreground">The main person you speak to at the company</p>
                         </FormItem>
@@ -703,7 +738,7 @@ export function CreateItemModal({
                           <FormItem>
                             <FormLabel>Contact Email</FormLabel>
                             <FormControl>
-                               <Input {...field} type="email" placeholder="client@example.com" value={field.value || ""} disabled={!!selectedProject?.clientContactEmail} />
+                              <Input {...field} type="email" placeholder="client@example.com" value={field.value || ""} disabled={!!selectedProject?.clientContactEmail} />
                             </FormControl>
                           </FormItem>
                         )}
@@ -715,7 +750,7 @@ export function CreateItemModal({
                           <FormItem>
                             <FormLabel>Contact Phone Number</FormLabel>
                             <FormControl>
-                               <Input {...field} type="tel" placeholder="+1 (555) 000-0000" value={field.value || ""} disabled={!!selectedProject?.clientContactPhone} />
+                              <Input {...field} type="tel" placeholder="+1 (555) 000-0000" value={field.value || ""} disabled={!!selectedProject?.clientContactPhone} />
                             </FormControl>
                           </FormItem>
                         )}
@@ -735,9 +770,9 @@ export function CreateItemModal({
                             <FormLabel>Account Manager</FormLabel>
                             <FormControl>
                               <Combobox
-                                options={[{ value: "unassigned", label: "Unassigned" }, ...projectTeamMembers.map(u => ({ value: u.id.toString(), label: u.fullName || u.username }))]}
+                                options={assigneeOptions}
                                 value={field.value?.toString() || "unassigned"}
-                                onValueChange={v => field.onChange(v === "unassigned" ? null : parseInt(v))}
+                                onValueChange={v => field.onChange(v === "unassigned" ? null : v)}
                               />
                             </FormControl>
                             <p className="text-xs text-muted-foreground">Internal team member responsible for this client</p>
@@ -782,116 +817,116 @@ export function CreateItemModal({
               {/* Description - shown for non-TASK, non-BUG, non-FEATURE, non-EPIC */}
               {!['TASK', 'BUG', 'FEATURE', 'EPIC'].includes(watchedType) && (
                 <>
-                {/* Parent FEATURE selector for STORY */}
-                {watchedType === 'STORY' && (() => {
-                  const parentFeatures = workItems.filter(w => w.type === 'FEATURE' && w.projectId === selectedProjectId);
-                  return parentFeatures.length > 0 ? (
-                    <FormField
-                      control={form.control}
-                      name="parentId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Client Requirement (Parent)</FormLabel>
-                          <FormControl>
-                            <Combobox
-                              options={parentFeatures.map(f => ({ value: f.id.toString(), label: f.title }))}
-                              value={field.value?.toString() || ""}
-                              onValueChange={v => field.onChange(v ? parseInt(v) : null)}
-                              placeholder="Auto-select first available..."
-                            />
-                          </FormControl>
-                          <p className="text-xs text-muted-foreground">Leave empty to auto-attach to the first Client Requirement</p>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  ) : null;
-                })()}
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {watchedType === 'STORY' ? 'Requirement Points' : 'Description'}
-                        {watchedType === 'STORY' && <span className="text-destructive"> *</span>}
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder={watchedType === 'STORY' ? "Enter requirement points" : "Enter description"}
-                          value={field.value || ""}
-                          rows={2}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                {watchedType === 'STORY' && (
+                  {/* Parent FEATURE selector for STORY */}
+                  {watchedType === 'STORY' && (() => {
+                    const parentFeatures = workItems.filter(w => w.type === 'FEATURE' && w.projectId === selectedProjectId);
+                    return parentFeatures.length > 0 ? (
+                      <FormField
+                        control={form.control}
+                        name="parentId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Client Requirement (Parent)</FormLabel>
+                            <FormControl>
+                              <Combobox
+                                options={parentFeatures.map(f => ({ value: f.id.toString(), label: f.title }))}
+                                value={field.value?.toString() || ""}
+                                onValueChange={v => field.onChange(v ? parseInt(v) : null)}
+                                placeholder="Auto-select first available..."
+                              />
+                            </FormControl>
+                            <p className="text-xs text-muted-foreground">Leave empty to auto-attach to the first Client Requirement</p>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ) : null;
+                  })()}
                   <FormField
                     control={form.control}
-                    name="autoCreateTemplateTasks"
+                    name="description"
                     render={({ field }) => (
-                      <FormItem className="rounded-md border p-4 bg-background shadow-sm space-y-3">
-                        <div className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel className="font-semibold text-orange-900 cursor-pointer">
-                              Auto-create Template Tasks
-                            </FormLabel>
-                            <p className="text-xs text-muted-foreground">
-                              Automatically create tasks from the selected template for this change request.
-                            </p>
-                          </div>
-                        </div>
-                        {field.value && (
-                          <div className="pl-7 space-y-2">
-                            <Label className="text-sm font-medium">Select Template</Label>
-                            <Select
-                              value={selectedTemplateId?.toString() || ""}
-                              onValueChange={(v) => setSelectedTemplateId(parseInt(v))}
-                            >
-                              <SelectTrigger className="h-9 text-sm">
-                                <SelectValue placeholder="Choose a template..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {availableTemplates.map((tpl) => (
-                                  <SelectItem key={tpl.id} value={tpl.id.toString()}>
-                                    {tpl.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {selectedTemplateId && (
-                              <div className="space-y-1 mt-2">
-                                <p className="text-xs text-muted-foreground font-medium">Tasks that will be created:</p>
-                                <ul className="text-xs text-muted-foreground space-y-0.5 list-disc list-inside">
-                                  {availableTemplateTasks
-                                    .filter(t => t.templateId === selectedTemplateId && t.isActive)
-                                    .map(t => (
-                                      <li key={t.id}>{t.title} {t.estimatedHours ? <span className="text-muted-foreground/70">({t.estimatedHours}h)</span> : null}</li>
-                                    ))}
-                                </ul>
-                                {availableTemplateTasks.filter(t => t.templateId === selectedTemplateId && t.isActive).length === 0 && (
-                                  <p className="text-xs text-muted-foreground italic">No active tasks in this template.</p>
-                                )}
-                              </div>
-                            )}
-                            {availableTemplates.length === 0 && (
-                              <p className="text-xs text-muted-foreground italic">No templates available. Create templates in Template Settings.</p>
-                            )}
-                          </div>
-                        )}
+                      <FormItem>
+                        <FormLabel>
+                          {watchedType === 'STORY' ? 'Requirement Points' : 'Description'}
+                          {watchedType === 'STORY' && <span className="text-destructive"> *</span>}
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            placeholder={watchedType === 'STORY' ? "Enter requirement points" : "Enter description"}
+                            value={field.value || ""}
+                            rows={2}
+                          />
+                        </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
-                )}
+                  {watchedType === 'STORY' && (
+                    <FormField
+                      control={form.control}
+                      name="autoCreateTemplateTasks"
+                      render={({ field }) => (
+                        <FormItem className="rounded-md border p-4 bg-background shadow-sm space-y-3">
+                          <div className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="font-semibold text-orange-900 cursor-pointer">
+                                Auto-create Template Tasks
+                              </FormLabel>
+                              <p className="text-xs text-muted-foreground">
+                                Automatically create tasks from the selected template for this change request.
+                              </p>
+                            </div>
+                          </div>
+                          {field.value && (
+                            <div className="pl-7 space-y-2">
+                              <Label className="text-sm font-medium">Select Template</Label>
+                              <Select
+                                value={selectedTemplateId?.toString() || ""}
+                                onValueChange={(v) => setSelectedTemplateId(parseInt(v))}
+                              >
+                                <SelectTrigger className="h-9 text-sm">
+                                  <SelectValue placeholder="Choose a template..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableTemplates.map((tpl) => (
+                                    <SelectItem key={tpl.id} value={tpl.id.toString()}>
+                                      {tpl.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              {selectedTemplateId && (
+                                <div className="space-y-1 mt-2">
+                                  <p className="text-xs text-muted-foreground font-medium">Tasks that will be created:</p>
+                                  <ul className="text-xs text-muted-foreground space-y-0.5 list-disc list-inside">
+                                    {availableTemplateTasks
+                                      .filter(t => t.templateId === selectedTemplateId && t.isActive)
+                                      .map(t => (
+                                        <li key={t.id}>{t.title} {t.estimatedHours ? <span className="text-muted-foreground/70">({t.estimatedHours}h)</span> : null}</li>
+                                      ))}
+                                  </ul>
+                                  {availableTemplateTasks.filter(t => t.templateId === selectedTemplateId && t.isActive).length === 0 && (
+                                    <p className="text-xs text-muted-foreground italic">No active tasks in this template.</p>
+                                  )}
+                                </div>
+                              )}
+                              {availableTemplates.length === 0 && (
+                                <p className="text-xs text-muted-foreground italic">No templates available. Create templates in Template Settings.</p>
+                              )}
+                            </div>
+                          )}
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </>
               )}
 
@@ -1189,43 +1224,43 @@ export function CreateItemModal({
               {watchedType !== 'EPIC' && (
                 <>
                   {watchedType !== 'FEATURE' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="assigneeId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Assignee</FormLabel>
-                          <FormControl>
-                            <Combobox
-                              options={[{ value: "unassigned", label: "Unassigned" }, ...projectTeamMembers.map(u => ({ value: u.id.toString(), label: u.fullName || u.username }))]}
-                              value={field.value?.toString() || "unassigned"}
-                              onValueChange={v => field.onChange(v === "unassigned" ? null : parseInt(v))}
-                              disabled={!(['TASK','BUG'].includes(watchedType) ? hasFeature('change_assignee_task_bug') : hasFeature('change_assignee_epic_feature_story'))}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Status <span className="text-destructive">*</span></FormLabel>
-                          <Select value={field.value} onValueChange={field.onChange}>
-                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                            <SelectContent>
-                              <SelectItem value="TODO">To Do</SelectItem>
-                              <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                              <SelectItem value="ON_HOLD">On Hold</SelectItem>
-                              <SelectItem value="DONE">Done</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="assigneeId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Assignee</FormLabel>
+                            <FormControl>
+                              <Combobox
+                                options={assigneeOptions}
+                                value={field.value?.toString() || "unassigned"}
+                                onValueChange={v => field.onChange(v === "unassigned" ? null : v)}
+                                disabled={!(['TASK', 'BUG'].includes(watchedType) ? hasFeature('change_assignee_task_bug') : hasFeature('change_assignee_epic_feature_story'))}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="status"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Status <span className="text-destructive">*</span></FormLabel>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                              <SelectContent>
+                                <SelectItem value="TODO">To Do</SelectItem>
+                                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                <SelectItem value="ON_HOLD">On Hold</SelectItem>
+                                <SelectItem value="DONE">Done</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   )}
 
 

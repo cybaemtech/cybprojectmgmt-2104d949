@@ -92,7 +92,9 @@ function mapTeamMember(row: any): TeamMember {
   };
 }
 
-function mapWorkItem(row: any): WorkItem {
+// projectKey/projectName are enriched after fetch from the _projects cache
+function mapWorkItem(row: any, projectLookup?: (id: number) => { key: string; name: string } | undefined): WorkItem {
+  const proj = projectLookup ? projectLookup(row.project_id) : undefined;
   return {
     id: row.id,
     externalId: row.external_id ?? "",
@@ -130,8 +132,9 @@ function mapWorkItem(row: any): WorkItem {
     pdfUploadBlob: row.pdf_upload_blob,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    projectKey: row.projects?.key ?? "",
-    projectName: row.projects?.name ?? "",
+    // Prefer passed-in project lookup, then fall back to joined row.projects if present
+    projectKey: proj?.key ?? row.projects?.key ?? "",
+    projectName: proj?.name ?? row.projects?.name ?? "",
   };
 }
 
@@ -225,18 +228,38 @@ export function initStore(): Promise<void> {
     }
 
     try {
-      const [projectsRes, teamsRes, usersRes, teamMembersRes, workItemsRes] = await Promise.all([
+      // Fetch projects first so we can enrich work items with projectKey/projectName
+      // without a PostgREST join (which causes 500s due to blob columns + query complexity)
+      const [projectsRes, teamsRes, usersRes, teamMembersRes] = await Promise.all([
         supabase.from("projects").select("*").order("created_at", { ascending: false }),
         supabase.from("teams").select("*").order("created_at", { ascending: false }),
         supabase.from("profiles").select("*").order("created_at", { ascending: false }),
         supabase.from("team_members").select("*"),
-        supabase.from("work_items").select("*, projects(key, name)").order("created_at", { ascending: false }),
       ]);
       _projects = (projectsRes.data || []).map(mapProject);
       _teams = (teamsRes.data || []).map(mapTeam);
       _users = (usersRes.data || []).map(mapProfile);
       _teamMembers = (teamMembersRes.data || []).map(mapTeamMember);
-      _workItems = (workItemsRes.data || []).map(mapWorkItem);
+
+      // Build a fast project lookup map for enrichment
+      const projMap = new Map(_projects.map(p => [p.id, { key: p.key, name: p.name }]));
+      const projectLookup = (id: number) => projMap.get(id);
+
+      // Fetch work items WITHOUT the projects join and WITHOUT heavy blob columns
+      // Blobs (screenshot, screenshot_blob, pdf_upload_blob) are excluded from bulk load
+      // to prevent Supabase 500 errors caused by payload size / query complexity.
+      const workItemsRes = await supabase
+        .from("work_items")
+        .select("id,external_id,title,description,tags,type,status,priority,project_id,parent_id,assignee_id,reporter_id,created_by_name,created_by_email,updated_by,updated_by_name,estimate,actual_hours,start_date,end_date,completed_at,bug_type,severity,current_behavior,expected_behavior,reference_url,screenshot_path,github_url,prototype_link,prototype_status,pdf_upload_path,created_at,updated_at")
+        .order("created_at", { ascending: false });
+
+      if (workItemsRes.error) {
+        console.error("[store] work_items fetch error:", workItemsRes.error);
+        _workItems = [];
+      } else {
+        _workItems = (workItemsRes.data || []).map(row => mapWorkItem(row, projectLookup));
+      }
+
       _initialised = true;
       console.log(`[store] Loaded from Supabase: ${_projects.length} projects, ${_teams.length} teams, ${_users.length} users, ${_workItems.length} work items`);
       notifyChange();
@@ -244,7 +267,13 @@ export function initStore(): Promise<void> {
       console.error("[store] Failed to initialise from Supabase:", err);
     }
   })();
-  return _bootPromise;
+  // Clear the boot promise after completion so future refreshStore() calls can re-fetch
+  _bootPromise.finally(() => { _bootPromise = null; });
+  return _bootPromise!;
+}
+
+export function isStoreInitialized(): boolean {
+  return _initialised;
 }
 
 // Force refresh from Supabase (dedupes concurrent calls within a short window)
@@ -255,6 +284,7 @@ export async function refreshStore(): Promise<void> {
   // Throttle: skip if we just refreshed within 2s
   if (_initialised && Date.now() - _lastRefreshAt < 2000) return;
   _initialised = false;
+  _bootPromise = null; // ensure initStore starts fresh
   const p = initStore();
   p.finally(() => { _lastRefreshAt = Date.now(); });
   return p;
@@ -608,17 +638,18 @@ export const workItemStore = {
       notifyChange();
       // Don't set external_id in the insert row - let it be auto-assigned
       if (!row.external_id) delete row.external_id;
-      supabase.from("work_items").insert(row).select("*, projects(key, name)").single().then(({ data, error }) => {
+      supabase.from("work_items").insert(row).select("*").single().then(({ data, error }) => {
         if (error) { console.error("[workItemStore.save] insert error:", error); return; }
         if (data) {
+          const proj = projectStore.get(data.project_id);
           // Auto-set external_id
-          const extId = data.external_id || `${data.projects?.key || "WI"}-${data.id}`;
+          const extId = data.external_id || `${proj?.key || "WI"}-${data.id}`;
           if (!data.external_id) {
             supabase.from("work_items").update({ external_id: extId }).eq("id", data.id);
             data.external_id = extId;
           }
           const idx = _workItems.findIndex((w) => w.id === tempId);
-          if (idx >= 0) _workItems[idx] = mapWorkItem(data);
+          if (idx >= 0) _workItems[idx] = mapWorkItem(data, (id) => projectStore.get(id));
           notifyChange();
         }
       });
@@ -639,9 +670,9 @@ export const workItemStore = {
     if (item.id) {
       // Update
       row.updated_at = now;
-      const { data, error } = await supabase.from("work_items").update(row).eq("id", item.id).select("*, projects(key, name)").single();
+      const { data, error } = await supabase.from("work_items").update(row).eq("id", item.id).select("*").single();
       if (error) { console.error("[workItemStore.saveAsync] update error:", error); throw error; }
-      const mapped = mapWorkItem(data);
+      const mapped = mapWorkItem(data, (id) => projectStore.get(id));
       const idx = _workItems.findIndex((w) => w.id === item.id);
       if (idx >= 0) _workItems[idx] = mapped;
       notifyChange();
@@ -649,15 +680,16 @@ export const workItemStore = {
     } else {
       // Insert
       if (!row.external_id) delete row.external_id;
-      const { data, error } = await supabase.from("work_items").insert(row).select("*, projects(key, name)").single();
+      const { data, error } = await supabase.from("work_items").insert(row).select("*").single();
       if (error) { console.error("[workItemStore.saveAsync] insert error:", error); throw error; }
+      const proj = projectStore.get(data.project_id);
       // Auto-set external_id
-      const extId = data.external_id || `${data.projects?.key || "WI"}-${data.id}`;
+      const extId = data.external_id || `${proj?.key || "WI"}-${data.id}`;
       if (!data.external_id) {
         await supabase.from("work_items").update({ external_id: extId }).eq("id", data.id);
         data.external_id = extId;
       }
-      const mapped = mapWorkItem(data);
+      const mapped = mapWorkItem(data, (id) => projectStore.get(id));
       _workItems.unshift(mapped);
       notifyChange();
       console.log("[workItemStore.saveAsync] Saved item:", mapped.id, mapped.externalId, mapped.type, mapped.title);
@@ -753,3 +785,54 @@ export function getLocalUser(): User {
     updatedAt: new Date().toISOString(),
   };
 }
+
+// Keep a mirror of the logged-in user in localStorage so it survives page refreshes
+export function setCachedUser(user: User): void {
+  try { localStorage.setItem("supabase-user-cache", JSON.stringify(user)); } catch {}
+}
+
+export function clearCachedUser(): void {
+  try { localStorage.removeItem("supabase-user-cache"); } catch {}
+}
+
+// ── Project Members (stub – projects use team membership) ─────────────
+// Kept for import compatibility; actual membership is managed via teamMemberStore.
+let _projectMembers: Array<{ projectId: number; userId: string | number; role: string }> = [];
+
+export const projectMemberStore = {
+  all: () => _projectMembers,
+
+  byProject: (projectId: number) =>
+    _projectMembers.filter((m) => m.projectId === projectId),
+
+  usersForProject: (projectId: number): User[] => {
+    const memberIds = _projectMembers
+      .filter((m) => m.projectId === projectId)
+      .map((m) => String(m.userId));
+    return _users.filter((u) => memberIds.includes(String(u.id)));
+  },
+
+  isMember: (projectId: number, userId: string | number): boolean => {
+    return _projectMembers.some(
+      (m) => m.projectId === projectId && String(m.userId) === String(userId)
+    );
+  },
+
+  add: (projectId: number, userId: string | number, role: string = "MEMBER") => {
+    const existing = _projectMembers.find(
+      (m) => m.projectId === projectId && String(m.userId) === String(userId)
+    );
+    if (existing) return existing;
+    const entry = { projectId, userId, role };
+    _projectMembers.push(entry);
+    notifyChange();
+    return entry;
+  },
+
+  remove: (projectId: number, userId: string | number) => {
+    _projectMembers = _projectMembers.filter(
+      (m) => !(m.projectId === projectId && String(m.userId) === String(userId))
+    );
+    notifyChange();
+  },
+};

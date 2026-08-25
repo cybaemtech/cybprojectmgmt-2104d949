@@ -54,7 +54,7 @@ export function TeamMembersModal({ isOpen, onClose, team, onMembersChange, onTea
       toast({ title: "Error", description: "Please select a user to add.", variant: "destructive" });
       return;
     }
-    teamMemberStore.add(team.id, parseInt(selectedUserId), selectedRole);
+    teamMemberStore.add(team.id, selectedUserId, selectedRole);
     setSelectedUserId("");
     setUserSearch("");
     setSelectedRole("MEMBER");
@@ -63,7 +63,7 @@ export function TeamMembersModal({ isOpen, onClose, team, onMembersChange, onTea
     toast({ title: "Member added", description: "Team member has been added successfully." });
   };
 
-  const handleRemoveMember = (userId: number) => {
+  const handleRemoveMember = (userId: string | number) => {
     teamMemberStore.remove(team.id, userId);
     setRefreshKey(k => k + 1);
     onMembersChange?.();

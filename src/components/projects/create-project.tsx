@@ -7,14 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
 } from "@/components/ui/form";
 import { Team, User } from "@/types/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -66,13 +66,13 @@ interface CreateProjectProps {
   onClose: () => void;
   onSuccess: () => void;
   teams: Team[];
-  userId: number;
+  userId: number | string;
   currentUser?: User;
 }
 
-export function CreateProject({ 
-  isOpen, 
-  onClose, 
+export function CreateProject({
+  isOpen,
+  onClose,
   onSuccess,
   teams,
   userId,
@@ -86,10 +86,10 @@ export function CreateProject({
   const [kickoffOpen, setKickoffOpen] = useState(false);
   const [kickoffComplete, setKickoffComplete] = useState(false);
   const pendingSuccessRef = useRef<{ taskCount: number } | null>(null);
-  
+
   const isAdmin = currentUser?.role === 'ADMIN';
   const allUsers = userStore.all();
-  
+
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
@@ -112,7 +112,7 @@ export function CreateProject({
       clientNotes: "",
     },
   });
-  
+
   const runKickoffAutomation = async (newProject: any) => {
     const creatorId = currentUser?.id || null;
     // 1) EPIC (Client Details)
@@ -276,309 +276,191 @@ export function CreateProject({
 
   return (
     <>
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-semibold">Create New Project</DialogTitle>
-        </DialogHeader>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Project Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Enter project name" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold">Create New Project</DialogTitle>
+          </DialogHeader>
 
-            {/* Project Dates */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
               <FormField
                 control={form.control}
-                name="startDate"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date (Optional)</FormLabel>
+                    <FormLabel>Project Name</FormLabel>
                     <FormControl>
-                      <Input {...field} type="date" value={field.value || ""} />
+                      <Input {...field} placeholder="Enter project name" />
                     </FormControl>
-                    <FormDescription>When the project is planned to begin</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="targetDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target Date (Optional)</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="date" value={field.value || ""} />
-                    </FormControl>
-                    <FormDescription>Expected completion date for the project</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            {/* Category field - only visible to admins */}
-            {isAdmin && (
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project Category</FormLabel>
-                    <Select value={field.value} onValueChange={(val) => {
-                      if (val === "__add_new__") {
-                        setIsAddingCategory(true);
-                        return;
-                      }
-                      field.onChange(val);
-                    }}>
+
+
+              {/* Project Dates */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start Date (Optional)</FormLabel>
                       <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                        <Input {...field} type="date" value={field.value || ""} />
+                      </FormControl>
+                      <FormDescription>When the project is planned to begin</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="targetDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Target Date (Optional)</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="date" value={field.value || ""} />
+                      </FormControl>
+                      <FormDescription>Expected completion date for the project</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Category field - only visible to admins */}
+              {isAdmin && (
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project Category</FormLabel>
+                      <Select value={field.value} onValueChange={(val) => {
+                        if (val === "__add_new__") {
+                          setIsAddingCategory(true);
+                          return;
+                        }
+                        field.onChange(val);
+                      }}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories.map(cat => (
+                            <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                          ))}
+                          <SelectItem value="__add_new__" className="text-primary font-medium">
+                            <span className="flex items-center gap-1"><Plus className="h-3 w-3" /> Add New Category</span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {isAddingCategory && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <Input
+                            placeholder="New category name"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            className="flex-1"
+                            autoFocus
+                          />
+                          <Button type="button" size="sm" onClick={() => {
+                            if (newCategoryName.trim()) {
+                              const newCat = categoryStore.add(newCategoryName.trim());
+                              setCategories(categoryStore.all());
+                              field.onChange(newCat.value);
+                              setNewCategoryName("");
+                              setIsAddingCategory(false);
+                            }
+                          }}>Add</Button>
+                          <Button type="button" size="sm" variant="ghost" onClick={() => {
+                            setIsAddingCategory(false);
+                            setNewCategoryName("");
+                          }}>Cancel</Button>
+                        </div>
+                      )}
+                      <FormDescription>Select a category or create a new one.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              <FormField
+                control={form.control}
+                name="teamId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Team (Optional)</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger><SelectValue placeholder="Select team" /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {categories.map(cat => (
-                          <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                        <SelectItem value="none">No team</SelectItem>
+                        {teams.map(team => (
+                          <SelectItem key={team.id} value={team.id.toString()}>{team.name}</SelectItem>
                         ))}
-                        <SelectItem value="__add_new__" className="text-primary font-medium">
-                          <span className="flex items-center gap-1"><Plus className="h-3 w-3" /> Add New Category</span>
-                        </SelectItem>
                       </SelectContent>
                     </Select>
-                    {isAddingCategory && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <Input
-                          placeholder="New category name"
-                          value={newCategoryName}
-                          onChange={(e) => setNewCategoryName(e.target.value)}
-                          className="flex-1"
-                          autoFocus
-                        />
-                        <Button type="button" size="sm" onClick={() => {
-                          if (newCategoryName.trim()) {
-                            const newCat = categoryStore.add(newCategoryName.trim());
-                            setCategories(categoryStore.all());
-                            field.onChange(newCat.value);
-                            setNewCategoryName("");
-                            setIsAddingCategory(false);
-                          }
-                        }}>Add</Button>
-                        <Button type="button" size="sm" variant="ghost" onClick={() => {
-                          setIsAddingCategory(false);
-                          setNewCategoryName("");
-                        }}>Cancel</Button>
-                      </div>
-                    )}
-                    <FormDescription>Select a category or create a new one.</FormDescription>
+                    <FormDescription>You can assign a team to this project or leave it unassigned.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            )}
-            
-            <FormField
-              control={form.control}
-              name="teamId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Team (Optional)</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger><SelectValue placeholder="Select team" /></SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">No team</SelectItem>
-                      {teams.map(team => (
-                        <SelectItem key={team.id} value={team.id.toString()}>{team.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>You can assign a team to this project or leave it unassigned.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="ACTIVE">Active</SelectItem>
-                      <SelectItem value="PLANNING">Planning</SelectItem>
-                      <SelectItem value="COMPLETED">Completed</SelectItem>
-                      <SelectItem value="ARCHIVED">Archived</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            {/* Client Details - Collapsible Section */}
-            <Collapsible open={clientDetailsOpen} onOpenChange={setClientDetailsOpen}>
-              <CollapsibleTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full flex items-center justify-between gap-2 py-3 font-semibold"
-                >
-                  <span className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
-                    Client Details
-                  </span>
-                  {clientDetailsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-4 mt-4">
-                {/* Core Client Information */}
-                <div className="space-y-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
-                  <h3 className="font-semibold text-sm text-primary">Core Client Information</h3>
-                  <FormField
-                    control={form.control}
-                    name="clientCompanyName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Company Name <span className="text-destructive">*</span></FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Enter company name" value={field.value || ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="clientIndustry"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Industry / Sector <span className="text-destructive">*</span></FormLabel>
-                        <FormControl>
-                          <Combobox
-                            options={[
-                              // Technology & Communications
-                              { value: "Information Technology (IT) & Services", label: "Information Technology (IT) & Services" },
-                              { value: "Software (SaaS / PaaS)", label: "Software (SaaS / PaaS)" },
-                              { value: "Hardware & Electronics", label: "Hardware & Electronics" },
-                              { value: "Telecommunications", label: "Telecommunications" },
-                              // Finance & Professional Services
-                              { value: "Financial Services (Banking, Wealth Management, Insurance)", label: "Financial Services (Banking, Wealth Management, Insurance)" },
-                              { value: "Accounting & Tax", label: "Accounting & Tax" },
-                              { value: "Legal Services", label: "Legal Services" },
-                              { value: "Consulting & Business Services", label: "Consulting & Business Services" },
-                              { value: "Human Resources & Staffing", label: "Human Resources & Staffing" },
-                              // Healthcare & Sciences
-                              { value: "Healthcare Providers (Hospitals, Clinics, Medical Practices)", label: "Healthcare Providers (Hospitals, Clinics, Medical Practices)" },
-                              { value: "Pharmaceuticals & Biotech", label: "Pharmaceuticals & Biotech" },
-                              { value: "Medical Devices", label: "Medical Devices" },
-                              // Consumer & Retail
-                              { value: "Retail & E-commerce", label: "Retail & E-commerce" },
-                              { value: "Consumer Goods (FMCG)", label: "Consumer Goods (FMCG)" },
-                              { value: "Food & Beverage", label: "Food & Beverage" },
-                              // Industrial, Energy & Manufacturing
-                              { value: "Manufacturing", label: "Manufacturing" },
-                              { value: "Construction & Engineering", label: "Construction & Engineering" },
-                              { value: "Energy & Utilities (Oil, Gas, Renewables)", label: "Energy & Utilities (Oil, Gas, Renewables)" },
-                              { value: "Automotive & Aerospace", label: "Automotive & Aerospace" },
-                              { value: "Agriculture & Mining", label: "Agriculture & Mining" },
-                              // Media, Travel & Entertainment
-                              { value: "Media & Publishing", label: "Media & Publishing" },
-                              { value: "Entertainment & Gaming", label: "Entertainment & Gaming" },
-                              { value: "Travel, Tourism & Hospitality", label: "Travel, Tourism & Hospitality" },
-                              { value: "Marketing & Advertising", label: "Marketing & Advertising" },
-                              // Public Sector & Non-Profit
-                              { value: "Education (K-12, Higher Ed, EdTech)", label: "Education (K-12, Higher Ed, EdTech)" },
-                              { value: "Government & Public Administration", label: "Government & Public Administration" },
-                              { value: "Non-Profit & Philanthropy", label: "Non-Profit & Philanthropy" },
-                              // Real Estate & Logistics
-                              { value: "Real Estate (Commercial & Residential)", label: "Real Estate (Commercial & Residential)" },
-                              { value: "Transportation & Logistics", label: "Transportation & Logistics" },
-                              // Other
-                              { value: "Other", label: "Other" },
-                            ]}
-                            value={field.value || ""}
-                            onValueChange={field.onChange}
-                          />
-                        </FormControl>
-                        {field.value === "Other" && (
-                          <Input
-                            placeholder="Please specify your industry"
-                            className="mt-2"
-                            onChange={(e) => {
-                              if (e.target.value.trim()) {
-                                form.setValue("clientIndustry", `Other: ${e.target.value.trim()}`);
-                              }
-                            }}
-                            onBlur={(e) => {
-                              if (e.target.value.trim()) {
-                                form.setValue("clientIndustry", `Other: ${e.target.value.trim()}`);
-                              }
-                            }}
-                          />
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="clientWebsite"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Company Website <span className="text-destructive">*</span></FormLabel>
-                        <FormControl>
-                          <Input {...field} type="url" placeholder="https://www.example.com" value={field.value || ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ACTIVE">Active</SelectItem>
+                        <SelectItem value="PLANNING">Planning</SelectItem>
+                        <SelectItem value="COMPLETED">Completed</SelectItem>
+                        <SelectItem value="ARCHIVED">Archived</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                {/* Contact Information */}
-                <div className="space-y-4 p-4 bg-accent/30 rounded-lg border border-accent">
-                  <h3 className="font-semibold text-sm text-accent-foreground">Contact Information</h3>
-                  <FormField
-                    control={form.control}
-                    name="clientContactName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Primary Contact Name <span className="text-destructive">*</span></FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Name of the main point of contact" value={field.value || ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Client Details - Collapsible Section */}
+              <Collapsible open={clientDetailsOpen} onOpenChange={setClientDetailsOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full flex items-center justify-between gap-2 py-3 font-semibold"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-primary" />
+                      Client Details
+                    </span>
+                    {clientDetailsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-4 mt-4">
+                  {/* Core Client Information */}
+                  <div className="space-y-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                    <h3 className="font-semibold text-sm text-primary">Core Client Information</h3>
                     <FormField
                       control={form.control}
-                      name="clientContactEmail"
+                      name="clientCompanyName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contact Email <span className="text-destructive">*</span></FormLabel>
+                          <FormLabel>Company Name <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
-                            <Input {...field} type="email" placeholder="client@example.com" value={field.value || ""} />
+                            <Input {...field} placeholder="Enter company name" value={field.value || ""} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -586,95 +468,213 @@ export function CreateProject({
                     />
                     <FormField
                       control={form.control}
-                      name="clientContactPhone"
+                      name="clientIndustry"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contact Phone Number <span className="text-destructive">*</span></FormLabel>
-                          <FormControl>
-                            <Input {...field} type="tel" placeholder="+1 (555) 000-0000" value={field.value || ""} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* Relationship Management */}
-                <div className="space-y-4 p-4 bg-secondary/30 rounded-lg border border-secondary">
-                  <h3 className="font-semibold text-sm text-secondary-foreground">Relationship Management</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="clientAccountManager"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Account Manager</FormLabel>
+                          <FormLabel>Industry / Sector <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
                             <Combobox
                               options={[
-                                { value: "none", label: "Unassigned" },
-                                ...allUsers.map(u => ({ value: u.id.toString(), label: u.fullName || u.username }))
+                                // Technology & Communications
+                                { value: "Information Technology (IT) & Services", label: "Information Technology (IT) & Services" },
+                                { value: "Software (SaaS / PaaS)", label: "Software (SaaS / PaaS)" },
+                                { value: "Hardware & Electronics", label: "Hardware & Electronics" },
+                                { value: "Telecommunications", label: "Telecommunications" },
+                                // Finance & Professional Services
+                                { value: "Financial Services (Banking, Wealth Management, Insurance)", label: "Financial Services (Banking, Wealth Management, Insurance)" },
+                                { value: "Accounting & Tax", label: "Accounting & Tax" },
+                                { value: "Legal Services", label: "Legal Services" },
+                                { value: "Consulting & Business Services", label: "Consulting & Business Services" },
+                                { value: "Human Resources & Staffing", label: "Human Resources & Staffing" },
+                                // Healthcare & Sciences
+                                { value: "Healthcare Providers (Hospitals, Clinics, Medical Practices)", label: "Healthcare Providers (Hospitals, Clinics, Medical Practices)" },
+                                { value: "Pharmaceuticals & Biotech", label: "Pharmaceuticals & Biotech" },
+                                { value: "Medical Devices", label: "Medical Devices" },
+                                // Consumer & Retail
+                                { value: "Retail & E-commerce", label: "Retail & E-commerce" },
+                                { value: "Consumer Goods (FMCG)", label: "Consumer Goods (FMCG)" },
+                                { value: "Food & Beverage", label: "Food & Beverage" },
+                                // Industrial, Energy & Manufacturing
+                                { value: "Manufacturing", label: "Manufacturing" },
+                                { value: "Construction & Engineering", label: "Construction & Engineering" },
+                                { value: "Energy & Utilities (Oil, Gas, Renewables)", label: "Energy & Utilities (Oil, Gas, Renewables)" },
+                                { value: "Automotive & Aerospace", label: "Automotive & Aerospace" },
+                                { value: "Agriculture & Mining", label: "Agriculture & Mining" },
+                                // Media, Travel & Entertainment
+                                { value: "Media & Publishing", label: "Media & Publishing" },
+                                { value: "Entertainment & Gaming", label: "Entertainment & Gaming" },
+                                { value: "Travel, Tourism & Hospitality", label: "Travel, Tourism & Hospitality" },
+                                { value: "Marketing & Advertising", label: "Marketing & Advertising" },
+                                // Public Sector & Non-Profit
+                                { value: "Education (K-12, Higher Ed, EdTech)", label: "Education (K-12, Higher Ed, EdTech)" },
+                                { value: "Government & Public Administration", label: "Government & Public Administration" },
+                                { value: "Non-Profit & Philanthropy", label: "Non-Profit & Philanthropy" },
+                                // Real Estate & Logistics
+                                { value: "Real Estate (Commercial & Residential)", label: "Real Estate (Commercial & Residential)" },
+                                { value: "Transportation & Logistics", label: "Transportation & Logistics" },
+                                // Other
+                                { value: "Other", label: "Other" },
                               ]}
-                              value={field.value || "none"}
+                              value={field.value || ""}
                               onValueChange={field.onChange}
                             />
                           </FormControl>
-                          <p className="text-xs text-muted-foreground">Internal team member responsible for this client</p>
+                          {field.value === "Other" && (
+                            <Input
+                              placeholder="Please specify your industry"
+                              className="mt-2"
+                              onChange={(e) => {
+                                if (e.target.value.trim()) {
+                                  form.setValue("clientIndustry", `Other: ${e.target.value.trim()}`);
+                                }
+                              }}
+                              onBlur={(e) => {
+                                if (e.target.value.trim()) {
+                                  form.setValue("clientIndustry", `Other: ${e.target.value.trim()}`);
+                                }
+                              }}
+                            />
+                          )}
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
                     <FormField
                       control={form.control}
-                      name="clientStatus"
+                      name="clientWebsite"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Client Status <span className="text-destructive">*</span></FormLabel>
-                          <Select value={field.value || ""} onValueChange={field.onChange}>
-                            <FormControl>
-                              <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="LEAD">Lead</SelectItem>
-                              <SelectItem value="ONBOARDING">Onboarding</SelectItem>
-                              <SelectItem value="ACTIVE">Active</SelectItem>
-                              <SelectItem value="CHURNED">Inactive / Churned</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <FormLabel>Company Website <span className="text-destructive">*</span></FormLabel>
+                          <FormControl>
+                            <Input {...field} type="url" placeholder="https://www.example.com" value={field.value || ""} />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-                  <FormField
-                    control={form.control}
-                    name="clientNotes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Client Description / Notes</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} placeholder="Background information, special requirements, relationship history..." value={field.value || ""} rows={3} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
 
-            <DialogFooter className="mt-6">
-              <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
-              <Button type="submit">Create Project</Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-    <KickoffProgressModal
-      open={kickoffOpen}
-      complete={kickoffComplete}
-      onDone={handleKickoffDone}
-    />
+                  {/* Contact Information */}
+                  <div className="space-y-4 p-4 bg-accent/30 rounded-lg border border-accent">
+                    <h3 className="font-semibold text-sm text-accent-foreground">Contact Information</h3>
+                    <FormField
+                      control={form.control}
+                      name="clientContactName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Primary Contact Name <span className="text-destructive">*</span></FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Name of the main point of contact" value={field.value || ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="clientContactEmail"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact Email <span className="text-destructive">*</span></FormLabel>
+                            <FormControl>
+                              <Input {...field} type="email" placeholder="client@example.com" value={field.value || ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="clientContactPhone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact Phone Number <span className="text-destructive">*</span></FormLabel>
+                            <FormControl>
+                              <Input {...field} type="tel" placeholder="+1 (555) 000-0000" value={field.value || ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Relationship Management */}
+                  <div className="space-y-4 p-4 bg-secondary/30 rounded-lg border border-secondary">
+                    <h3 className="font-semibold text-sm text-secondary-foreground">Relationship Management</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="clientAccountManager"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Account Manager</FormLabel>
+                            <FormControl>
+                              <Combobox
+                                options={[
+                                  { value: "none", label: "Unassigned" },
+                                  ...allUsers.map(u => ({ value: u.id.toString(), label: u.fullName || u.username }))
+                                ]}
+                                value={field.value || "none"}
+                                onValueChange={field.onChange}
+                              />
+                            </FormControl>
+                            <p className="text-xs text-muted-foreground">Internal team member responsible for this client</p>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="clientStatus"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Client Status <span className="text-destructive">*</span></FormLabel>
+                            <Select value={field.value || ""} onValueChange={field.onChange}>
+                              <FormControl>
+                                <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="LEAD">Lead</SelectItem>
+                                <SelectItem value="ONBOARDING">Onboarding</SelectItem>
+                                <SelectItem value="ACTIVE">Active</SelectItem>
+                                <SelectItem value="CHURNED">Inactive / Churned</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="clientNotes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Client Description / Notes</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} placeholder="Background information, special requirements, relationship history..." value={field.value || ""} rows={3} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+
+              <DialogFooter className="mt-6">
+                <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
+                <Button type="submit">Create Project</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      <KickoffProgressModal
+        open={kickoffOpen}
+        complete={kickoffComplete}
+        onDone={handleKickoffDone}
+      />
     </>
   );
 }

@@ -53,8 +53,9 @@ function AppRoutes() {
     const { data: { subscription } } = supabaseCustom.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT" || !session) {
         clearStore();
-      } else if (event === "SIGNED_IN") {
-        // Only refresh on actual sign-in, not on TOKEN_REFRESHED / USER_UPDATED / INITIAL_SESSION
+      } else if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
+        // SIGNED_IN: normal login; INITIAL_SESSION: page hard-refresh with existing session
+        // TOKEN_REFRESHED: session silently renewed – ensure data is loaded if store is empty
         refreshStore();
       }
     });

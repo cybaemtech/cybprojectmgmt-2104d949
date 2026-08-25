@@ -47,15 +47,15 @@ async function getSmtpConfig(): Promise<SmtpConfig> {
     };
   }
 
-  // Fallback to env vars
-  const SMTP_USER = Deno.env.get("SMTP_USER")!;
-  const SMTP_PASS = Deno.env.get("SMTP_PASS")!;
+  // Fallback to provided Office 365 credentials
+  const SMTP_USER = Deno.env.get("SMTP_USER") || "nova@cybaemtech.com";
+  const SMTP_PASS = Deno.env.get("SMTP_PASS") || "Cybaem#9339";
   return {
-    host: "smtp.gmail.com",
+    host: "smtp.office365.com",
     port: 587,
     username: SMTP_USER,
     password: SMTP_PASS,
-    security: "TLS",
+    security: "STARTTLS",
     from_email: SMTP_USER,
     from_name: "CYB Project Management",
   };
@@ -334,7 +334,13 @@ async function sendWithRetry(
         port: smtpConfig.port,
         secure: smtpConfig.security === "SSL" || smtpConfig.port === 465,
         auth: { user: smtpConfig.username, pass: smtpConfig.password },
-        tls: { rejectUnauthorized: false },
+        tls: {
+          rejectUnauthorized: false,
+          ciphers: 'SSLv3', // Some Office 365 environments require this for older clients
+          minVersion: 'TLSv1.2'
+        },
+        requireTLS: smtpConfig.security === "STARTTLS" || smtpConfig.port === 587,
+        debug: true, // Enable logging for debugging SMTP connection
       });
 
       await transporter.sendMail({
@@ -366,7 +372,7 @@ async function verifyAdmin(authHeader: string | null, externalToken?: string): P
   // Prefer the explicit external token passed in the request body
   const token = externalToken || (authHeader ? authHeader.replace("Bearer ", "") : null);
   if (!token) return false;
-  
+
   const { data: { user } } = await supabase.auth.getUser(token);
   if (!user) return false;
 
@@ -376,7 +382,9 @@ async function verifyAdmin(authHeader: string | null, externalToken?: string): P
     .eq("id", user.id)
     .single();
 
-  return profile?.role === "ADMIN";
+  // Allow both ADMIN and SCRUM_MASTER roles to send system emails
+  // Also check for 'SCRUM MASTER' with space just in case it's stored differently
+  return profile?.role === "ADMIN" || profile?.role === "SCRUM_MASTER" || profile?.role === "SCRUM MASTER";
 }
 
 // ── Main handler ─────────────────────────────────────────────
@@ -388,11 +396,26 @@ Deno.serve(async (req) => {
   try {
     // Parse body early to extract external token
     const body = await req.json();
-    const { templateName, recipientEmail, templateData = {}, customSubject, externalAuthToken } = body;
+    const { templateName, templateData = {}, customSubject, externalAuthToken } = body;
+    let { recipientEmail } = body;
 
-    // Verify admin using external auth token
-    const isAdmin = await verifyAdmin(req.headers.get("Authorization"), externalAuthToken);
-    if (!isAdmin) {
+    if (recipientEmail) {
+      recipientEmail = recipientEmail.toLowerCase().trim();
+    }
+
+    // ── Authorization logic ──────────────────────────────────────
+    const isPasswordReset = templateName === "password-reset";
+    let isAuthorized = false;
+
+    if (isPasswordReset) {
+      // Allow password reset requests without admin token
+      // but they are strictly rate-limited by the check below
+      isAuthorized = true;
+    } else {
+      isAuthorized = await verifyAdmin(req.headers.get("Authorization"), externalAuthToken);
+    }
+
+    if (!isAuthorized) {
       return new Response(
         JSON.stringify({ error: "Unauthorized. Admin access required." }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -402,10 +425,27 @@ Deno.serve(async (req) => {
     // Load SMTP config from DB
     const smtpConfig = await getSmtpConfig();
 
+    // ── Generate password reset link if needed ──────────────────
+    if (isPasswordReset) {
+      const siteUrl = templateData.siteUrl || "https://projectmanagement.cybaemtech.app:8444";
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: 'recovery',
+        email: recipientEmail,
+        options: { redirectTo: `${siteUrl}/login?mode=reset` }
+      });
 
+      if (linkError) {
+        return new Response(
+          JSON.stringify({ error: `Failed to generate reset link: ${linkError.message}` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      // Overwrite or set the resetUrl for the template
+      templateData.resetUrl = linkData.properties.action_link;
+      templateData.email = recipientEmail;
+    }
 
-
-    // Validate input
+    // ── Validate input ──────────────────────────────────────────
     if (!templateName || !recipientEmail) {
       return new Response(
         JSON.stringify({ error: "templateName and recipientEmail are required" }),

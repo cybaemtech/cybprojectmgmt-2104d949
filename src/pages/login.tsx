@@ -75,19 +75,39 @@ export default function LoginPage() {
     defaultValues: { password: "", confirmPassword: "" },
   });
 
-  // Handle Supabase Auth State Changes (especially for password recovery)
   useEffect(() => {
     // 1. Listen for auth events
-    const { data: { subscription } } = supabaseCustom.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
+    const { data: { subscription } } = supabaseCustom.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth event in LoginPage:", event, !!session);
+      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && window.location.hash.includes("type=recovery"))) {
+        console.log("Recovery condition met via onAuthStateChange");
         setMode("reset");
       }
     });
 
-    // 2. Also check URL hash immediately on mount (fallback for some browser/supabase versions)
-    if (window.location.hash.includes("type=recovery")) {
-      setMode("reset");
-    }
+    // 2. Also check URL hash AND query params immediately on mount
+    const checkRecovery = async () => {
+      const hash = window.location.hash;
+      const search = window.location.search;
+
+      console.log("Checking recovery in URL. Hash:", hash.substring(0, 20) + "...", "Search:", search);
+
+      const hasRecoveryToken = hash.includes("type=recovery") || hash.includes("access_token=");
+      const hasRecoveryCode = search.includes("code=") && (search.includes("type=recovery") || !search.includes("type="));
+      const hasResetMode = search.includes("mode=reset");
+
+      if (hasRecoveryToken || hasRecoveryCode || hasResetMode) {
+        console.log("Recovery indicator or reset mode found in URL, forcing reset mode");
+        setMode("reset");
+
+        // Final fallback: even if session isn't immediately ready, stay in reset mode
+        const { data: { session } } = await supabaseCustom.auth.getSession();
+        if (session) {
+          console.log("Session confirmed for recovery");
+        }
+      }
+    };
+    checkRecovery();
 
     return () => subscription.unsubscribe();
   }, []);
@@ -140,9 +160,14 @@ export default function LoginPage() {
     setIsLoading(true);
     const result = await signup(data.email, data.password, data.fullName);
     if (result.success) {
-      setConfirmEmail(data.email);
-      setMode("confirm");
-      toast({ title: "Account created!", description: "Please check your email to confirm your account." });
+      if (result.requireConfirmation) {
+        setConfirmEmail(data.email);
+        setMode("confirm");
+        toast({ title: "Account created!", description: "Please check your email to confirm your account." });
+      } else {
+        toast({ title: "Account created!", description: "Welcome to your new account!" });
+        setTimeout(() => navigate("/dashboard"), 500);
+      }
     } else {
       toast({ variant: "destructive", title: "Sign up failed", description: result.error });
     }
@@ -152,13 +177,29 @@ export default function LoginPage() {
   const onResetPassword = async (data: ResetPasswordFormValues) => {
     setIsLoading(true);
     try {
+      // First, verify we actually HAVE a session. updateUser requires an active session.
+      const { data: { session } } = await supabaseCustom.auth.getSession();
+
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Session expired",
+          description: "Your password reset session has expired or is invalid. Please request a new reset link."
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const { error } = await supabaseCustom.auth.updateUser({
         password: data.password
       });
+
       if (error) {
         toast({ variant: "destructive", title: "Error", description: error.message });
       } else {
         toast({ title: "Password updated", description: "Your password has been changed successfully. You can now login." });
+        // Sign out to clear the recovery session and go back to login
+        await supabaseCustom.auth.signOut();
         setMode("login");
       }
     } catch (e) {

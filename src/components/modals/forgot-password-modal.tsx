@@ -33,12 +33,24 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
 
   const onSubmit = async (data: ForgotPasswordFormValues) => {
     setIsLoading(true);
+    const siteUrl = import.meta.env.VITE_SITE_URL || "https://projectmanagement.cybaemtech.app:8444";
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/login`,
+      const { data: funcData, error } = await supabase.functions.invoke("send-email", {
+        body: {
+          templateName: "password-reset",
+          recipientEmail: data.email,
+          templateData: {
+            siteUrl: siteUrl,
+          },
+        },
       });
-      if (error) {
-        toast({ variant: "destructive", title: "Error", description: error.message });
+
+      if (error || (funcData && !funcData.success)) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error?.message || funcData?.error || "Failed to send reset email"
+        });
       } else {
         setIsSuccess(true);
         toast({ title: "Reset email sent", description: "Check your email for the password reset link." });

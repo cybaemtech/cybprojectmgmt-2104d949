@@ -165,9 +165,9 @@ export function formatDate(date: Date | string): string {
 /**
  * Get the user object by ID from a list of users
  */
-export function getUserById(users: User[], userId: number | null | undefined): User | undefined {
+export function getUserById(users: User[], userId: string | number | null | undefined): User | undefined {
   if (!userId) return undefined;
-  return users.find(user => user.id === userId);
+  return users.find(user => String(user.id) === String(userId));
 }
 
 /**

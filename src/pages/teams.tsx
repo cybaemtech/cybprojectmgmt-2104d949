@@ -107,7 +107,7 @@ export default function Teams() {
       const { data: { session: extSession } } = await supabaseCustom.auth.getSession();
       const extToken = extSession?.access_token;
 
-      const { error: emailError } = await supabase.functions.invoke("send-email", {
+      const { data: emailData, error: emailError } = await supabase.functions.invoke("send-email", {
         body: {
           templateName: "invitation",
           recipientEmail: inv.email,
@@ -120,7 +120,17 @@ export default function Teams() {
           },
         },
       });
-      if (emailError) throw emailError;
+
+      if (emailError) {
+        console.error("Function error:", emailError);
+        // Try to get message from error body if it exists
+        let errorMsg = emailError.message;
+        try {
+          const body = await emailError.context?.json();
+          if (body?.error) errorMsg = body.error;
+        } catch (e) {}
+        throw new Error(errorMsg);
+      }
 
       // Bump updated_at so the list reflects the resend
       await supabaseCustom
@@ -414,7 +424,16 @@ export default function Teams() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            {getStatusBadge(inv.status)}
+                            {(() => {
+                              const matchingUser = users.find(u => u.email.toLowerCase() === inv.email.toLowerCase());
+                              let effectiveStatus = inv.status;
+                              if (matchingUser && matchingUser.isActive) {
+                                effectiveStatus = 'ACTIVE';
+                              } else if (matchingUser && !matchingUser.isActive) {
+                                effectiveStatus = 'SIGNED_UP'; // Or some other "inactive" status
+                              }
+                              return getStatusBadge(effectiveStatus);
+                            })()}
                             {inv.status === 'PENDING' && (
                               <Button
                                 variant="outline"
